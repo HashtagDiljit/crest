@@ -29,7 +29,10 @@ export default async function DashboardLayout({
   } | null;
 
   const username = profile?.username ?? user!.email?.split("@")[0] ?? "You";
-  const initials = username.slice(0, 2).toUpperCase();
+  const parts = username.trim().split(/\s+/);
+  const initials = parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : username.slice(0, 2).toUpperCase();
   const level = profile?.level ?? 1;
   const xp = profile?.xp ?? 0;
   const streak = profile?.streak_current ?? 0;
