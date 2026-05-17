@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Plus } from "lucide-react";
 import type { TemplateExerciseRow, SessionSetRow } from "../../actions";
 
 type ExerciseWithDetails = TemplateExerciseRow;
@@ -10,13 +10,23 @@ interface Props {
   loggedSets: SessionSetRow[];
   currentExIdx: number;
   onJump: (idx: number) => void;
+  onAddExercise?: () => void;
 }
 
-export function ExerciseQueue({ exercises, loggedSets, currentExIdx, onJump }: Props) {
+export function ExerciseQueue({ exercises, loggedSets, currentExIdx, onJump, onAddExercise }: Props) {
   return (
     <div className="rounded-r5 border border-border bg-bg-surface">
-      <div className="px-4 py-3 border-b border-border">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <span className="font-display text-13 font-semibold text-text-primary">Up next</span>
+        {onAddExercise && (
+          <button
+            onClick={onAddExercise}
+            className="flex items-center gap-1 text-12 font-medium transition-colors"
+            style={{ color: "var(--color-accent)" }}
+          >
+            <Plus size={12} /> Add
+          </button>
+        )}
       </div>
       <div className="divide-y divide-border">
         {exercises.map((ex, i) => {

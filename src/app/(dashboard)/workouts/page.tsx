@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Plus, Dumbbell } from "lucide-react";
+import { Plus, Dumbbell, BookOpen } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getTemplates, getWorkoutHistory } from "./actions";
@@ -30,13 +30,22 @@ export default async function WorkoutsPage() {
             Track your training, build templates, and log sessions.
           </p>
         </div>
-        <Link
-          href="/workouts/templates/new"
-          className="flex items-center gap-2 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors flex-shrink-0"
-        >
-          <Plus size={15} />
-          Log workout
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/workouts/exercises"
+            className="flex items-center gap-2 px-4 py-2 rounded-pill border border-border bg-bg-elevated hover:bg-bg-overlay text-text-secondary text-13 font-medium transition-colors flex-shrink-0"
+          >
+            <BookOpen size={14} />
+            Exercises
+          </Link>
+          <Link
+            href="/workouts/start"
+            className="flex items-center gap-2 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors flex-shrink-0"
+          >
+            <Plus size={15} />
+            Log workout
+          </Link>
+        </div>
       </div>
 
       {/* Templates section */}

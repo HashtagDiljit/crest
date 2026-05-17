@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
+import { Plus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -11,6 +12,8 @@ import { SetTable } from "./_components/SetTable";
 import { Steppers } from "./_components/Steppers";
 import { RestTimer } from "./_components/RestTimer";
 import { ExerciseQueue } from "./_components/ExerciseQueue";
+import { AdHocExercisePicker } from "./_components/AdHocExercisePicker";
+import type { ExerciseRow } from "../actions";
 
 type WorkoutTemplate = Database["public"]["Tables"]["workout_templates"]["Row"];
 
@@ -45,6 +48,8 @@ function SessionPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loggedSets, setLoggedSets] = useState<SessionSetRow[]>([]);
   const [ending, setEnding] = useState(false);
+  const [adHocExercises, setAdHocExercises] = useState<TemplateExerciseRow[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     if (!sessionId) { router.replace("/workouts"); return; }
@@ -149,8 +154,25 @@ function SessionPage() {
     return () => clearInterval(t);
   }, [restRemaining]);
 
-  const currentEx = data?.exercises[currentExIdx];
+  const allExercises = [...(data?.exercises ?? []), ...adHocExercises];
+  const currentEx = allExercises[currentExIdx];
+
+  function handleAddExercise(ex: ExerciseRow, setsTarget: number, repsTarget: number) {
+    const adHoc: TemplateExerciseRow = {
+      id: `adhoc-${ex.id}-${Date.now()}`,
+      template_id: sessionId ?? "adhoc",
+      exercise_id: ex.id,
+      sets_target: setsTarget,
+      reps_target: repsTarget,
+      order_index: allExercises.length,
+      exercise: ex,
+    };
+    setAdHocExercises((prev) => [...prev, adHoc]);
+    setShowPicker(false);
+    setCurrentExIdx(allExercises.length);
+  }
   const setsForCurrentEx = loggedSets.filter((s) => s.exercise_id === currentEx?.exercise_id);
+  const isQuickStart = !data?.template;
   const targetSets = currentEx?.sets_target ?? 3;
 
   const handleCompleteSet = useCallback(async () => {
@@ -201,10 +223,25 @@ function SessionPage() {
         ending={ending}
       />
 
-      <ProgressStrip exercises={data.exercises} loggedSets={loggedSets} currentExIdx={currentExIdx} />
+      <ProgressStrip exercises={allExercises} loggedSets={loggedSets} currentExIdx={currentExIdx} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <div className="flex flex-col gap-4">
+          {isQuickStart && allExercises.length === 0 && !showPicker && (
+            <div className="rounded-r5 border border-border bg-bg-surface p-8 flex flex-col items-center gap-4 text-center">
+              <p className="font-display text-18 font-semibold text-text-primary">Quick start session</p>
+              <p className="text-13 text-text-secondary">Add exercises to begin tracking sets.</p>
+              <button
+                onClick={() => setShowPicker(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
+              >
+                <Plus size={14} /> Add exercise
+              </button>
+            </div>
+          )}
+          {showPicker && (
+            <AdHocExercisePicker onAdd={handleAddExercise} onClose={() => setShowPicker(false)} />
+          )}
           {currentEx && (
             <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4">
               <div>
@@ -243,10 +280,11 @@ function SessionPage() {
             onChangeTotal={setRestTotal}
           />
           <ExerciseQueue
-            exercises={data.exercises}
+            exercises={allExercises}
             loggedSets={loggedSets}
             currentExIdx={currentExIdx}
             onJump={setCurrentExIdx}
+            onAddExercise={isQuickStart ? () => setShowPicker(true) : undefined}
           />
         </div>
       </div>

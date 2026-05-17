@@ -408,6 +408,113 @@ export async function getSession(
   };
 }
 
+export async function startBlankSession(): Promise<{ error: string } | void> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: session, error } = await supabase
+    .from("workout_sessions")
+    .insert({ user_id: user.id, template_id: null, xp_earned: 0 })
+    .select("id")
+    .single();
+
+  if (error || !session) return { error: error?.message ?? "Failed to start session" };
+  redirect(`/workouts/session?id=${(session as { id: string }).id}`);
+}
+
+export async function getExercises(): Promise<ExerciseRow[]> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("exercises")
+    .select("id, name, category, muscle_primary, equipment")
+    .order("name");
+
+  return (data ?? []) as ExerciseRow[];
+}
+
+export async function createCustomExercise(
+  formData: FormData
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required" };
+
+  const { error } = await supabase.from("exercises").insert({
+    name,
+    category: (formData.get("category") as string) || null,
+    muscle_primary: (formData.get("muscle_primary") as string) || null,
+    equipment: (formData.get("equipment") as string) || null,
+    is_custom: true,
+    user_id: user.id,
+  });
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts/exercises");
+  return { success: true };
+}
+
+export interface CalendarSession {
+  date: string;
+  template_name: string | null;
+  sets_count: number;
+}
+
+export async function getSessionsForMonth(
+  year: number,
+  month: number
+): Promise<CalendarSession[]> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const start = new Date(year, month - 1, 1).toISOString();
+  const end = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("id, started_at, template_id")
+    .eq("user_id", user.id)
+    .not("ended_at", "is", null)
+    .gte("started_at", start)
+    .lte("started_at", end);
+
+  if (!sessions?.length) return [];
+
+  const sessArr = sessions as Array<{ id: string; started_at: string; template_id: string | null }>;
+  const templateIds = Array.from(
+    new Set(sessArr.map((s) => s.template_id).filter((id): id is string => id !== null))
+  );
+  const sessionIds = sessArr.map((s) => s.id);
+
+  const [templatesRes, setsRes] = await Promise.all([
+    templateIds.length > 0
+      ? supabase.from("workout_templates").select("id, name").in("id", templateIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+    supabase.from("session_sets").select("id, session_id").in("session_id", sessionIds),
+  ]);
+
+  const templateMap = new Map(
+    ((templatesRes.data ?? []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name])
+  );
+  const setsCountMap = new Map<string, number>();
+  for (const s of (setsRes.data ?? []) as Array<{ id: string; session_id: string }>) {
+    setsCountMap.set(s.session_id, (setsCountMap.get(s.session_id) ?? 0) + 1);
+  }
+
+  return sessArr.map((s) => ({
+    date: s.started_at.split("T")[0],
+    template_name: s.template_id ? (templateMap.get(s.template_id) ?? null) : null,
+    sets_count: setsCountMap.get(s.id) ?? 0,
+  }));
+}
+
 export async function getWorkoutHistory(): Promise<HistorySession[]> {
   const supabase = await createServerClient();
   const {

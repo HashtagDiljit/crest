@@ -1,4 +1,5 @@
-import { History, CalendarDays } from "lucide-react";
+import { History } from "lucide-react";
+import { CalendarButton } from "./CalendarButton";
 
 interface TopBarProps {
   level: number;
@@ -27,13 +28,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials }: TopB
       >
         <History size={16} />
       </button>
-      <button
-        type="button"
-        aria-label="Calendar"
-        className="w-[34px] h-[34px] rounded-pill border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
-      >
-        <CalendarDays size={16} />
-      </button>
+      <CalendarButton />
       <Avatar initials={initials} />
     </div>
   );
