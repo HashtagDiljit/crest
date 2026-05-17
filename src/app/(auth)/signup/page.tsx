@@ -2,20 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { User, Mail, Lock } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { signupAction } from "./actions";
 
 export default function SignupPage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
@@ -25,23 +21,13 @@ export default function SignupPage() {
     }
 
     setLoading(true);
-    const supabase = createClient();
+    const formData = new FormData(e.currentTarget);
+    const result = await signupAction(formData);
 
-    const response = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
-
-    console.log("Supabase signUp response:", response);
-
-    if (response.error) {
-      setError(response.error.message);
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
-      return;
     }
-
-    router.push("/");
   }
 
   return (
@@ -72,10 +58,9 @@ export default function SignupPage() {
             <div className="relative">
               <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
+                name="name"
                 type="text"
                 placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 required
                 className="w-full rounded-r3 border border-border bg-bg-base pl-9 pr-3 py-2.5 text-13 text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors"
               />
@@ -89,10 +74,9 @@ export default function SignupPage() {
             <div className="relative">
               <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
+                name="email"
                 type="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full rounded-r3 border border-border bg-bg-base pl-9 pr-3 py-2.5 text-13 text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors"
               />
@@ -106,6 +90,7 @@ export default function SignupPage() {
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
+                name="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -123,6 +108,7 @@ export default function SignupPage() {
             <div className="relative">
               <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
+                name="confirm"
                 type="password"
                 placeholder="••••••••"
                 value={confirm}
