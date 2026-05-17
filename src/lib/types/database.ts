@@ -1,0 +1,442 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          username: string | null;
+          level: number;
+          xp: number;
+          streak_current: number;
+          streak_best: number;
+          theme: string | null;
+          accent_colour: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          username?: string | null;
+          level?: number;
+          xp?: number;
+          streak_current?: number;
+          streak_best?: number;
+          theme?: string | null;
+          accent_colour?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          username?: string | null;
+          level?: number;
+          xp?: number;
+          streak_current?: number;
+          streak_best?: number;
+          theme?: string | null;
+          accent_colour?: string | null;
+          created_at?: string;
+        };
+      };
+      workout_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          template_id: string | null;
+          started_at: string;
+          ended_at: string | null;
+          notes: string | null;
+          xp_earned: number;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          template_id?: string | null;
+          started_at?: string;
+          ended_at?: string | null;
+          notes?: string | null;
+          xp_earned?: number;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          template_id?: string | null;
+          started_at?: string;
+          ended_at?: string | null;
+          notes?: string | null;
+          xp_earned?: number;
+        };
+      };
+      workout_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          category: string | null;
+          icon_colour: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          category?: string | null;
+          icon_colour?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          category?: string | null;
+          icon_colour?: string | null;
+        };
+      };
+      exercises: {
+        Row: {
+          id: string;
+          name: string;
+          category: string | null;
+          muscle_primary: string | null;
+          muscle_secondary: string[] | null;
+          equipment: string | null;
+          is_custom: boolean;
+          user_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          category?: string | null;
+          muscle_primary?: string | null;
+          muscle_secondary?: string[] | null;
+          equipment?: string | null;
+          is_custom?: boolean;
+          user_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          category?: string | null;
+          muscle_primary?: string | null;
+          muscle_secondary?: string[] | null;
+          equipment?: string | null;
+          is_custom?: boolean;
+          user_id?: string | null;
+        };
+      };
+      template_exercises: {
+        Row: {
+          id: string;
+          template_id: string;
+          exercise_id: string;
+          sets_target: number | null;
+          reps_target: number | null;
+          order_index: number;
+        };
+        Insert: {
+          id?: string;
+          template_id: string;
+          exercise_id: string;
+          sets_target?: number | null;
+          reps_target?: number | null;
+          order_index: number;
+        };
+        Update: {
+          id?: string;
+          template_id?: string;
+          exercise_id?: string;
+          sets_target?: number | null;
+          reps_target?: number | null;
+          order_index?: number;
+        };
+      };
+      session_sets: {
+        Row: {
+          id: string;
+          session_id: string;
+          exercise_id: string;
+          set_number: number;
+          weight_kg: number | null;
+          reps: number | null;
+          rpe: number | null;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          exercise_id: string;
+          set_number: number;
+          weight_kg?: number | null;
+          reps?: number | null;
+          rpe?: number | null;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          exercise_id?: string;
+          set_number?: number;
+          weight_kg?: number | null;
+          reps?: number | null;
+          rpe?: number | null;
+          completed_at?: string;
+        };
+      };
+      habits: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          category: string | null;
+          frequency: string | null;
+          created_at: string;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          category?: string | null;
+          frequency?: string | null;
+          created_at?: string;
+          archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          category?: string | null;
+          frequency?: string | null;
+          created_at?: string;
+          archived_at?: string | null;
+        };
+      };
+      habit_logs: {
+        Row: {
+          id: string;
+          habit_id: string;
+          user_id: string;
+          logged_date: string;
+          completed: boolean;
+        };
+        Insert: {
+          id?: string;
+          habit_id: string;
+          user_id: string;
+          logged_date: string;
+          completed?: boolean;
+        };
+        Update: {
+          id?: string;
+          habit_id?: string;
+          user_id?: string;
+          logged_date?: string;
+          completed?: boolean;
+        };
+      };
+      sleep_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          duration_hrs: number | null;
+          quality_score: number | null;
+          bedtime: string | null;
+          wake_time: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          duration_hrs?: number | null;
+          quality_score?: number | null;
+          bedtime?: string | null;
+          wake_time?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          duration_hrs?: number | null;
+          quality_score?: number | null;
+          bedtime?: string | null;
+          wake_time?: string | null;
+        };
+      };
+      mood_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          score: number | null;
+          note: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          score?: number | null;
+          note?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          score?: number | null;
+          note?: string | null;
+        };
+      };
+      health_metrics: {
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          metric_type: string;
+          value: number;
+          unit: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          metric_type: string;
+          value: number;
+          unit?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          metric_type?: string;
+          value?: number;
+          unit?: string | null;
+        };
+      };
+      journal_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          body: string;
+          tags: string[] | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          body: string;
+          tags?: string[] | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          body?: string;
+          tags?: string[] | null;
+        };
+      };
+      goals: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          category: string | null;
+          target_date: string | null;
+          progress: number;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          category?: string | null;
+          target_date?: string | null;
+          progress?: number;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          category?: string | null;
+          target_date?: string | null;
+          progress?: number;
+          completed_at?: string | null;
+        };
+      };
+      goal_milestones: {
+        Row: {
+          id: string;
+          goal_id: string;
+          title: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          goal_id: string;
+          title: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          goal_id?: string;
+          title?: string;
+          completed_at?: string | null;
+        };
+      };
+      achievements: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          tier: string | null;
+          xp_reward: number;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string | null;
+          tier?: string | null;
+          xp_reward?: number;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          tier?: string | null;
+          xp_reward?: number;
+        };
+      };
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          achievement_id?: string;
+          unlocked_at?: string;
+        };
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+  };
+}
