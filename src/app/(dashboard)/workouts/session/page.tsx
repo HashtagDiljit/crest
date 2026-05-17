@@ -1,0 +1,283 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/types/database";
+import { logSet, endSession } from "../actions";
+import type { TemplateExerciseRow, SessionSetRow, SessionRow } from "../actions";
+import { SessionHeader } from "./_components/SessionHeader";
+import { SetTable } from "./_components/SetTable";
+import { Steppers } from "./_components/Steppers";
+import { RestTimer } from "./_components/RestTimer";
+import { ExerciseQueue } from "./_components/ExerciseQueue";
+
+type WorkoutTemplate = Database["public"]["Tables"]["workout_templates"]["Row"];
+
+export interface SessionData {
+  session: SessionRow;
+  template: WorkoutTemplate | null;
+  exercises: TemplateExerciseRow[];
+  sets: SessionSetRow[];
+}
+
+export default function SessionPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const sessionId = searchParams.get("id");
+
+  const [data, setData] = useState<SessionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentExIdx, setCurrentExIdx] = useState(0);
+  const [currentSetIdx, setCurrentSetIdx] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [reps, setReps] = useState(5);
+  const [restRemaining, setRestRemaining] = useState(0);
+  const [restTotal, setRestTotal] = useState(120);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [loggedSets, setLoggedSets] = useState<SessionSetRow[]>([]);
+  const [ending, setEnding] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) { router.replace("/workouts"); return; }
+    const supabase = createClient();
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.replace("/login"); return; }
+
+      const { data: sessionRaw } = await supabase
+        .from("workout_sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (!sessionRaw) { router.replace("/workouts"); return; }
+
+      const session = sessionRaw as Database["public"]["Tables"]["workout_sessions"]["Row"];
+
+      const templateData = session.template_id
+        ? (await supabase.from("workout_templates").select("*").eq("id", session.template_id).single()).data
+        : null;
+
+      const { data: texRaw } = session.template_id
+        ? await supabase
+            .from("template_exercises")
+            .select("id, template_id, exercise_id, sets_target, reps_target, order_index")
+            .eq("template_id", session.template_id)
+            .order("order_index")
+        : { data: [] };
+
+      const texRows = (texRaw ?? []) as Array<Database["public"]["Tables"]["template_exercises"]["Row"]>;
+      const exerciseIds = texRows.map((te) => te.exercise_id);
+
+      const { data: exRaw } = exerciseIds.length > 0
+        ? await supabase.from("exercises").select("id, name, category, muscle_primary, equipment").in("id", exerciseIds)
+        : { data: [] };
+
+      const exMap = new Map((exRaw ?? []).map((e) => {
+        const ex = e as Database["public"]["Tables"]["exercises"]["Row"];
+        return [ex.id, ex];
+      }));
+
+      const exercises: TemplateExerciseRow[] = texRows.map((te) => ({
+        id: te.id,
+        template_id: te.template_id,
+        exercise_id: te.exercise_id,
+        sets_target: te.sets_target,
+        reps_target: te.reps_target,
+        order_index: te.order_index,
+        exercise: exMap.get(te.exercise_id) ?? { id: te.exercise_id, name: "Unknown", category: null, muscle_primary: null, equipment: null },
+      }));
+
+      const { data: setsRaw } = await supabase
+        .from("session_sets")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("completed_at");
+
+      const sets = (setsRaw ?? []).map((s) => {
+        const sr = s as Database["public"]["Tables"]["session_sets"]["Row"];
+        return {
+          id: sr.id,
+          session_id: sr.session_id,
+          exercise_id: sr.exercise_id,
+          set_number: sr.set_number,
+          weight_kg: sr.weight_kg,
+          reps: sr.reps,
+          rpe: sr.rpe,
+          completed_at: sr.completed_at,
+        } satisfies SessionSetRow;
+      });
+
+      const sessionRow: SessionRow = {
+        id: session.id,
+        user_id: session.user_id,
+        template_id: session.template_id,
+        started_at: session.started_at,
+        ended_at: session.ended_at,
+        notes: session.notes,
+        xp_earned: session.xp_earned,
+      };
+
+      setData({ session: sessionRow, template: templateData as WorkoutTemplate | null, exercises, sets });
+      setLoggedSets(sets);
+      setElapsedSeconds(Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000));
+      setLoading(false);
+    })();
+  }, [sessionId, router]);
+
+  // Elapsed timer
+  useEffect(() => {
+    const t = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Rest countdown
+  useEffect(() => {
+    if (restRemaining <= 0) return;
+    const t = setInterval(() => setRestRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(t);
+  }, [restRemaining]);
+
+  const currentEx = data?.exercises[currentExIdx];
+  const setsForCurrentEx = loggedSets.filter((s) => s.exercise_id === currentEx?.exercise_id);
+  const targetSets = currentEx?.sets_target ?? 3;
+
+  const handleCompleteSet = useCallback(async () => {
+    if (!sessionId || !currentEx) return;
+    const setNum = setsForCurrentEx.length + 1;
+    const result = await logSet({ sessionId, exerciseId: currentEx.exercise_id, setNumber: setNum, weightKg: weight, reps });
+    if ("id" in result) {
+      const newSet: SessionSetRow = {
+        id: result.id, session_id: sessionId, exercise_id: currentEx.exercise_id,
+        set_number: setNum, weight_kg: weight, reps, rpe: null,
+        completed_at: new Date().toISOString(),
+      };
+      const newSets = [...loggedSets, newSet];
+      setLoggedSets(newSets);
+      setRestRemaining(restTotal);
+      setCurrentSetIdx(setNum);
+
+      const newCount = setsForCurrentEx.length + 1;
+      if (newCount >= targetSets && data && currentExIdx < data.exercises.length - 1) {
+        setCurrentExIdx((i) => i + 1);
+        setCurrentSetIdx(0);
+      }
+    }
+  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, restTotal, targetSets, data, currentExIdx, loggedSets]);
+
+  const handleEndSession = useCallback(async () => {
+    if (!sessionId) return;
+    setEnding(true);
+    await endSession(sessionId);
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-text-muted text-13">
+        Loading session…
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <SessionHeader
+        templateName={data.template?.name ?? "Workout"}
+        exerciseName={currentEx?.exercise?.name ?? ""}
+        elapsed={elapsedSeconds}
+        onEnd={handleEndSession}
+        ending={ending}
+      />
+
+      <ProgressStrip exercises={data.exercises} loggedSets={loggedSets} currentExIdx={currentExIdx} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+        <div className="flex flex-col gap-4">
+          {currentEx && (
+            <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4">
+              <div>
+                <h2 className="font-display text-[26px] font-bold text-text-primary leading-tight">
+                  {currentEx.exercise?.name}
+                </h2>
+                <p className="text-12 text-text-muted mt-1">
+                  {currentEx.exercise?.equipment ?? "—"} · target {targetSets}×{currentEx.reps_target ?? 5}
+                </p>
+              </div>
+              <SetTable sets={setsForCurrentEx} targetSets={targetSets} currentSetIdx={currentSetIdx} />
+              <Steppers
+                weight={weight}
+                reps={reps}
+                onWeightChange={setWeight}
+                onRepsChange={setReps}
+                setNum={setsForCurrentEx.length + 1}
+                totalSets={targetSets}
+              />
+              <button
+                onClick={handleCompleteSet}
+                className="w-full h-14 rounded-r4 bg-accent hover:bg-accent-hover text-white font-semibold text-15 transition-colors"
+              >
+                Complete set {setsForCurrentEx.length + 1}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <RestTimer
+            remaining={restRemaining}
+            total={restTotal}
+            onAdjust={(delta) => setRestRemaining((r) => Math.max(0, r + delta))}
+            onSkip={() => setRestRemaining(0)}
+            onChangeTotal={setRestTotal}
+          />
+          <ExerciseQueue
+            exercises={data.exercises}
+            loggedSets={loggedSets}
+            currentExIdx={currentExIdx}
+            onJump={setCurrentExIdx}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProgressStrip({
+  exercises,
+  loggedSets,
+  currentExIdx,
+}: {
+  exercises: TemplateExerciseRow[];
+  loggedSets: SessionSetRow[];
+  currentExIdx: number;
+}) {
+  return (
+    <div className="flex gap-1 h-1.5">
+      {exercises.map((ex, i) => {
+        const done = loggedSets.filter((s) => s.exercise_id === ex.exercise_id).length;
+        const target = ex.sets_target ?? 3;
+        const isActive = i === currentExIdx;
+        return (
+          <div key={ex.id} className="flex gap-0.5 flex-1">
+            {Array.from({ length: target }).map((_, si) => (
+              <div
+                key={si}
+                className={`h-full flex-1 rounded-pill transition-colors ${
+                  si < done
+                    ? "bg-success"
+                    : isActive && si === done
+                    ? "bg-accent"
+                    : "bg-bg-elevated"
+                }`}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -6,10 +6,14 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export type DbResult<T> = T extends PromiseLike<infer U> ? U : never;
+export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never;
+
 export interface Database {
   public: {
     Tables: {
       profiles: {
+        Relationships: [];
         Row: {
           id: string;
           username: string | null;
@@ -45,6 +49,7 @@ export interface Database {
         };
       };
       workout_sessions: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -74,6 +79,7 @@ export interface Database {
         };
       };
       workout_templates: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -97,6 +103,7 @@ export interface Database {
         };
       };
       exercises: {
+        Relationships: [];
         Row: {
           id: string;
           name: string;
@@ -129,6 +136,7 @@ export interface Database {
         };
       };
       template_exercises: {
+        Relationships: [];
         Row: {
           id: string;
           template_id: string;
@@ -155,6 +163,7 @@ export interface Database {
         };
       };
       session_sets: {
+        Relationships: [];
         Row: {
           id: string;
           session_id: string;
@@ -187,6 +196,7 @@ export interface Database {
         };
       };
       habits: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -216,6 +226,7 @@ export interface Database {
         };
       };
       habit_logs: {
+        Relationships: [];
         Row: {
           id: string;
           habit_id: string;
@@ -239,6 +250,7 @@ export interface Database {
         };
       };
       sleep_logs: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -268,6 +280,7 @@ export interface Database {
         };
       };
       mood_logs: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -291,6 +304,7 @@ export interface Database {
         };
       };
       health_metrics: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -317,6 +331,7 @@ export interface Database {
         };
       };
       journal_entries: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -340,6 +355,7 @@ export interface Database {
         };
       };
       goals: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -369,6 +385,7 @@ export interface Database {
         };
       };
       goal_milestones: {
+        Relationships: [];
         Row: {
           id: string;
           goal_id: string;
@@ -389,6 +406,7 @@ export interface Database {
         };
       };
       achievements: {
+        Relationships: [];
         Row: {
           id: string;
           slug: string;
@@ -415,6 +433,7 @@ export interface Database {
         };
       };
       user_achievements: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
