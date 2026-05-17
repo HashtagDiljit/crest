@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -21,7 +21,15 @@ export interface SessionData {
   sets: SessionSetRow[];
 }
 
-export default function SessionPage() {
+export default function SessionPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64 text-text-muted text-13">Loading…</div>}>
+      <SessionPage />
+    </Suspense>
+  );
+}
+
+function SessionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("id");
