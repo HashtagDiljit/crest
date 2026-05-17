@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-base: #0D0D12;
+  --color-bg-inset: #111118;
+  --color-bg-surface: #16161E;
+  --color-bg-elevated: #1C1C26;
+  --color-bg-overlay: #23232F;
+  --color-accent: #6C63FF;
+  --color-accent-hover: #8B83FF;
+  --color-accent-pressed: #4A41E0;
+  --color-accent-soft: rgba(108, 99, 255, 0.14);
+  --color-accent-ring: rgba(108, 99, 255, 0.45);
+  --color-text-primary: #E8E6E0;
+  --color-text-secondary: #B5B3AE;
+  --color-text-muted: #7E7C78;
+  --color-text-disabled: #4F4D49;
+  --color-border: #23232F;
+  --color-border-strong: #2E2E3D;
+  --color-border-focus: #6C63FF;
+  --color-success: #22C55E;
+  --color-success-soft: rgba(34, 197, 94, 0.14);
+  --color-warning: #F59E0B;
+  --color-warning-soft: rgba(245, 158, 11, 0.14);
+  --color-danger: #EF4444;
+  --color-danger-soft: rgba(239, 68, 68, 0.14);
+  --color-info: #38BDF8;
+  --color-streak: #FF8A3D;
+  --color-streak-2: #FFC46B;
+  --color-xp-track: #23232F;
+
+  --font-display: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "DM Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 14px rgba(0,0,0,0.45);
+  --shadow-3: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px rgba(0,0,0,0.55);
+}
+
+html, body {
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer utilities {
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-bg-surface) 25%,
+      var(--color-bg-elevated) 50%,
+      var(--color-bg-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
