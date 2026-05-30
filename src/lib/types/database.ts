@@ -453,6 +453,132 @@ export interface Database {
           unlocked_at?: string;
         };
       };
+      personal_records: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          exercise_id: string;
+          pr_type: string;
+          weight_kg: number | null;
+          reps: number | null;
+          achieved_at: string;
+          session_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          exercise_id: string;
+          pr_type: string;
+          weight_kg?: number | null;
+          reps?: number | null;
+          achieved_at?: string;
+          session_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          exercise_id?: string;
+          pr_type?: string;
+          weight_kg?: number | null;
+          reps?: number | null;
+          achieved_at?: string;
+          session_id?: string | null;
+        };
+      };
+      readiness_logs: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          score: number;
+          note: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          score: number;
+          note?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          score?: number;
+          note?: string | null;
+        };
+      };
+      body_measurements: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          weight_kg: number | null;
+          neck_cm: number | null;
+          forearm_cm: number | null;
+          calf_cm: number | null;
+          chest_cm: number | null;
+          waist_cm: number | null;
+          shoulders_cm: number | null;
+          upper_arm_cm: number | null;
+          steps: number | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          weight_kg?: number | null;
+          neck_cm?: number | null;
+          forearm_cm?: number | null;
+          calf_cm?: number | null;
+          chest_cm?: number | null;
+          waist_cm?: number | null;
+          shoulders_cm?: number | null;
+          upper_arm_cm?: number | null;
+          steps?: number | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          weight_kg?: number | null;
+          neck_cm?: number | null;
+          forearm_cm?: number | null;
+          calf_cm?: number | null;
+          chest_cm?: number | null;
+          waist_cm?: number | null;
+          shoulders_cm?: number | null;
+          upper_arm_cm?: number | null;
+          steps?: number | null;
+        };
+      };
+      soreness_logs: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          muscle_group: string;
+          severity: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          muscle_group: string;
+          severity: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          muscle_group?: string;
+          severity?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

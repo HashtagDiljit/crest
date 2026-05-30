@@ -515,6 +515,295 @@ export async function getSessionsForMonth(
   }));
 }
 
+export interface PRResult {
+  exerciseId: string;
+  exerciseName: string;
+  prType: "load" | "reps";
+  weightKg: number | null;
+  reps: number | null;
+}
+
+export interface ExerciseSessionHistory {
+  date: string;
+  sets: Array<{ weight_kg: number; reps: number }>;
+}
+
+// ---------- Template seeding ----------
+
+const DEFAULT_TEMPLATES: Array<{
+  name: string;
+  category: string;
+  exercises: Array<{ name: string; sets: number; reps: number }>;
+}> = [
+  {
+    name: "Upper A — Push",
+    category: "upper",
+    exercises: [
+      { name: "Barbell Bench Press", sets: 3, reps: 5 },
+      { name: "Dumbbell Incline Press", sets: 3, reps: 10 },
+      { name: "Dumbbell Chest Fly", sets: 3, reps: 12 },
+      { name: "Dumbbell Shoulder Press", sets: 3, reps: 10 },
+      { name: "Dumbbell Lateral Raise", sets: 3, reps: 15 },
+      { name: "Overhead DB Tricep Extension", sets: 3, reps: 12 },
+    ],
+  },
+  {
+    name: "Lower A — Quad",
+    category: "lower",
+    exercises: [
+      { name: "Barbell Back Squat", sets: 3, reps: 5 },
+      { name: "Bulgarian Split Squat", sets: 3, reps: 10 },
+      { name: "Leg Extension", sets: 3, reps: 12 },
+      { name: "Standing Calf Raise", sets: 4, reps: 15 },
+      { name: "Adductor Machine", sets: 3, reps: 12 },
+      { name: "Ab Wheel Rollout", sets: 3, reps: 10 },
+    ],
+  },
+  {
+    name: "Upper B — Pull",
+    category: "upper",
+    exercises: [
+      { name: "Pull-Up", sets: 3, reps: 8 },
+      { name: "Barbell Bent-Over Row", sets: 3, reps: 8 },
+      { name: "Cable Row", sets: 3, reps: 10 },
+      { name: "Cable Face Pull", sets: 3, reps: 15 },
+      { name: "Dumbbell Hammer Curl", sets: 3, reps: 10 },
+      { name: "Incline Dumbbell Curl", sets: 3, reps: 12 },
+    ],
+  },
+  {
+    name: "Lower B — Posterior",
+    category: "lower",
+    exercises: [
+      { name: "Barbell Romanian Deadlift", sets: 3, reps: 8 },
+      { name: "Barbell Good Morning", sets: 3, reps: 10 },
+      { name: "Leg Curl", sets: 3, reps: 10 },
+      { name: "Seated Calf Raise", sets: 4, reps: 15 },
+      { name: "Abductor Machine", sets: 3, reps: 12 },
+      { name: "Hanging Leg Raise", sets: 3, reps: 12 },
+    ],
+  },
+];
+
+// Exercises that may not exist in the seed data
+const EXTRA_EXERCISES = [
+  { name: "Overhead DB Tricep Extension", category: "dumbbell", muscle_primary: "triceps", equipment: "dumbbell" },
+  { name: "Bulgarian Split Squat", category: "bodyweight", muscle_primary: "quadriceps", equipment: "dumbbell" },
+  { name: "Standing Calf Raise", category: "machine", muscle_primary: "calves", equipment: "machine" },
+  { name: "Adductor Machine", category: "machine", muscle_primary: "quadriceps", equipment: "machine" },
+  { name: "Ab Wheel Rollout", category: "bodyweight", muscle_primary: "core", equipment: "none" },
+  { name: "Incline Dumbbell Curl", category: "dumbbell", muscle_primary: "biceps", equipment: "dumbbell" },
+  { name: "Seated Calf Raise", category: "machine", muscle_primary: "calves", equipment: "machine" },
+  { name: "Abductor Machine", category: "machine", muscle_primary: "glutes", equipment: "machine" },
+];
+
+export async function seedDefaultTemplates(): Promise<void> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // Only seed if user has no templates
+  const { count } = await supabase
+    .from("workout_templates")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if ((count ?? 0) > 0) return;
+
+  // Ensure extra exercises exist (upsert by name)
+  for (const ex of EXTRA_EXERCISES) {
+    const { data: existing } = await supabase
+      .from("exercises")
+      .select("id")
+      .eq("name", ex.name)
+      .eq("is_custom", false)
+      .maybeSingle();
+    if (!existing) {
+      await supabase.from("exercises").insert({
+        name: ex.name,
+        category: ex.category,
+        muscle_primary: ex.muscle_primary,
+        equipment: ex.equipment,
+        is_custom: false,
+        user_id: null,
+      });
+    }
+  }
+
+  // Get all exercise IDs needed
+  const allNames = DEFAULT_TEMPLATES.flatMap((t) => t.exercises.map((e) => e.name));
+  const { data: exRows } = await supabase
+    .from("exercises")
+    .select("id, name")
+    .in("name", allNames);
+
+  const nameToId = new Map((exRows ?? []).map((e) => [e.name as string, e.id as string]));
+
+  for (const tmpl of DEFAULT_TEMPLATES) {
+    const { data: template } = await supabase
+      .from("workout_templates")
+      .insert({ user_id: user.id, name: tmpl.name, category: tmpl.category })
+      .select("id")
+      .single();
+    if (!template) continue;
+
+    const tmplId = (template as { id: string }).id;
+    const rows = tmpl.exercises
+      .map((ex, i) => {
+        const exerciseId = nameToId.get(ex.name);
+        if (!exerciseId) return null;
+        return { template_id: tmplId, exercise_id: exerciseId, sets_target: ex.sets, reps_target: ex.reps, order_index: i };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    if (rows.length > 0) {
+      await supabase.from("template_exercises").insert(rows);
+    }
+  }
+}
+
+// ---------- Progressive overload ----------
+
+export async function getExerciseHistory(exerciseId: string): Promise<ExerciseSessionHistory[]> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Get the last 3 completed sessions that logged this exercise
+  const { data: sets } = await supabase
+    .from("session_sets")
+    .select("session_id, weight_kg, reps, completed_at")
+    .eq("exercise_id", exerciseId)
+    .order("completed_at", { ascending: false });
+
+  if (!sets?.length) return [];
+
+  // Group by session, take last 3 sessions
+  const sessionGroups = new Map<string, Array<{ weight_kg: number; reps: number; completed_at: string }>>();
+  for (const s of sets) {
+    if (!sessionGroups.has(s.session_id)) sessionGroups.set(s.session_id, []);
+    sessionGroups.get(s.session_id)!.push({ weight_kg: s.weight_kg ?? 0, reps: s.reps ?? 0, completed_at: s.completed_at });
+  }
+
+  const sessionIds = Array.from(sessionGroups.keys()).slice(0, 3);
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("id, started_at")
+    .in("id", sessionIds)
+    .not("ended_at", "is", null);
+
+  const sessionDates = new Map((sessions ?? []).map((s) => [s.id as string, s.started_at as string]));
+
+  return sessionIds
+    .filter((id) => sessionDates.has(id))
+    .map((id) => ({
+      date: sessionDates.get(id)!.split("T")[0],
+      sets: (sessionGroups.get(id) ?? []).map((s) => ({ weight_kg: s.weight_kg, reps: s.reps })),
+    }));
+}
+
+// ---------- PR detection + session finalization ----------
+
+export async function finalizeSession(sessionId: string): Promise<{ prs: PRResult[]; sets_count: number }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { prs: [], sets_count: 0 };
+
+  // End the session
+  const { data: sets } = await supabase
+    .from("session_sets")
+    .select("id, exercise_id, weight_kg, reps")
+    .eq("session_id", sessionId);
+
+  const setsArr = (sets ?? []) as Array<{ id: string; exercise_id: string; weight_kg: number | null; reps: number | null }>;
+  const xp = Math.max(10, setsArr.length * 5);
+
+  await supabase
+    .from("workout_sessions")
+    .update({ ended_at: new Date().toISOString(), xp_earned: xp })
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
+
+  const { data: profile } = await supabase.from("profiles").select("xp").eq("id", user.id).single();
+  if (profile) {
+    await supabase.from("profiles").update({ xp: ((profile as { xp: number }).xp ?? 0) + xp }).eq("id", user.id);
+  }
+
+  // Detect PRs per exercise
+  const exerciseIds = Array.from(new Set(setsArr.map((s) => s.exercise_id)));
+  const prs: PRResult[] = [];
+
+  for (const exerciseId of exerciseIds) {
+    const sessionSets = setsArr.filter((s) => s.exercise_id === exerciseId);
+    const maxWeight = Math.max(...sessionSets.map((s) => s.weight_kg ?? 0));
+
+    // Get historical max weight for this exercise (before this session)
+    const { data: histSets } = await supabase
+      .from("session_sets")
+      .select("weight_kg, reps, session_id")
+      .eq("exercise_id", exerciseId)
+      .neq("session_id", sessionId);
+
+    const histArr = (histSets ?? []) as Array<{ weight_kg: number | null; reps: number | null; session_id: string }>;
+
+    const histMaxWeight = histArr.reduce((m, s) => Math.max(m, s.weight_kg ?? 0), 0);
+    const histMaxRepsAtSameWeight = histArr
+      .filter((s) => (s.weight_kg ?? 0) === maxWeight)
+      .reduce((m, s) => Math.max(m, s.reps ?? 0), 0);
+    const sessionMaxRepsAtMaxWeight = sessionSets
+      .filter((s) => (s.weight_kg ?? 0) === maxWeight)
+      .reduce((m, s) => Math.max(m, s.reps ?? 0), 0);
+
+    const { data: exRow } = await supabase.from("exercises").select("name").eq("id", exerciseId).single();
+    const exerciseName = (exRow as { name: string } | null)?.name ?? "Unknown";
+
+    // Load PR: new highest weight ever
+    if (maxWeight > 0 && maxWeight > histMaxWeight) {
+      await supabase.from("personal_records").insert({
+        user_id: user.id, exercise_id: exerciseId, pr_type: "load",
+        weight_kg: maxWeight, reps: sessionMaxRepsAtMaxWeight, session_id: sessionId,
+      });
+      prs.push({ exerciseId, exerciseName, prType: "load", weightKg: maxWeight, reps: sessionMaxRepsAtMaxWeight });
+    }
+    // Rep PR: more reps at same weight than ever before
+    else if (sessionMaxRepsAtMaxWeight > 0 && sessionMaxRepsAtMaxWeight > histMaxRepsAtSameWeight && maxWeight > 0) {
+      await supabase.from("personal_records").insert({
+        user_id: user.id, exercise_id: exerciseId, pr_type: "reps",
+        weight_kg: maxWeight, reps: sessionMaxRepsAtMaxWeight, session_id: sessionId,
+      });
+      prs.push({ exerciseId, exerciseName, prType: "reps", weightKg: maxWeight, reps: sessionMaxRepsAtMaxWeight });
+    }
+  }
+
+  revalidatePath("/workouts");
+  return { prs, sets_count: setsArr.length };
+}
+
+// ---------- Deload detection ----------
+
+export async function getTrainingWeekCount(): Promise<number> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("started_at")
+    .eq("user_id", user.id)
+    .not("ended_at", "is", null);
+
+  if (!sessions?.length) return 0;
+
+  const weeks = new Set<string>();
+  for (const s of sessions) {
+    const d = new Date(s.started_at as string);
+    const year = d.getFullYear();
+    const week = Math.ceil(((d.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + new Date(year, 0, 1).getDay() + 1) / 7);
+    weeks.add(`${year}-W${week}`);
+  }
+  return weeks.size;
+}
+
 export async function getWorkoutHistory(): Promise<HistorySession[]> {
   const supabase = await createServerClient();
   const {

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { Plus, Dumbbell, BookOpen } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { getTemplates, getWorkoutHistory } from "./actions";
+import { getTemplates, getWorkoutHistory, seedDefaultTemplates, getTrainingWeekCount } from "./actions";
 import { TemplateCard } from "./_components/TemplateCard";
 import { HistorySection } from "./_components/HistorySection";
 import { WeekPanel } from "./_components/WeekPanel";
+import { DeloadBanner } from "./_components/DeloadBanner";
 
 export default async function WorkoutsPage() {
   const supabase = await createServerClient();
@@ -16,10 +17,18 @@ export default async function WorkoutsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [templates, history] = await Promise.all([getTemplates(), getWorkoutHistory()]);
+  // Seed default templates for new users (no-op if they already have templates)
+  await seedDefaultTemplates();
+
+  const [templates, history, weekCount] = await Promise.all([
+    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(),
+  ]);
+
+  const showDeloadBanner = weekCount > 0 && weekCount % 4 === 0;
 
   return (
     <div className="flex flex-col gap-6">
+      {showDeloadBanner && <DeloadBanner weekCount={weekCount} />}
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>

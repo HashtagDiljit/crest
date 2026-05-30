@@ -5,14 +5,16 @@ import { Plus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
-import { logSet, endSession } from "../actions";
-import type { TemplateExerciseRow, SessionSetRow, SessionRow } from "../actions";
+import { logSet, finalizeSession, getExerciseHistory } from "../actions";
+import type { TemplateExerciseRow, SessionSetRow, SessionRow, ExerciseSessionHistory, PRResult } from "../actions";
 import { SessionHeader } from "./_components/SessionHeader";
 import { SetTable } from "./_components/SetTable";
 import { Steppers } from "./_components/Steppers";
 import { RestTimer } from "./_components/RestTimer";
 import { ExerciseQueue } from "./_components/ExerciseQueue";
 import { AdHocExercisePicker } from "./_components/AdHocExercisePicker";
+import { OverloadHistory } from "./_components/OverloadHistory";
+import { SessionSummary } from "./_components/SessionSummary";
 import type { ExerciseRow } from "../actions";
 
 type WorkoutTemplate = Database["public"]["Tables"]["workout_templates"]["Row"];
@@ -36,6 +38,7 @@ function SessionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("id");
+  const isDeload = searchParams.get("deload") === "1";
 
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +53,8 @@ function SessionPage() {
   const [ending, setEnding] = useState(false);
   const [adHocExercises, setAdHocExercises] = useState<TemplateExerciseRow[]>([]);
   const [showPicker, setShowPicker] = useState(false);
+  const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
+  const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
 
   useEffect(() => {
     if (!sessionId) { router.replace("/workouts"); return; }
@@ -157,6 +162,20 @@ function SessionPage() {
   const allExercises = [...(data?.exercises ?? []), ...adHocExercises];
   const currentEx = allExercises[currentExIdx];
 
+  // Fetch exercise history when exercise changes, pre-fill weight
+  useEffect(() => {
+    if (!currentEx?.exercise_id) return;
+    setExerciseHistory([]);
+    getExerciseHistory(currentEx.exercise_id).then((h) => {
+      setExerciseHistory(h);
+      if (h.length > 0 && h[0].sets.length > 0) {
+        const lastWeight = h[0].sets[0].weight_kg;
+        setWeight(isDeload ? Math.round(lastWeight * 0.6 * 4) / 4 : lastWeight);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEx?.exercise_id]);
+
   function handleAddExercise(ex: ExerciseRow, setsTarget: number, repsTarget: number) {
     const adHoc: TemplateExerciseRow = {
       id: `adhoc-${ex.id}-${Date.now()}`,
@@ -174,6 +193,16 @@ function SessionPage() {
   const setsForCurrentEx = loggedSets.filter((s) => s.exercise_id === currentEx?.exercise_id);
   const isQuickStart = !data?.template;
   const targetSets = currentEx?.sets_target ?? 3;
+
+  // Suggested weight for overload hint
+  const suggestedWeight = (() => {
+    if (!exerciseHistory.length || !exerciseHistory[0].sets.length) return 0;
+    const last = exerciseHistory[0];
+    const lastWeight = last.sets[0].weight_kg;
+    if (isDeload) return Math.round(lastWeight * 0.6 * 4) / 4;
+    const allHit = last.sets.every((s) => s.reps >= (currentEx?.reps_target ?? 5));
+    return allHit ? lastWeight + 2.5 : lastWeight;
+  })();
 
   const handleCompleteSet = useCallback(async () => {
     if (!sessionId || !currentEx) return;
@@ -199,10 +228,11 @@ function SessionPage() {
   }, [sessionId, currentEx, setsForCurrentEx, weight, reps, restTotal, targetSets, data, currentExIdx, loggedSets]);
 
   const handleEndSession = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId || !data) return;
     setEnding(true);
-    await endSession(sessionId);
-  }, [sessionId]);
+    const result = await finalizeSession(sessionId);
+    setSummary({ ...result, started_at: data.session.started_at });
+  }, [sessionId, data]);
 
   if (loading) {
     return (
@@ -215,6 +245,13 @@ function SessionPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {summary && (
+        <SessionSummary
+          setsCount={summary.sets_count}
+          durationSecs={Math.floor((Date.now() - new Date(summary.started_at).getTime()) / 1000)}
+          prs={summary.prs}
+        />
+      )}
       <SessionHeader
         templateName={data.template?.name ?? "Workout"}
         exerciseName={currentEx?.exercise?.name ?? ""}
@@ -250,8 +287,17 @@ function SessionPage() {
                 </h2>
                 <p className="text-12 text-text-muted mt-1">
                   {currentEx.exercise?.equipment ?? "—"} · target {targetSets}×{currentEx.reps_target ?? 5}
+                  {isDeload && <span className="ml-2 text-warning font-semibold">· Deload week</span>}
                 </p>
               </div>
+              {exerciseHistory.length > 0 && (
+                <OverloadHistory
+                  history={exerciseHistory}
+                  repsTarget={currentEx.reps_target ?? 5}
+                  isDeload={isDeload}
+                  suggestedWeight={suggestedWeight}
+                />
+              )}
               <SetTable sets={setsForCurrentEx} targetSets={targetSets} currentSetIdx={currentSetIdx} />
               <Steppers
                 weight={weight}
