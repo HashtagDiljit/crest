@@ -24,6 +24,12 @@ export interface Database {
           theme: string | null;
           accent_colour: string | null;
           created_at: string;
+          notification_preferences: Json | null;
+          weight_unit: string | null;
+          distance_unit: string | null;
+          time_format: string | null;
+          week_starts: string | null;
+          avatar_url: string | null;
         };
         Insert: {
           id: string;
@@ -35,6 +41,12 @@ export interface Database {
           theme?: string | null;
           accent_colour?: string | null;
           created_at?: string;
+          notification_preferences?: Json | null;
+          weight_unit?: string | null;
+          distance_unit?: string | null;
+          time_format?: string | null;
+          week_starts?: string | null;
+          avatar_url?: string | null;
         };
         Update: {
           id?: string;
@@ -46,6 +58,12 @@ export interface Database {
           theme?: string | null;
           accent_colour?: string | null;
           created_at?: string;
+          notification_preferences?: Json | null;
+          weight_unit?: string | null;
+          distance_unit?: string | null;
+          time_format?: string | null;
+          week_starts?: string | null;
+          avatar_url?: string | null;
         };
       };
       workout_sessions: {

@@ -1,4 +1,5 @@
 import { History } from "lucide-react";
+import Link from "next/link";
 import { CalendarButton } from "./CalendarButton";
 
 interface TopBarProps {
@@ -122,14 +123,16 @@ function FlameIcon() {
 
 function Avatar({ initials }: { initials: string }) {
   return (
-    <div
-      className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white"
-      style={{
-        background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {initials}
-    </div>
+    <Link href="/profile" aria-label="Profile">
+      <div
+        className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white hover:opacity-80 transition-opacity"
+        style={{
+          background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        {initials}
+      </div>
+    </Link>
   );
 }
