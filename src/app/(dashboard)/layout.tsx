@@ -40,7 +40,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-base">
-      <Sidebar activeId="dashboard" />
+      <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 ml-sidebar overflow-hidden">
         <TopBar
           level={level}

@@ -579,6 +579,39 @@ export interface Database {
           severity?: string;
         };
       };
+      nutrition_logs: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          logged_date: string;
+          meal_name: string | null;
+          protein_g: number | null;
+          food_preset: string | null;
+          notes: string | null;
+          logged_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          logged_date: string;
+          meal_name?: string | null;
+          protein_g?: number | null;
+          food_preset?: string | null;
+          notes?: string | null;
+          logged_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          logged_date?: string;
+          meal_name?: string | null;
+          protein_g?: number | null;
+          food_preset?: string | null;
+          notes?: string | null;
+          logged_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
