@@ -9,9 +9,10 @@ interface TopBarProps {
   streak: number;
   username: string;
   initials: string;
+  avatarUrl?: string | null;
 }
 
-export function TopBar({ level, xp, xpNeeded, streak, username, initials }: TopBarProps) {
+export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatarUrl }: TopBarProps) {
   const xpPct = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
   const xpRemaining = xpNeeded - xp;
 
@@ -30,7 +31,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials }: TopB
         <History size={16} />
       </button>
       <CalendarButton />
-      <Avatar initials={initials} />
+      <Avatar initials={initials} avatarUrl={avatarUrl} />
     </div>
   );
 }
@@ -121,18 +122,28 @@ function FlameIcon() {
   );
 }
 
-function Avatar({ initials }: { initials: string }) {
+function Avatar({ initials, avatarUrl }: { initials: string; avatarUrl?: string | null }) {
   return (
-    <Link href="/profile" aria-label="Profile">
-      <div
-        className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white hover:opacity-80 transition-opacity"
-        style={{
-          background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        {initials}
-      </div>
+    <Link href="/profile" aria-label="Profile" className="hover:opacity-80 transition-opacity">
+      {avatarUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={avatarUrl}
+          alt=""
+          className="w-[34px] h-[34px] rounded-pill object-cover"
+          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+        />
+      ) : (
+        <div
+          className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white"
+          style={{
+            background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          {initials}
+        </div>
+      )}
     </Link>
   );
 }

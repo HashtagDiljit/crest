@@ -24,7 +24,7 @@ const NAV_PRIMARY: Array<{ id: string; label: string; icon: LucideIcon; href: st
 
 const NAV_PROGRESS: Array<{ id: string; label: string; icon: LucideIcon; href: string; badge?: string; badgeAccent?: boolean }> = [
   { id: "achievements", label: "Trophy room", icon: Trophy, href: "/achievements" },
-  { id: "insights", label: "AI insights", icon: Sparkles, href: "/insights", badge: "3 new", badgeAccent: true },
+  { id: "insights", label: "AI insights", icon: Sparkles, href: "/ai-insights" },
 ];
 
 const QUICK_LOG: Array<{ key: ModalKey & string; label: string; icon: LucideIcon; color: string }> = [

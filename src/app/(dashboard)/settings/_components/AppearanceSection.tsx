@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { updateAppearance } from "../actions";
+import { applyTheme, applyAccent } from "@/lib/theme";
 
 const ACCENT_SWATCHES = [
   { label: "Violet", value: "#6C63FF" },
@@ -30,6 +31,16 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
 
+  function handleThemeChange(value: string) {
+    setTheme(value);
+    applyTheme(value); // instant visual update
+  }
+
+  function handleAccentChange(value: string) {
+    setAccent(value);
+    applyAccent(value); // instant visual update
+  }
+
   async function handleSave() {
     setSaving(true);
     setMsg(null);
@@ -45,7 +56,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
           {THEMES.map((t) => (
             <button
               key={t.value}
-              onClick={() => setTheme(t.value)}
+              onClick={() => handleThemeChange(t.value)}
               className={`flex-1 py-2.5 rounded-r3 border text-13 font-medium transition-colors ${
                 theme === t.value
                   ? "border-accent bg-accent-soft text-text-primary"
@@ -56,6 +67,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
             </button>
           ))}
         </div>
+        <p className="text-11 text-text-disabled mt-1">Changes apply instantly. Save to persist across sessions.</p>
       </Field>
 
       <Field label="Accent colour">
@@ -64,7 +76,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
             <button
               key={s.value}
               title={s.label}
-              onClick={() => setAccent(s.value)}
+              onClick={() => handleAccentChange(s.value)}
               className="w-9 h-9 rounded-pill flex items-center justify-center transition-transform hover:scale-110"
               style={{
                 background: s.value,

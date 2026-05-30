@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { updateUnits } from "../actions";
+import { useRouter } from "next/navigation";
 import type { ProfilePrefs } from "../actions";
 
 const OPTIONS: Record<string, Array<{ value: string; label: string }>> = {
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function UnitsSection({ prefs }: Props) {
+  const router = useRouter();
   const [values, setValues] = useState({
     weight_unit: prefs.weight_unit ?? "kg",
     distance_unit: prefs.distance_unit ?? "km",
@@ -33,7 +35,12 @@ export function UnitsSection({ prefs }: Props) {
     setMsg(null);
     const res = await updateUnits(values);
     setSaving(false);
-    setMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
+    if (res.error) {
+      setMsg({ text: res.error });
+    } else {
+      setMsg({ ok: true, text: "Saved" });
+      router.refresh();
+    }
   }
 
   const LABELS: Record<UnitKey, string> = {
