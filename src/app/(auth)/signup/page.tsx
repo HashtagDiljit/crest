@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { User, Mail, Lock } from "lucide-react";
-import { signupAction } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
@@ -22,12 +24,23 @@ export default function SignupPage() {
 
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const result = await signupAction(formData);
+    const email = formData.get("email") as string;
+    const name = formData.get("name") as string;
 
-    if (result?.error) {
-      setError(result.error);
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
+      return;
     }
+
+    router.push("/");
   }
 
   return (
