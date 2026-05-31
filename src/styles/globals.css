@@ -40,6 +40,9 @@
   --shadow-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.4);
   --shadow-2: 0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 14px rgba(0,0,0,0.45);
   --shadow-3: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px rgba(0,0,0,0.55);
+
+  /* Sidebar width — updated by Sidebar.tsx toggle and init script */
+  --sidebar-w: 240px;
 }
 
 html, body {
@@ -77,6 +80,22 @@ html, body {
 /* Topbar uses a frosted glass effect — needs theme-aware background */
 :root {
   --topbar-bg: rgba(22, 22, 30, 0.82);
+}
+
+/* Dashboard main area — applies sidebar offset at lg+ with smooth transition */
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  transition: margin-left 0.2s ease;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-main {
+    margin-left: var(--sidebar-w, 240px);
+  }
 }
 
 /* Light theme overrides */

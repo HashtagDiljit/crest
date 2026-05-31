@@ -48,7 +48,8 @@ export default async function DashboardLayout({
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
       <div className="flex h-screen overflow-hidden bg-bg-base">
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 lg:ml-sidebar overflow-hidden">
+        {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
+        <div className="dashboard-main">
           <TopBar
             level={level}
             xp={xp}

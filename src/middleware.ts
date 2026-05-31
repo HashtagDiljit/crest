@@ -29,16 +29,20 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isLanding = pathname === "/";
+  const isPublic = isAuthRoute || isLanding;
 
-  if (!user && !isAuthRoute) {
+  // Authenticated users on landing or auth routes → send to dashboard
+  if (user && (isLanding || isAuthRoute)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  // Unauthenticated users on protected routes → send to login
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 

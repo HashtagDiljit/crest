@@ -63,5 +63,8 @@ export const THEME_INIT_SCRIPT = `(function(){
       el.style.setProperty('--color-accent-soft','rgba('+r+','+g+','+b+',0.15)');
       el.style.setProperty('--color-accent-ring','rgba('+r+','+g+','+b+',0.45)');
     }
+    if(localStorage.getItem('crest-sidebar-collapsed')==='true'){
+      document.documentElement.style.setProperty('--sidebar-w','64px');
+    }
   }catch(e){}
 })();`;
