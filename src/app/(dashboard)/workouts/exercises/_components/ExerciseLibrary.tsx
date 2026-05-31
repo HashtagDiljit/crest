@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Plus, X, Dumbbell, Loader2 } from "lucide-react";
-import { createCustomExercise } from "../../actions";
+import { Search, Plus, X, Dumbbell, Loader2, Pencil } from "lucide-react";
+import { createCustomExercise, updateCustomExercise } from "../../actions";
 import type { ExerciseRow } from "../../actions";
+import { ExerciseDetailPanel } from "./ExerciseDetailPanel";
 
 const MUSCLE_FILTERS: Array<{ label: string; values: string[] | null }> = [
   { label: "All", values: null },
@@ -39,9 +40,17 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
   const [muscleFilter, setMuscleFilter] = useState<string[] | null>(null);
   const [equipFilter, setEquipFilter] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [editExercise, setEditExercise] = useState<ExerciseRow | null>(null);
   const [localExercises, setLocalExercises] = useState<ExerciseRow[]>([]);
+  const [editedMap, setEditedMap] = useState<Map<string, ExerciseRow>>(new Map());
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseRow | null>(null);
 
-  const exercises = useMemo(() => [...serverExercises, ...localExercises], [serverExercises, localExercises]);
+  const exercises = useMemo(() => {
+    const serverIds = new Set(serverExercises.map((e) => e.id));
+    const merged = serverExercises.map((e) => editedMap.get(e.id) ?? e);
+    const fresh = localExercises.filter((e) => !serverIds.has(e.id));
+    return [...merged, ...fresh];
+  }, [serverExercises, localExercises, editedMap]);
 
   const filtered = useMemo(() => {
     return exercises.filter((ex) => {
@@ -53,9 +62,15 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
     });
   }, [exercises, query, muscleFilter, equipFilter]);
 
-  function handleSaved(exercise: ExerciseRow) {
+  function handleAdded(exercise: ExerciseRow) {
     setLocalExercises((prev) => [...prev, exercise]);
     setShowModal(false);
+  }
+
+  function handleUpdated(exercise: ExerciseRow) {
+    setEditedMap((prev) => new Map(Array.from(prev).concat([[exercise.id, exercise]])));
+    if (selectedExercise?.id === exercise.id) setSelectedExercise(exercise);
+    setEditExercise(null);
   }
 
   return (
@@ -95,7 +110,12 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((ex) => (
-          <ExerciseCard key={ex.id} exercise={ex} />
+          <ExerciseCard
+            key={ex.id}
+            exercise={ex}
+            onSelect={() => setSelectedExercise(ex)}
+            onEdit={ex.is_custom ? () => setEditExercise(ex) : undefined}
+          />
         ))}
         {filtered.length === 0 && (
           <div className="col-span-3 flex flex-col items-center gap-2 py-12 text-center">
@@ -106,7 +126,20 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
       </div>
 
       {showModal && (
-        <AddExerciseModal onClose={() => setShowModal(false)} onSaved={handleSaved} />
+        <ExerciseModal onClose={() => setShowModal(false)} onSaved={handleAdded} />
+      )}
+      {editExercise && (
+        <ExerciseModal
+          exercise={editExercise}
+          onClose={() => setEditExercise(null)}
+          onSaved={handleUpdated}
+        />
+      )}
+      {selectedExercise && (
+        <ExerciseDetailPanel
+          exercise={selectedExercise}
+          onClose={() => setSelectedExercise(null)}
+        />
       )}
     </div>
   );
@@ -133,10 +166,33 @@ function FilterRow({ label, filters }: { label: string; filters: Array<{ label: 
   );
 }
 
-function ExerciseCard({ exercise }: { exercise: ExerciseRow }) {
+function ExerciseCard({
+  exercise,
+  onSelect,
+  onEdit,
+}: {
+  exercise: ExerciseRow;
+  onSelect: () => void;
+  onEdit?: () => void;
+}) {
   return (
-    <div className="rounded-r4 border border-border bg-bg-surface hover:border-border-strong transition-colors p-4 flex flex-col gap-2">
-      <p className="font-display text-14 font-semibold text-text-primary leading-tight">{exercise.name}</p>
+    <div className="rounded-r4 border border-border bg-bg-surface hover:border-border-strong transition-colors p-4 flex flex-col gap-2 group">
+      <div className="flex items-start justify-between gap-2">
+        <button onClick={onSelect} className="flex-1 text-left">
+          <p className="font-display text-14 font-semibold text-text-primary leading-tight hover:text-accent transition-colors">
+            {exercise.name}
+          </p>
+        </button>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="w-6 h-6 flex items-center justify-center rounded-r2 text-text-disabled hover:text-accent hover:bg-bg-elevated transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+            aria-label="Edit exercise"
+          >
+            <Pencil size={12} />
+          </button>
+        )}
+      </div>
       <div className="flex items-center gap-2 flex-wrap">
         {exercise.muscle_primary && (
           <span className="text-11 px-2 py-0.5 rounded-pill bg-bg-elevated border border-border text-text-secondary capitalize">
@@ -153,7 +209,16 @@ function ExerciseCard({ exercise }: { exercise: ExerciseRow }) {
   );
 }
 
-function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: (ex: ExerciseRow) => void }) {
+function ExerciseModal({
+  exercise,
+  onClose,
+  onSaved,
+}: {
+  exercise?: ExerciseRow;
+  onClose: () => void;
+  onSaved: (ex: ExerciseRow) => void;
+}) {
+  const isEdit = !!exercise;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -161,7 +226,10 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const result = await createCustomExercise(new FormData(e.currentTarget));
+    const fd = new FormData(e.currentTarget);
+    const result = isEdit
+      ? await updateCustomExercise(exercise!.id, fd)
+      : await createCustomExercise(fd);
     if ("error" in result) {
       setError(result.error);
       setSaving(false);
@@ -178,7 +246,9 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
     >
       <div className="w-full max-w-md rounded-r5 border border-border bg-bg-surface shadow-2xl overflow-hidden">
         <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-          <h2 className="font-display text-16 font-semibold text-text-primary">Add custom exercise</h2>
+          <h2 className="font-display text-16 font-semibold text-text-primary">
+            {isEdit ? "Edit exercise" : "Add custom exercise"}
+          </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-r2 hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors">
             <X size={16} />
           </button>
@@ -190,17 +260,18 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             <input
               name="name"
               required
+              defaultValue={exercise?.name ?? ""}
               placeholder="e.g. Paused squat"
               className="rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-13 text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <SelectField name="category" label="Category" options={CATEGORY_OPTIONS} />
-            <SelectField name="muscle_primary" label="Primary muscle" options={MUSCLE_OPTIONS} />
+            <SelectField name="category" label="Category" options={CATEGORY_OPTIONS} defaultValue={exercise?.category ?? ""} />
+            <SelectField name="muscle_primary" label="Primary muscle" options={MUSCLE_OPTIONS} defaultValue={exercise?.muscle_primary ?? ""} />
           </div>
 
-          <SelectField name="equipment" label="Equipment" options={EQUIPMENT_OPTIONS} />
+          <SelectField name="equipment" label="Equipment" options={EQUIPMENT_OPTIONS} defaultValue={exercise?.equipment ?? ""} />
 
           <div className="flex flex-col gap-1.5">
             <label className="text-11 font-semibold uppercase tracking-widest text-text-muted">Notes (optional)</label>
@@ -215,11 +286,7 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           {error && <p className="text-13 text-danger">{error}</p>}
 
           <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-r3 border border-border text-13 text-text-secondary hover:text-text-primary transition-colors"
-            >
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-r3 border border-border text-13 text-text-secondary hover:text-text-primary transition-colors">
               Cancel
             </button>
             <button
@@ -228,7 +295,7 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
               className="flex-1 py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
               {saving ? <Loader2 size={13} className="animate-spin" /> : null}
-              {saving ? "Saving…" : "Save exercise"}
+              {saving ? "Saving…" : isEdit ? "Save changes" : "Save exercise"}
             </button>
           </div>
         </form>
@@ -237,12 +304,13 @@ function AddExerciseModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   );
 }
 
-function SelectField({ name, label, options }: { name: string; label: string; options: string[] }) {
+function SelectField({ name, label, options, defaultValue }: { name: string; label: string; options: string[]; defaultValue?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-11 font-semibold uppercase tracking-widest text-text-muted">{label}</label>
       <select
         name={name}
+        defaultValue={defaultValue ?? ""}
         className="rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-13 text-text-primary outline-none focus:border-accent transition-colors"
       >
         <option value="">— select —</option>

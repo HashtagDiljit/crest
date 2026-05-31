@@ -56,7 +56,7 @@ export function AdHocExercisePicker({ onAdd, onClose, compact = false }: Props) 
         {filtered.map((ex) => (
           <button
             key={ex.id}
-            onClick={() => onAdd(ex, 3, 10)}
+            onClick={() => onAdd(ex, 1, 10)}
             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-elevated transition-colors text-left border-b border-border last:border-0"
           >
             <Plus size={13} className="text-text-muted flex-shrink-0" />

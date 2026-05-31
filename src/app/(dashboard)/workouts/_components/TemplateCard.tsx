@@ -1,6 +1,7 @@
 "use client";
 
-import { Dumbbell, Play } from "lucide-react";
+import { Dumbbell, Play, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { startSession } from "../actions";
 import type { TemplateRow } from "../actions";
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function TemplateCard({ template }: Props) {
+  const router = useRouter();
   const exerciseNames = template.exercises.map((te) => te.exercise.name).filter(Boolean);
   const shown = exerciseNames.slice(0, 3);
   const remaining = exerciseNames.length - shown.length;
@@ -27,7 +29,7 @@ export function TemplateCard({ template }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-r4 border border-border bg-bg-inset p-4 hover:border-border-strong transition-colors cursor-default">
+    <div className="flex flex-col gap-3 rounded-r4 border border-border bg-bg-inset p-4 hover:border-border-strong transition-colors cursor-default group">
       <div className="flex items-start justify-between">
         <div
           className="w-9 h-9 rounded-r3 flex items-center justify-center flex-shrink-0"
@@ -35,6 +37,13 @@ export function TemplateCard({ template }: Props) {
         >
           <Dumbbell size={17} className="text-accent" strokeWidth={1.75} />
         </div>
+        <button
+          onClick={() => router.push(`/workouts/templates/${template.id}/edit`)}
+          className="w-7 h-7 flex items-center justify-center rounded-r2 text-text-disabled hover:text-text-secondary hover:bg-bg-elevated transition-colors opacity-0 group-hover:opacity-100"
+          aria-label="Edit template"
+        >
+          <Pencil size={13} />
+        </button>
       </div>
 
       <div>

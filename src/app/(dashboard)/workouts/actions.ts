@@ -18,6 +18,8 @@ export interface ExerciseRow {
   category: string | null;
   muscle_primary: string | null;
   equipment: string | null;
+  is_custom?: boolean;
+  user_id?: string | null;
 }
 
 export interface TemplateExerciseRow {
@@ -430,10 +432,199 @@ export async function getExercises(): Promise<ExerciseRow[]> {
 
   const { data } = await supabase
     .from("exercises")
-    .select("id, name, category, muscle_primary, equipment")
+    .select("id, name, category, muscle_primary, equipment, is_custom, user_id")
     .order("name");
 
   return (data ?? []) as ExerciseRow[];
+}
+
+export async function updateCustomExercise(
+  id: string,
+  formData: FormData
+): Promise<{ error: string } | { success: true; exercise: ExerciseRow }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required" };
+
+  const { data, error } = await supabase
+    .from("exercises")
+    .update({
+      name,
+      category: (formData.get("category") as string) || null,
+      muscle_primary: (formData.get("muscle_primary") as string) || null,
+      equipment: (formData.get("equipment") as string) || null,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("is_custom", true)
+    .select("id, name, category, muscle_primary, equipment, is_custom, user_id")
+    .single();
+
+  if (error || !data) return { error: error?.message ?? "Failed to update" };
+  revalidatePath("/workouts/exercises");
+  return { success: true, exercise: data as ExerciseRow };
+}
+
+export async function getTemplate(id: string): Promise<TemplateRow | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: t } = await supabase
+    .from("workout_templates")
+    .select("id, user_id, name, category, icon_colour")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!t) return null;
+  const tmpl = t as WorkoutTemplate;
+
+  const { data: teData } = await supabase
+    .from("template_exercises")
+    .select("id, template_id, exercise_id, sets_target, reps_target, order_index")
+    .eq("template_id", tmpl.id)
+    .order("order_index");
+
+  const exerciseRows = (teData ?? []) as TemplateExerciseDB[];
+  const exerciseIds = exerciseRows.map((te) => te.exercise_id);
+
+  const { data: exData } = exerciseIds.length > 0
+    ? await supabase.from("exercises").select("id, name, category, muscle_primary, equipment").in("id", exerciseIds)
+    : { data: [] };
+
+  const exMap = new Map(((exData ?? []) as ExerciseDB[]).map((e) => [e.id, e]));
+
+  const exercises: TemplateExerciseRow[] = exerciseRows.map((te) => ({
+    id: te.id,
+    template_id: te.template_id,
+    exercise_id: te.exercise_id,
+    sets_target: te.sets_target,
+    reps_target: te.reps_target,
+    order_index: te.order_index,
+    exercise: exMap.get(te.exercise_id) ?? { id: te.exercise_id, name: "Unknown", category: null, muscle_primary: null, equipment: null },
+  }));
+
+  return { ...tmpl, exercises };
+}
+
+export async function updateTemplate(
+  id: string,
+  formData: FormData
+): Promise<{ error: string } | void> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const name = formData.get("name") as string;
+  const category = formData.get("category") as string;
+  const exercisesJson = formData.get("exercises") as string;
+
+  if (!name?.trim()) return { error: "Template name is required" };
+
+  let parsedExercises: Array<{ exerciseId: string; setsTarget: number; repsTarget: number }> = [];
+  try {
+    parsedExercises = JSON.parse(exercisesJson || "[]");
+  } catch {
+    return { error: "Invalid exercise data" };
+  }
+
+  const { error: updateError } = await supabase
+    .from("workout_templates")
+    .update({ name: name.trim(), category: category || null })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (updateError) return { error: updateError.message };
+
+  await supabase.from("template_exercises").delete().eq("template_id", id);
+
+  if (parsedExercises.length > 0) {
+    const rows = parsedExercises.map((e, i) => ({
+      template_id: id,
+      exercise_id: e.exerciseId,
+      sets_target: e.setsTarget,
+      reps_target: e.repsTarget,
+      order_index: i,
+    }));
+    const { error: insError } = await supabase.from("template_exercises").insert(rows);
+    if (insError) return { error: insError.message };
+  }
+
+  revalidatePath("/workouts");
+}
+
+export interface ExerciseStats {
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  pr: { weightKg: number; reps: number; date: string } | null;
+  lastSessions: Array<{ date: string; setsCount: number; topWeight: number }>;
+  weightOverTime: Array<{ date: string; weight: number }>;
+}
+
+export async function getExerciseStats(exerciseId: string): Promise<ExerciseStats> {
+  const empty: ExerciseStats = { totalSets: 0, totalReps: 0, totalVolume: 0, pr: null, lastSessions: [], weightOverTime: [] };
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("id, started_at")
+    .eq("user_id", user.id);
+
+  const sessionMap = new Map(((sessions ?? []) as Array<{ id: string; started_at: string }>).map((s) => [s.id, s.started_at]));
+  const sessionIds = Array.from(sessionMap.keys());
+  if (sessionIds.length === 0) return empty;
+
+  const db = supabase as any;
+  const { data: sets } = await db
+    .from("session_sets")
+    .select("weight_kg, reps, session_id")
+    .eq("exercise_id", exerciseId)
+    .in("session_id", sessionIds);
+
+  type SetRow = { weight_kg: number; reps: number; session_id: string };
+  const setsArr: SetRow[] = (sets ?? []) as SetRow[];
+  if (setsArr.length === 0) return empty;
+
+  const totalSets = setsArr.length;
+  const totalReps = setsArr.reduce((s, r) => s + (r.reps ?? 0), 0);
+  const totalVolume = Math.round(setsArr.reduce((s, r) => s + (r.weight_kg ?? 0) * (r.reps ?? 0), 0));
+
+  const maxSet = setsArr.reduce((best, s) => (s.weight_kg ?? 0) > (best.weight_kg ?? 0) ? s : best, setsArr[0]);
+  const pr = {
+    weightKg: maxSet.weight_kg,
+    reps: maxSet.reps,
+    date: sessionMap.get(maxSet.session_id) ?? "",
+  };
+
+  const bySession = new Map<string, SetRow[]>();
+  for (const s of setsArr) {
+    if (!bySession.has(s.session_id)) bySession.set(s.session_id, []);
+    bySession.get(s.session_id)!.push(s);
+  }
+
+  const sessionList = Array.from(bySession.entries()).map(([sid, rows]) => ({
+    date: sessionMap.get(sid) ?? "",
+    setsCount: rows.length,
+    topWeight: rows.reduce((m, r) => Math.max(m, r.weight_kg ?? 0), 0),
+  })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const lastSessions = sessionList.slice(0, 5);
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const weightOverTime = sessionList
+    .filter((s) => new Date(s.date) >= sixMonthsAgo)
+    .map((s) => ({ date: s.date, weight: s.topWeight }))
+    .reverse();
+
+  return { totalSets, totalReps, totalVolume, pr, lastSessions, weightOverTime };
 }
 
 export async function createCustomExercise(
@@ -453,7 +644,7 @@ export async function createCustomExercise(
     equipment: (formData.get("equipment") as string) || null,
     is_custom: true,
     user_id: user.id,
-  }).select("id, name, category, muscle_primary, equipment").single();
+  }).select("id, name, category, muscle_primary, equipment, is_custom, user_id").single();
 
   if (error) return { error: error.message };
   revalidatePath("/workouts/exercises");

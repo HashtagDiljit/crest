@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -55,6 +55,7 @@ function SessionPage() {
   const [adHocExercises, setAdHocExercises] = useState<TemplateExerciseRow[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set<string>());
   const [showPicker, setShowPicker] = useState(false);
+  const [targetOverrides, setTargetOverrides] = useState<Record<string, number>>({});
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
   const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
 
@@ -195,7 +196,17 @@ function SessionPage() {
   }
   const setsForCurrentEx = loggedSets.filter((s) => s.exercise_id === currentEx?.exercise_id);
   const isQuickStart = !data?.template;
-  const targetSets = currentEx?.sets_target ?? 3;
+  const targetSets = currentEx ? (targetOverrides[currentEx.id] ?? currentEx.sets_target ?? 3) : 3;
+
+  function handleAddSet() {
+    if (!currentEx) return;
+    setTargetOverrides((prev) => ({ ...prev, [currentEx.id]: targetSets + 1 }));
+  }
+
+  function handleRemoveSet() {
+    if (!currentEx || targetSets <= setsForCurrentEx.length + 1) return;
+    setTargetOverrides((prev) => ({ ...prev, [currentEx.id]: targetSets - 1 }));
+  }
 
   // Suggested weight for overload hint
   const suggestedWeight = (() => {
@@ -233,6 +244,7 @@ function SessionPage() {
   const handleEndSession = useCallback(async () => {
     if (!sessionId || !data) return;
     setFrozenElapsed(elapsedSeconds);
+    setRestRemaining(0);
     setEnding(true);
     const result = await finalizeSession(sessionId);
     setSummary({ ...result, started_at: data.session.started_at });
@@ -318,6 +330,22 @@ function SessionPage() {
               >
                 Complete set {setsForCurrentEx.length + 1}
               </button>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={handleRemoveSet}
+                  disabled={targetSets <= setsForCurrentEx.length + 1}
+                  className="flex items-center gap-1 text-12 text-text-muted hover:text-text-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Minus size={12} /> Remove set
+                </button>
+                <span className="font-mono text-11 text-text-disabled">{targetSets} sets</span>
+                <button
+                  onClick={handleAddSet}
+                  className="flex items-center gap-1 text-12 text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  <Plus size={12} /> Add set
+                </button>
+              </div>
             </div>
           )}
         </div>
