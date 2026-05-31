@@ -56,6 +56,8 @@ function SessionPage() {
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set<string>());
   const [showPicker, setShowPicker] = useState(false);
   const [targetOverrides, setTargetOverrides] = useState<Record<string, number>>({});
+  const [currentSetType, setCurrentSetType] = useState<"warmup" | "working" | "dropset" | "failure">("working");
+  const [supersetLinks, setSupersetLinks] = useState<Set<number>>(new Set<number>());
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
   const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
 
@@ -129,6 +131,8 @@ function SessionPage() {
           reps: sr.reps,
           rpe: sr.rpe,
           completed_at: sr.completed_at,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          set_type: ((sr as any).set_type ?? "working") as SessionSetRow["set_type"],
         } satisfies SessionSetRow;
       });
 
@@ -221,11 +225,12 @@ function SessionPage() {
   const handleCompleteSet = useCallback(async () => {
     if (!sessionId || !currentEx) return;
     const setNum = setsForCurrentEx.length + 1;
-    const result = await logSet({ sessionId, exerciseId: currentEx.exercise_id, setNumber: setNum, weightKg: weight, reps });
+    const result = await logSet({ sessionId, exerciseId: currentEx.exercise_id, setNumber: setNum, weightKg: weight, reps, setType: currentSetType });
     if ("id" in result) {
       const newSet: SessionSetRow = {
         id: result.id, session_id: sessionId, exercise_id: currentEx.exercise_id,
         set_number: setNum, weight_kg: weight, reps, rpe: null,
+        set_type: currentSetType,
         completed_at: new Date().toISOString(),
       };
       const newSets = [...loggedSets, newSet];
@@ -234,12 +239,32 @@ function SessionPage() {
       setCurrentSetIdx(setNum);
 
       const newCount = setsForCurrentEx.length + 1;
-      if (newCount >= targetSets && data && currentExIdx < data.exercises.length - 1) {
+      const isFirstOfSuperset = supersetLinks.has(currentExIdx);
+      const isSecondOfSuperset = currentExIdx > 0 && supersetLinks.has(currentExIdx - 1);
+
+      if (isFirstOfSuperset) {
+        // Alternate to partner
+        setCurrentExIdx(currentExIdx + 1);
+        setCurrentSetIdx(0);
+      } else if (isSecondOfSuperset) {
+        const firstEx = allExercises[currentExIdx - 1];
+        const firstExDone = newSets.filter((s) => s.exercise_id === firstEx?.exercise_id).length;
+        const firstExTarget = firstEx ? (targetOverrides[firstEx.id] ?? firstEx.sets_target ?? 3) : 3;
+        if (firstExDone >= firstExTarget && newCount >= targetSets) {
+          // Both done — advance past superset
+          setCurrentExIdx(currentExIdx + 1);
+          setCurrentSetIdx(0);
+        } else {
+          // Back to first exercise in pair
+          setCurrentExIdx(currentExIdx - 1);
+          setCurrentSetIdx(0);
+        }
+      } else if (newCount >= targetSets && currentExIdx < allExercises.length - 1) {
         setCurrentExIdx((i) => i + 1);
         setCurrentSetIdx(0);
       }
     }
-  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, restTotal, targetSets, data, currentExIdx, loggedSets]);
+  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides]);
 
   const handleEndSession = useCallback(async () => {
     if (!sessionId || !data) return;
@@ -324,6 +349,25 @@ function SessionPage() {
                 setNum={setsForCurrentEx.length + 1}
                 totalSets={targetSets}
               />
+              {/* Set type selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Type</span>
+                <div className="flex gap-1.5">
+                  {([ ["warmup","W","text-warning"], ["working","S","text-accent"], ["dropset","D","text-success"], ["failure","F","text-danger"] ] as const).map(([t, label, col]) => (
+                    <button
+                      key={t}
+                      onClick={() => setCurrentSetType(t)}
+                      className={`w-8 h-7 rounded-r2 text-11 font-bold border transition-colors ${
+                        currentSetType === t
+                          ? `border-current bg-bg-elevated ${col}`
+                          : "border-border text-text-disabled hover:text-text-muted"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button
                 onClick={handleCompleteSet}
                 className="w-full h-14 rounded-r4 bg-accent hover:bg-accent-hover text-white font-semibold text-15 transition-colors"
@@ -368,6 +412,14 @@ function SessionPage() {
               setRemovedIds((prev) => new Set(Array.from(prev).concat(id)));
               setCurrentExIdx((i) => Math.min(i, allExercises.length - 2));
             }}
+            supersetLinks={supersetLinks}
+            onToggleSuperset={(idx) =>
+              setSupersetLinks((prev) => {
+                const next = new Set(Array.from(prev));
+                if (next.has(idx)) next.delete(idx); else next.add(idx);
+                return next;
+              })
+            }
           />
         </div>
       </div>

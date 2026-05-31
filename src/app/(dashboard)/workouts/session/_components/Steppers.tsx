@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 
 interface Props {
@@ -22,7 +22,7 @@ export function Steppers({ weight, reps, onWeightChange, onRepsChange, setNum, t
         step={2.5}
         onChange={onWeightChange}
         min={0}
-        decimals={1}
+        isInt={false}
         hint={`set ${setNum} / ${totalSets}`}
       />
       <StepperInput
@@ -32,7 +32,7 @@ export function Steppers({ weight, reps, onWeightChange, onRepsChange, setNum, t
         step={1}
         onChange={onRepsChange}
         min={1}
-        decimals={0}
+        isInt={true}
         hint={`set ${setNum} / ${totalSets}`}
       />
     </div>
@@ -46,38 +46,51 @@ interface StepperProps {
   step: number;
   onChange: (v: number) => void;
   min: number;
-  decimals: number;
+  isInt: boolean;
   hint: string;
 }
 
-function StepperInput({ label, value, unit, step, onChange, min, decimals, hint }: StepperProps) {
-  const [inputVal, setInputVal] = useState(formatVal(value, decimals));
+function fmt(v: number, isInt: boolean): string {
+  if (isInt) return String(Math.round(v));
+  return Number.isInteger(v) ? v.toFixed(1) : v.toFixed(1);
+}
 
+function StepperInput({ label, value, unit, step, onChange, min, isInt, hint }: StepperProps) {
+  const [display, setDisplay] = useState(() => fmt(value, isInt));
+  const [focused, setFocused] = useState(false);
+
+  // Sync from parent when not editing (e.g. +/- button)
   useEffect(() => {
-    setInputVal(formatVal(value, decimals));
-  }, [value, decimals]);
+    if (!focused) setDisplay(fmt(value, isInt));
+  }, [value, isInt, focused]);
 
-  function formatVal(v: number, d: number) {
-    return d === 0 ? String(Math.round(v)) : (Number.isInteger(v) ? v.toFixed(1) : v.toFixed(d));
+  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+    setFocused(true);
+    // Select all so typing immediately replaces the current value
+    e.target.select();
   }
 
   function handleChange(raw: string) {
-    setInputVal(raw);
-    const parsed = parseFloat(raw);
-    if (!isNaN(parsed) && parsed >= 0) {
-      onChange(Math.max(min, parsed));
+    if (isInt) {
+      // Strip everything except digits
+      setDisplay(raw.replace(/\D/g, ""));
+    } else {
+      // Strip everything except digits and the first decimal point
+      const cleaned = raw.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+      setDisplay(cleaned);
     }
   }
 
   function handleBlur() {
-    const parsed = parseFloat(inputVal);
+    setFocused(false);
+    const parsed = isInt ? parseInt(display, 10) : parseFloat(display);
     if (isNaN(parsed) || parsed < 0) {
       onChange(0);
-      setInputVal("0");
+      setDisplay("0");
     } else {
       const clamped = Math.max(min, parsed);
       onChange(clamped);
-      setInputVal(formatVal(clamped, decimals));
+      setDisplay(fmt(clamped, isInt));
     }
   }
 
@@ -92,11 +105,12 @@ function StepperInput({ label, value, unit, step, onChange, min, decimals, hint 
         >
           <Minus size={14} />
         </button>
-        <div className="flex-1 flex items-baseline justify-center gap-1">
+        <div className="flex-1 flex items-baseline justify-center gap-1 min-w-0">
           <input
             type="text"
-            inputMode="decimal"
-            value={inputVal}
+            inputMode={isInt ? "numeric" : "decimal"}
+            value={display}
+            onFocus={handleFocus}
             onChange={(e) => handleChange(e.target.value)}
             onBlur={handleBlur}
             className="w-full text-center font-mono text-[28px] font-bold text-text-primary tabular-nums bg-transparent outline-none border-b border-transparent focus:border-accent transition-colors min-w-0"

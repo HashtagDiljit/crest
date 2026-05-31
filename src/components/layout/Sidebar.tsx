@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
+import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
 
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
@@ -99,14 +100,16 @@ export function Sidebar() {
         </div>
 
         {/* Log workout CTA */}
-        <Link
-          href="/workouts/start"
-          className="flex items-center justify-center gap-2 w-full rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold py-2.5 mt-3.5 mb-1 transition-colors"
-          style={{ boxShadow: "0 0 0 1px var(--color-accent-ring), 0 8px 22px rgba(108,99,255,0.25)" }}
-        >
-          <Plus size={16} strokeWidth={2} />
-          Log workout
-        </Link>
+        <form action={async () => { await startBlankSession(); }} className="w-full mt-3.5 mb-1">
+          <button
+            type="submit"
+            className="flex items-center justify-center gap-2 w-full rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold py-2.5 transition-colors"
+            style={{ boxShadow: "0 0 0 1px var(--color-accent-ring), 0 8px 22px rgba(108,99,255,0.25)" }}
+          >
+            <Plus size={16} strokeWidth={2} />
+            Log workout
+          </button>
+        </form>
 
         {/* Quick log */}
         <div>

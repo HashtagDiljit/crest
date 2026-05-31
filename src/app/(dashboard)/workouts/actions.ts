@@ -50,6 +50,7 @@ export interface SessionSetRow {
   reps: number | null;
   rpe: number | null;
   completed_at: string;
+  set_type: "warmup" | "working" | "dropset" | "failure";
 }
 
 export interface SessionRow {
@@ -240,6 +241,7 @@ export async function logSet(data: {
   weightKg: number;
   reps: number;
   rpe?: number;
+  setType?: "warmup" | "working" | "dropset" | "failure";
 }): Promise<{ error: string } | { id: string }> {
   const supabase = await createServerClient();
   const {
@@ -247,7 +249,8 @@ export async function logSet(data: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { data: inserted, error } = await supabase
+  const db = supabase as any;
+  const { data: inserted, error } = await db
     .from("session_sets")
     .insert({
       session_id: data.sessionId,
@@ -256,6 +259,7 @@ export async function logSet(data: {
       weight_kg: data.weightKg,
       reps: data.reps,
       rpe: data.rpe ?? null,
+      set_type: data.setType ?? "working",
     })
     .select("id")
     .single();
@@ -385,7 +389,8 @@ export async function getSession(
     },
   }));
 
-  const sets: SessionSetRow[] = setsRows.map((s) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sets: SessionSetRow[] = setsRows.map((s: any) => ({
     id: s.id,
     session_id: s.session_id,
     exercise_id: s.exercise_id,
@@ -394,6 +399,7 @@ export async function getSession(
     reps: s.reps,
     rpe: s.rpe,
     completed_at: s.completed_at,
+    set_type: (s.set_type ?? "working") as SessionSetRow["set_type"],
   }));
 
   return {
@@ -901,12 +907,13 @@ export async function finalizeSession(sessionId: string): Promise<{ prs: PRResul
   if (!user) return { prs: [], sets_count: 0 };
 
   // End the session
-  const { data: sets } = await supabase
+  const dbAny = supabase as any;
+  const { data: sets } = await dbAny
     .from("session_sets")
-    .select("id, exercise_id, weight_kg, reps")
+    .select("id, exercise_id, weight_kg, reps, set_type")
     .eq("session_id", sessionId);
 
-  const setsArr = (sets ?? []) as Array<{ id: string; exercise_id: string; weight_kg: number | null; reps: number | null }>;
+  const setsArr = (sets ?? []) as Array<{ id: string; exercise_id: string; weight_kg: number | null; reps: number | null; set_type?: string }>;
   const xp = Math.max(10, setsArr.length * 5);
 
   await supabase
@@ -920,22 +927,23 @@ export async function finalizeSession(sessionId: string): Promise<{ prs: PRResul
     await supabase.from("profiles").update({ xp: ((profile as { xp: number }).xp ?? 0) + xp }).eq("id", user.id);
   }
 
-  // Detect PRs per exercise
+  // Detect PRs per exercise (exclude warmup sets)
   const exerciseIds = Array.from(new Set(setsArr.map((s) => s.exercise_id)));
   const prs: PRResult[] = [];
 
   for (const exerciseId of exerciseIds) {
-    const sessionSets = setsArr.filter((s) => s.exercise_id === exerciseId);
+    const sessionSets = setsArr.filter((s) => s.exercise_id === exerciseId && (s.set_type ?? "working") !== "warmup");
     const maxWeight = Math.max(...sessionSets.map((s) => s.weight_kg ?? 0));
 
-    // Get historical max weight for this exercise (before this session)
-    const { data: histSets } = await supabase
+    // Get historical max weight for this exercise (before this session, exclude warmups)
+    const { data: histSets } = await dbAny
       .from("session_sets")
-      .select("weight_kg, reps, session_id")
+      .select("weight_kg, reps, session_id, set_type")
       .eq("exercise_id", exerciseId)
       .neq("session_id", sessionId);
 
-    const histArr = (histSets ?? []) as Array<{ weight_kg: number | null; reps: number | null; session_id: string }>;
+    const histArr = ((histSets ?? []) as Array<{ weight_kg: number | null; reps: number | null; session_id: string; set_type?: string }>)
+      .filter((s) => (s.set_type ?? "working") !== "warmup");
 
     const histMaxWeight = histArr.reduce((m, s) => Math.max(m, s.weight_kg ?? 0), 0);
     const histMaxRepsAtSameWeight = histArr
