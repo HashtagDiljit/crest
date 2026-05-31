@@ -35,7 +35,8 @@ export function ExerciseQueue({
           </button>
         )}
       </div>
-      <div>
+      {/* Vertical on desktop, horizontal scroll strip on mobile */}
+      <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible">
         {exercises.map((ex, i) => {
           const done = loggedSets.filter((s) => s.exercise_id === ex.exercise_id).length;
           const target = ex.sets_target ?? 3;
@@ -46,7 +47,7 @@ export function ExerciseQueue({
           const showConnector = i < exercises.length - 1;
 
           return (
-            <div key={ex.id}>
+            <div key={ex.id} className="flex-shrink-0 lg:flex-shrink w-48 lg:w-auto border-r lg:border-r-0 border-border last:border-r-0">
               {/* Exercise row */}
               <div
                 className="flex items-center hover:bg-bg-elevated transition-colors"

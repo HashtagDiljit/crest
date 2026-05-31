@@ -6,12 +6,18 @@ import { updateAppearance } from "../actions";
 import { applyTheme, applyAccent } from "@/lib/theme";
 
 const ACCENT_SWATCHES = [
-  { label: "Violet", value: "#6C63FF" },
-  { label: "Indigo", value: "#6366F1" },
-  { label: "Sky", value: "#38BDF8" },
-  { label: "Emerald", value: "#22C55E" },
-  { label: "Amber", value: "#F59E0B" },
-  { label: "Rose", value: "#F472B6" },
+  { label: "Teal",    value: "#2DD4BF" },
+  { label: "Indigo",  value: "#6366F1" },
+  { label: "Violet",  value: "#A855F7" },
+  { label: "Rose",    value: "#F43F5E" },
+  { label: "Coral",   value: "#F97316" },
+  { label: "Amber",   value: "#F59E0B" },
+  { label: "Yellow",  value: "#EAB308" },
+  { label: "Lime",    value: "#84CC16" },
+  { label: "Emerald", value: "#10B981" },
+  { label: "Sky",     value: "#0EA5E9" },
+  { label: "Slate",   value: "#94A3B8" },
+  { label: "Pink",    value: "#EC4899" },
 ];
 
 const THEMES = [
@@ -27,18 +33,18 @@ interface Props {
 
 export function AppearanceSection({ theme: initTheme, accentColour: initAccent }: Props) {
   const [theme, setTheme] = useState(initTheme ?? "dark");
-  const [accent, setAccent] = useState(initAccent ?? "#6C63FF");
+  const [accent, setAccent] = useState(initAccent ?? "#2DD4BF");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
 
   function handleThemeChange(value: string) {
     setTheme(value);
-    applyTheme(value); // instant visual update
+    applyTheme(value);
   }
 
   function handleAccentChange(value: string) {
     setAccent(value);
-    applyAccent(value); // instant visual update
+    applyAccent(value);
   }
 
   async function handleSave() {
@@ -59,7 +65,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
               onClick={() => handleThemeChange(t.value)}
               className={`flex-1 py-2.5 rounded-r3 border text-13 font-medium transition-colors ${
                 theme === t.value
-                  ? "border-accent bg-accent-soft text-text-primary"
+                  ? "border-accent bg-[var(--color-accent-soft)] text-text-primary"
                   : "border-border bg-bg-elevated text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -71,13 +77,13 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
       </Field>
 
       <Field label="Accent colour">
-        <div className="flex gap-2.5">
+        <div className="grid grid-cols-6 gap-2">
           {ACCENT_SWATCHES.map((s) => (
             <button
               key={s.value}
               title={s.label}
               onClick={() => handleAccentChange(s.value)}
-              className="w-9 h-9 rounded-pill flex items-center justify-center transition-transform hover:scale-110"
+              className="w-full aspect-square rounded-pill flex items-center justify-center transition-transform hover:scale-110 min-h-[44px]"
               style={{
                 background: s.value,
                 boxShadow: accent === s.value ? `0 0 0 2px var(--color-bg-base), 0 0 0 4px ${s.value}` : "none",

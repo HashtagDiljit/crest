@@ -90,7 +90,7 @@ export default function NewTemplatePage() {
         </Link>
       </div>
 
-      <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">New template</h1>
+      <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">New template</h1>
 
       <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-5">
         {/* Name */}

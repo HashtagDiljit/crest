@@ -91,7 +91,7 @@ export default function AIInsightsPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight flex items-center gap-2">
+          <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight flex items-center gap-2">
             <Sparkles size={26} className="text-accent" />
             AI Insights
           </h1>

@@ -48,7 +48,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-sidebar bg-bg-inset border-r border-border flex flex-col gap-0.5 px-3.5 py-5 h-full overflow-y-auto fixed left-0 top-0 bottom-0 z-20">
+      <aside className="hidden lg:flex w-sidebar bg-bg-inset border-r border-border flex-col gap-0.5 px-3.5 py-5 h-full overflow-y-auto fixed left-0 top-0 bottom-0 z-20">
         <SidebarBrand />
 
         {/* Primary nav */}

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export default async function DashboardLayout({
@@ -47,7 +48,7 @@ export default async function DashboardLayout({
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
       <div className="flex h-screen overflow-hidden bg-bg-base">
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 ml-sidebar overflow-hidden">
+        <div className="flex flex-col flex-1 min-w-0 lg:ml-sidebar overflow-hidden">
           <TopBar
             level={level}
             xp={xp}
@@ -58,12 +59,13 @@ export default async function DashboardLayout({
             avatarUrl={profile?.avatar_url ?? null}
           />
           <main className="flex-1 overflow-y-auto">
-            <div className="max-w-[1200px] w-full mx-auto px-6 py-7 pb-14">
+            <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
               {children}
             </div>
           </main>
         </div>
       </div>
+      <BottomTabBar />
     </>
   );
 }

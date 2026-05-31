@@ -31,7 +31,7 @@ export default function GoalsPage() {
       <div className="flex flex-col gap-6 max-w-4xl">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Goals</h1>
+            <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Goals</h1>
             <p className="text-13 text-text-secondary mt-0.5">
               {active.length} active goal{active.length !== 1 ? "s" : ""}
             </p>

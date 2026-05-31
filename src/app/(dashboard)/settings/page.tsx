@@ -19,7 +19,7 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div>
-        <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Settings</h1>
+        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Settings</h1>
         <p className="text-13 text-text-secondary mt-0.5">Manage your account and preferences</p>
       </div>
 

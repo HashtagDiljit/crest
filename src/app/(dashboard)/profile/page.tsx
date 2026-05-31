@@ -39,7 +39,7 @@ export default async function ProfilePage() {
     <div className="flex flex-col gap-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Profile</h1>
+        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Profile</h1>
         <Link href="/settings" className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill border border-border text-12 text-text-secondary hover:text-text-primary transition-colors">
           <Settings size={13} /> Settings
         </Link>

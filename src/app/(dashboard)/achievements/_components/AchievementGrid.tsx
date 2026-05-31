@@ -61,7 +61,7 @@ export function AchievementGrid({ achievements }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {/* Summary row */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SummaryTile label="Earned" value={`${earned.length}/${achievements.length}`} color="var(--color-accent)" />
         <SummaryTile label="Bronze" value={`${bronzeCount}`} color={TIER_COLORS.bronze} />
         <SummaryTile label="Silver" value={`${silverCount}`} color={TIER_COLORS.silver} />
@@ -86,7 +86,7 @@ export function AchievementGrid({ achievements }: Props) {
       </div>
 
       {/* Badge grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {filtered.map((a) => (
           <BadgeCard key={a.id} achievement={a} />
         ))}

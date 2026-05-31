@@ -30,7 +30,7 @@ export default async function WorkoutsPage() {
       {showDeloadBanner && <DeloadBanner weekCount={weekCount} />}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Workouts</h1>
+          <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Workouts</h1>
           <p className="text-13 text-text-secondary mt-1">Track your training, build templates, and log sessions.</p>
         </div>
         <div className="flex items-center gap-2">

@@ -21,7 +21,7 @@ export default async function HealthPage() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
       <div>
-        <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Health</h1>
+        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Health</h1>
         <p className="text-13 text-text-secondary mt-0.5">Sleep, recovery, and body composition all in one place.</p>
       </div>
 

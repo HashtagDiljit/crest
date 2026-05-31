@@ -17,7 +17,7 @@ export default async function JournalPage() {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
-        <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Journal</h1>
+        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Journal</h1>
         <p className="text-13 text-text-secondary mt-0.5">
           {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </p>

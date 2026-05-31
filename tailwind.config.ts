@@ -17,6 +17,7 @@ const config: Config = {
         accent: "var(--color-accent)",
         "accent-hover": "var(--color-accent-hover)",
         "accent-pressed": "var(--color-accent-pressed)",
+        "accent-soft": "var(--color-accent-soft)",
         "text-primary": "var(--color-text-primary)",
         "text-secondary": "var(--color-text-secondary)",
         "text-muted": "var(--color-text-muted)",
@@ -35,10 +36,16 @@ const config: Config = {
         mono: ["var(--font-mono)"],
       },
       fontSize: {
+        "10": ["10px", { lineHeight: "1.4" }],
         "11": ["11px", { lineHeight: "1.45" }],
+        "12": ["12px", { lineHeight: "1.45" }],
         "13": ["13px", { lineHeight: "1.45" }],
+        "14": ["14px", { lineHeight: "1.45" }],
         "15": ["15px", { lineHeight: "1.45" }],
+        "16": ["16px", { lineHeight: "1.45" }],
         "18": ["18px", { lineHeight: "1.25" }],
+        "20": ["20px", { lineHeight: "1.25" }],
+        "22": ["22px", { lineHeight: "1.25" }],
         "24": ["24px", { lineHeight: "1.25" }],
         "32": ["32px", { lineHeight: "1.1" }],
         "48": ["48px", { lineHeight: "1.1" }],
@@ -53,6 +60,9 @@ const config: Config = {
         "pill": "999px",
       },
       width: {
+        sidebar: "240px",
+      },
+      spacing: {
         sidebar: "240px",
       },
       boxShadow: {

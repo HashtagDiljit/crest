@@ -10,7 +10,7 @@ import {
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4 md:gap-5">
       <DashboardGreeting />
       <DashboardGrid />
     </div>
@@ -20,7 +20,7 @@ export default function DashboardPage() {
 function DashboardGreeting() {
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">
+      <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">
         Welcome to Crest.
       </h1>
       <p className="text-13 text-text-secondary">
@@ -32,8 +32,8 @@ function DashboardGreeting() {
 
 function DashboardGrid() {
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="col-span-2">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="sm:col-span-2">
         <WeeklyRingEmpty />
       </div>
       <StreakCardEmpty />
@@ -42,11 +42,11 @@ function DashboardGrid() {
       <StatCardEmpty label="Resting HR" unit="bpm" icon={Heart} />
       <StatCardEmpty label="Workouts" unit="/ wk" icon={Dumbbell} />
 
-      <div className="col-span-3">
+      <div className="sm:col-span-3">
         <HeatmapEmpty />
       </div>
 
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <AIInsightEmpty />
       </div>
 

@@ -1,5 +1,6 @@
 import { History } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { CalendarButton } from "./CalendarButton";
 
 interface TopBarProps {
@@ -17,22 +18,58 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   const xpRemaining = xpNeeded - xp;
 
   return (
-    <div className="sticky top-4 z-10 mx-6 mt-4 flex items-center gap-3.5 rounded-pill border border-border px-4 py-2 backdrop-blur-[14px]"
-      style={{ background: "var(--topbar-bg)", boxShadow: "var(--shadow-2)" }}
-    >
-      <LevelPill level={level} username={username} />
-      <XpBar xp={xp} xpRemaining={xpRemaining} xpPct={xpPct} nextLevel={level + 1} />
-      <StreakChip streak={streak} />
-      <button
-        type="button"
-        aria-label="History"
-        className="w-[34px] h-[34px] rounded-pill border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+    <>
+      {/* ── Mobile top bar ── */}
+      <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)" }}>
+        <div className="flex items-center justify-between px-4 h-14">
+          <Link href="/" className="flex items-center gap-2">
+            <CrestLogoMini />
+            <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Crest</span>
+          </Link>
+          <MobileStreakChip streak={streak} />
+          <Avatar initials={initials} avatarUrl={avatarUrl} />
+        </div>
+        {/* 4px XP strip */}
+        <div className="h-1 w-full" style={{ background: "var(--color-xp-track)" }}>
+          <div
+            className="h-full transition-[width] duration-500"
+            style={{
+              width: `${xpPct}%`,
+              background: "linear-gradient(90deg, var(--color-accent), color-mix(in oklab, var(--color-accent) 60%, white))",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ── Desktop top bar ── */}
+      <div
+        className="hidden lg:flex sticky top-4 z-10 mx-6 mt-4 items-center gap-3.5 rounded-pill border border-border px-4 py-2 backdrop-blur-[14px]"
+        style={{ background: "var(--topbar-bg)", boxShadow: "var(--shadow-2)" }}
       >
-        <History size={16} />
-      </button>
-      <CalendarButton />
-      <Avatar initials={initials} avatarUrl={avatarUrl} />
-    </div>
+        <LevelPill level={level} username={username} />
+        <XpBar xp={xp} xpRemaining={xpRemaining} xpPct={xpPct} nextLevel={level + 1} />
+        <StreakChip streak={streak} />
+        <button
+          type="button"
+          aria-label="History"
+          className="w-[34px] h-[34px] rounded-pill border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+        >
+          <History size={16} />
+        </button>
+        <CalendarButton />
+        <Avatar initials={initials} avatarUrl={avatarUrl} />
+      </div>
+    </>
+  );
+}
+
+function CrestLogoMini() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
+      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
+      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+    </svg>
   );
 }
 
@@ -105,6 +142,22 @@ function StreakChip({ streak }: { streak: number }) {
   );
 }
 
+function MobileStreakChip({ streak }: { streak: number }) {
+  return (
+    <div
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-pill font-mono text-12 text-text-primary"
+      style={{
+        background: "rgba(255,138,61,0.08)",
+        border: "1px solid rgba(255,138,61,0.25)",
+        fontFeatureSettings: '"tnum" 1',
+      }}
+    >
+      <FlameIcon />
+      <strong className="font-semibold">{streak}</strong>
+    </div>
+  );
+}
+
 function FlameIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24">
@@ -124,12 +177,13 @@ function FlameIcon() {
 
 function Avatar({ initials, avatarUrl }: { initials: string; avatarUrl?: string | null }) {
   return (
-    <Link href="/profile" aria-label="Profile" className="hover:opacity-80 transition-opacity">
+    <Link href="/profile" aria-label="Profile" className="hover:opacity-80 transition-opacity flex-shrink-0">
       {avatarUrl ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
+        <Image
           src={avatarUrl}
-          alt=""
+          alt="Profile"
+          width={34}
+          height={34}
           className="w-[34px] h-[34px] rounded-pill object-cover border border-border"
         />
       ) : (

@@ -25,7 +25,7 @@ export default async function StartWorkoutPage() {
           <ArrowLeft size={16} />
         </Link>
         <div>
-          <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">
+          <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">
             Start workout
           </h1>
           <p className="text-13 text-text-secondary mt-0.5">

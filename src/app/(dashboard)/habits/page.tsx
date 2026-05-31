@@ -15,7 +15,7 @@ export default async function HabitsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
       <div>
-        <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight">Habits</h1>
+        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Habits</h1>
         <p className="text-13 text-text-secondary mt-0.5">Build consistency, one day at a time.</p>
       </div>
 
