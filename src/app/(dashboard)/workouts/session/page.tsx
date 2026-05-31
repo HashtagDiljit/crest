@@ -51,7 +51,9 @@ function SessionPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loggedSets, setLoggedSets] = useState<SessionSetRow[]>([]);
   const [ending, setEnding] = useState(false);
+  const [frozenElapsed, setFrozenElapsed] = useState<number | null>(null);
   const [adHocExercises, setAdHocExercises] = useState<TemplateExerciseRow[]>([]);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set<string>());
   const [showPicker, setShowPicker] = useState(false);
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
   const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
@@ -146,11 +148,12 @@ function SessionPage() {
     })();
   }, [sessionId, router]);
 
-  // Elapsed timer
+  // Elapsed timer — stops when session ends
   useEffect(() => {
+    if (ending) return;
     const t = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [ending]);
 
   // Rest countdown
   useEffect(() => {
@@ -159,7 +162,7 @@ function SessionPage() {
     return () => clearInterval(t);
   }, [restRemaining]);
 
-  const allExercises = [...(data?.exercises ?? []), ...adHocExercises];
+  const allExercises = [...(data?.exercises ?? []), ...adHocExercises].filter((ex) => !removedIds.has(ex.id));
   const currentEx = allExercises[currentExIdx];
 
   // Fetch exercise history when exercise changes, pre-fill weight
@@ -229,10 +232,11 @@ function SessionPage() {
 
   const handleEndSession = useCallback(async () => {
     if (!sessionId || !data) return;
+    setFrozenElapsed(elapsedSeconds);
     setEnding(true);
     const result = await finalizeSession(sessionId);
     setSummary({ ...result, started_at: data.session.started_at });
-  }, [sessionId, data]);
+  }, [sessionId, data, elapsedSeconds]);
 
   if (loading) {
     return (
@@ -247,8 +251,9 @@ function SessionPage() {
     <div className="flex flex-col gap-4">
       {summary && (
         <SessionSummary
+          sessionId={sessionId!}
           setsCount={summary.sets_count}
-          durationSecs={Math.floor((Date.now() - new Date(summary.started_at).getTime()) / 1000)}
+          durationSecs={frozenElapsed ?? Math.floor((Date.now() - new Date(summary.started_at).getTime()) / 1000)}
           prs={summary.prs}
         />
       )}
@@ -330,7 +335,11 @@ function SessionPage() {
             loggedSets={loggedSets}
             currentExIdx={currentExIdx}
             onJump={setCurrentExIdx}
-            onAddExercise={isQuickStart ? () => setShowPicker(true) : undefined}
+            onAddExercise={() => setShowPicker(true)}
+            onRemoveExercise={(id) => {
+              setRemovedIds((prev) => new Set(Array.from(prev).concat(id)));
+              setCurrentExIdx((i) => Math.min(i, allExercises.length - 2));
+            }}
           />
         </div>
       </div>

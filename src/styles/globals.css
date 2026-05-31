@@ -74,8 +74,14 @@ html, body {
   100% { background-position: -200% 0; }
 }
 
+/* Topbar uses a frosted glass effect — needs theme-aware background */
+:root {
+  --topbar-bg: rgba(22, 22, 30, 0.82);
+}
+
 /* Light theme overrides */
 [data-theme="light"] {
+  --topbar-bg: rgba(248, 248, 245, 0.88);
   --color-bg-base: #F8F8F5;
   --color-bg-inset: #F0F0ED;
   --color-bg-surface: #FFFFFF;

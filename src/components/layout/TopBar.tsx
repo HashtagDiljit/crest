@@ -18,7 +18,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
 
   return (
     <div className="sticky top-4 z-10 mx-6 mt-4 flex items-center gap-3.5 rounded-pill border border-border px-4 py-2 backdrop-blur-[14px]"
-      style={{ background: "rgba(22,22,30,0.72)", boxShadow: "var(--shadow-2)" }}
+      style={{ background: "var(--topbar-bg)", boxShadow: "var(--shadow-2)" }}
     >
       <LevelPill level={level} username={username} />
       <XpBar xp={xp} xpRemaining={xpRemaining} xpPct={xpPct} nextLevel={level + 1} />
@@ -130,16 +130,12 @@ function Avatar({ initials, avatarUrl }: { initials: string; avatarUrl?: string 
         <img
           src={avatarUrl}
           alt=""
-          className="w-[34px] h-[34px] rounded-pill object-cover"
-          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+          className="w-[34px] h-[34px] rounded-pill object-cover border border-border"
         />
       ) : (
         <div
-          className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white"
-          style={{
-            background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
+          className="w-[34px] h-[34px] rounded-pill flex items-center justify-center font-mono text-11 font-semibold text-white border border-border"
+          style={{ background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)" }}
         >
           {initials}
         </div>

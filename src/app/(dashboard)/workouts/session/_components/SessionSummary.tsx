@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, TrendingUp, Zap, Award } from "lucide-react";
+import { Trophy, TrendingUp, Zap, Award, Trash2, Loader2 } from "lucide-react";
+import { deleteWorkoutSession } from "../../actions";
 import type { PRResult } from "../../actions";
 
 function formatDuration(secs: number): string {
@@ -11,13 +13,22 @@ function formatDuration(secs: number): string {
 }
 
 interface Props {
+  sessionId: string;
   setsCount: number;
   durationSecs: number;
   prs: PRResult[];
 }
 
-export function SessionSummary({ setsCount, durationSecs, prs }: Props) {
+export function SessionSummary({ sessionId, setsCount, durationSecs, prs }: Props) {
   const router = useRouter();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteWorkoutSession(sessionId);
+    router.replace("/workouts");
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
@@ -56,12 +67,37 @@ export function SessionSummary({ setsCount, durationSecs, prs }: Props) {
               ))}
             </div>
           )}
+
+          {confirmDelete && (
+            <div className="rounded-r4 border border-danger border-opacity-40 bg-danger bg-opacity-5 p-4">
+              <p className="text-13 text-text-primary font-semibold mb-1">Delete this session?</p>
+              <p className="text-12 text-text-secondary mb-3">This will also remove any PRs set during this session. This cannot be undone.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-1.5 rounded-r3 border border-border text-13 text-text-secondary">
+                  Cancel
+                </button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="flex-1 py-1.5 rounded-r3 bg-danger text-white text-13 font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  {deleting ? "Deleting…" : "Confirm delete"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="px-6 py-4 border-t border-border">
+        <div className="px-6 py-4 border-t border-border flex gap-2">
+          {!confirmDelete && (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="px-3 py-2.5 rounded-r3 border border-border text-text-muted hover:text-danger hover:border-danger transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
           <button
             onClick={() => router.push("/workouts")}
-            className="w-full py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
+            className="flex-1 py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
           >
             Back to workouts
           </button>

@@ -164,9 +164,9 @@ function SidebarBrand() {
 function CrestLogo() {
   return (
     <svg width="26" height="26" viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="14" fill="#16161E" />
-      <path d="M14 42 L32 18 L50 42" stroke="#8B83FF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 48 L32 32 L44 48" stroke="#E8E6E0" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
+      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
     </svg>
   );
 }

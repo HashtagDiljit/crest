@@ -438,7 +438,7 @@ export async function getExercises(): Promise<ExerciseRow[]> {
 
 export async function createCustomExercise(
   formData: FormData
-): Promise<{ error: string } | { success: true }> {
+): Promise<{ error: string } | { success: true; exercise: ExerciseRow }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
@@ -446,18 +446,18 @@ export async function createCustomExercise(
   const name = (formData.get("name") as string)?.trim();
   if (!name) return { error: "Name is required" };
 
-  const { error } = await supabase.from("exercises").insert({
+  const { data, error } = await supabase.from("exercises").insert({
     name,
     category: (formData.get("category") as string) || null,
     muscle_primary: (formData.get("muscle_primary") as string) || null,
     equipment: (formData.get("equipment") as string) || null,
     is_custom: true,
     user_id: user.id,
-  });
+  }).select("id, name, category, muscle_primary, equipment").single();
 
   if (error) return { error: error.message };
   revalidatePath("/workouts/exercises");
-  return { success: true };
+  return { success: true, exercise: data as ExerciseRow };
 }
 
 export interface CalendarSession {
@@ -865,4 +865,30 @@ export async function getWorkoutHistory(): Promise<HistorySession[]> {
     template_name: s.template_id ? (templateMap.get(s.template_id) ?? null) : null,
     sets_count: setsCountMap.get(s.id) ?? 0,
   }));
+}
+
+export async function deleteWorkoutSession(sessionId: string): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+
+  // Delete PRs linked to this session
+  await db.from("personal_records")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id);
+
+  // Delete the session — session_sets cascade via FK
+  const { error } = await supabase
+    .from("workout_sessions")
+    .delete()
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts");
+  return {};
 }
