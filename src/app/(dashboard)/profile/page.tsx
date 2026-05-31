@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Settings, Trophy, Dumbbell, BookOpen, Zap, Flame, Target } from "lucide-react";
@@ -48,7 +49,7 @@ export default async function ProfilePage() {
       <div className="rounded-r5 border border-border bg-bg-surface p-6 flex flex-col gap-5">
         <div className="flex items-center gap-4">
           {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-pill object-cover flex-shrink-0" />
+            <Image src={profile.avatar_url} alt="Profile avatar" width={80} height={80} className="w-20 h-20 rounded-pill object-cover flex-shrink-0" />
           ) : (
             <div className="w-20 h-20 rounded-pill flex items-center justify-center font-mono text-24 font-bold text-white flex-shrink-0"
               style={{ background: "linear-gradient(135deg, var(--color-accent), #FF8A3D)" }}>

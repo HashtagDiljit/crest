@@ -249,8 +249,7 @@ export async function logSet(data: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const db = supabase as any;
-  const { data: inserted, error } = await db
+  const { data: inserted, error } = await supabase
     .from("session_sets")
     .insert({
       session_id: data.sessionId,
@@ -587,8 +586,7 @@ export async function getExerciseStats(exerciseId: string): Promise<ExerciseStat
   const sessionIds = Array.from(sessionMap.keys());
   if (sessionIds.length === 0) return empty;
 
-  const db = supabase as any;
-  const { data: sets } = await db
+  const { data: sets } = await supabase
     .from("session_sets")
     .select("weight_kg, reps, session_id")
     .eq("exercise_id", exerciseId)
@@ -907,8 +905,7 @@ export async function finalizeSession(sessionId: string): Promise<{ prs: PRResul
   if (!user) return { prs: [], sets_count: 0 };
 
   // End the session
-  const dbAny = supabase as any;
-  const { data: sets } = await dbAny
+  const { data: sets } = await supabase
     .from("session_sets")
     .select("id, exercise_id, weight_kg, reps, set_type")
     .eq("session_id", sessionId);
@@ -936,7 +933,7 @@ export async function finalizeSession(sessionId: string): Promise<{ prs: PRResul
     const maxWeight = Math.max(...sessionSets.map((s) => s.weight_kg ?? 0));
 
     // Get historical max weight for this exercise (before this session, exclude warmups)
-    const { data: histSets } = await dbAny
+    const { data: histSets } = await supabase
       .from("session_sets")
       .select("weight_kg, reps, session_id, set_type")
       .eq("exercise_id", exerciseId)

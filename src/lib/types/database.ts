@@ -191,6 +191,8 @@ export interface Database {
           reps: number | null;
           rpe: number | null;
           completed_at: string;
+          set_type: "warmup" | "working" | "dropset" | "failure";
+          superset_group_id: string | null;
         };
         Insert: {
           id?: string;
@@ -201,6 +203,8 @@ export interface Database {
           reps?: number | null;
           rpe?: number | null;
           completed_at?: string;
+          set_type?: "warmup" | "working" | "dropset" | "failure";
+          superset_group_id?: string | null;
         };
         Update: {
           id?: string;
@@ -211,6 +215,8 @@ export interface Database {
           reps?: number | null;
           rpe?: number | null;
           completed_at?: string;
+          set_type?: "warmup" | "working" | "dropset" | "failure";
+          superset_group_id?: string | null;
         };
       };
       habits: {
