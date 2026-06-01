@@ -19,11 +19,12 @@ export default async function DashboardLayout({
 
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url")
+    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url, onboarding_completed")
     .eq("id", user!.id)
     .single();
 
-  const profile = profileData as {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = profileData as any as {
     username: string | null;
     level: number;
     xp: number;
@@ -31,7 +32,12 @@ export default async function DashboardLayout({
     theme: string | null;
     accent_colour: string | null;
     avatar_url: string | null;
+    onboarding_completed: boolean | null;
   } | null;
+
+  if (profile && profile.onboarding_completed === false) {
+    redirect("/onboarding");
+  }
 
   const username = profile?.username ?? user!.email?.split("@")[0] ?? "You";
   const parts = username.trim().split(/\s+/);

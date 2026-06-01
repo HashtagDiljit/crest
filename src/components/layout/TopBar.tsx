@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import { History } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { CalendarButton } from "./CalendarButton";
+import { HistoryPanel } from "./HistoryPanel";
 
 interface TopBarProps {
   level: number;
@@ -16,6 +20,7 @@ interface TopBarProps {
 export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatarUrl }: TopBarProps) {
   const xpPct = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
   const xpRemaining = xpNeeded - xp;
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <>
@@ -52,13 +57,20 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
         <button
           type="button"
           aria-label="History"
-          className="w-[34px] h-[34px] rounded-pill border border-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+          onClick={() => setShowHistory(true)}
+          className={`w-[34px] h-[34px] rounded-pill border flex items-center justify-center transition-colors ${
+            showHistory
+              ? "bg-bg-elevated border-border-strong text-text-primary"
+              : "border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated"
+          }`}
         >
           <History size={16} />
         </button>
         <CalendarButton />
         <Avatar initials={initials} avatarUrl={avatarUrl} />
       </div>
+
+      <HistoryPanel open={showHistory} onClose={() => setShowHistory(false)} />
     </>
   );
 }

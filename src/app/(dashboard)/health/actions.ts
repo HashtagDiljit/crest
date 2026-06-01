@@ -28,9 +28,11 @@ export interface BodyMeasurementRow {
   calf_cm: number | null;
   chest_cm: number | null;
   waist_cm: number | null;
+  hip_cm: number | null;
   shoulders_cm: number | null;
   upper_arm_cm: number | null;
   steps: number | null;
+  bf_percentage: number | null;
 }
 
 export interface MetricRow {
@@ -80,11 +82,13 @@ export async function getHealthData(): Promise<HealthData> {
   return {
     sleepLogs: (sleepRes.data ?? []).map((l) => ({ id: l.id, logged_date: l.logged_date, duration_hrs: l.duration_hrs, quality_score: l.quality_score, bedtime: l.bedtime, wake_time: l.wake_time })),
     readinessLogs: (readinessRes.data ?? []).map((l) => ({ id: l.id, logged_date: l.logged_date, score: l.score, note: l.note })),
-    measurements: (measureRes.data ?? []).map((l) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    measurements: (measureRes.data ?? []).map((l: any) => ({
       id: l.id, logged_date: l.logged_date, weight_kg: l.weight_kg,
       neck_cm: l.neck_cm, forearm_cm: l.forearm_cm, calf_cm: l.calf_cm,
-      chest_cm: l.chest_cm, waist_cm: l.waist_cm, shoulders_cm: l.shoulders_cm,
-      upper_arm_cm: l.upper_arm_cm, steps: l.steps,
+      chest_cm: l.chest_cm, waist_cm: l.waist_cm, hip_cm: l.hip_cm ?? null,
+      shoulders_cm: l.shoulders_cm, upper_arm_cm: l.upper_arm_cm,
+      steps: l.steps, bf_percentage: l.bf_percentage ?? null,
     })),
     hrvMetrics: metrics.filter((m) => m.metric_type === "hrv").map((m) => ({ logged_date: m.logged_date, value: m.value })),
     hrMetrics: metrics.filter((m) => m.metric_type === "resting_hr").map((m) => ({ logged_date: m.logged_date, value: m.value })),
@@ -150,6 +154,36 @@ export async function logBodyweight(weightKg: number): Promise<{ error?: string 
   return {};
 }
 
+function calcNavyBF(
+  gender: string,
+  heightCm: number,
+  waistCm: number,
+  neckCm: number,
+  hipCm: number | null
+): number | null {
+  if (waistCm <= neckCm) return null;
+  const log = Math.log10;
+  if (gender === "male") {
+    const val =
+      495 /
+        (1.0324 -
+          0.19077 * log(waistCm - neckCm) +
+          0.15456 * log(heightCm)) -
+      450;
+    return Math.max(0, Math.round(val * 10) / 10);
+  }
+  if (gender === "female" && hipCm !== null) {
+    const val =
+      495 /
+        (1.29579 -
+          0.35004 * log(waistCm + hipCm - neckCm) +
+          0.221 * log(heightCm)) -
+      450;
+    return Math.max(0, Math.round(val * 10) / 10);
+  }
+  return null;
+}
+
 export async function logMeasurements(formData: FormData): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -158,11 +192,27 @@ export async function logMeasurements(formData: FormData): Promise<{ error?: str
   const today = new Date().toISOString().split("T")[0];
   const n = (k: string) => { const v = parseFloat(formData.get(k) as string); return isNaN(v) ? null : v; };
 
-  const { error } = await supabase.from("body_measurements").insert({
+  const waist = n("waist_cm");
+  const neck = n("neck_cm");
+  const hip = n("hip_cm");
+
+  // Try to compute BF% using US Navy method
+  let bfPct: number | null = null;
+  if (waist !== null && neck !== null) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: prof } = await supabase.from("profiles").select("height_cm, gender").eq("id", user.id).single() as any;
+    if (prof?.height_cm && prof?.gender) {
+      bfPct = calcNavyBF(prof.gender as string, prof.height_cm as number, waist, neck, hip);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("body_measurements") as any).insert({
     user_id: user.id, logged_date: today,
-    weight_kg: n("weight_kg"), neck_cm: n("neck_cm"), forearm_cm: n("forearm_cm"),
-    calf_cm: n("calf_cm"), chest_cm: n("chest_cm"), waist_cm: n("waist_cm"),
-    shoulders_cm: n("shoulders_cm"), upper_arm_cm: n("upper_arm_cm"),
+    weight_kg: n("weight_kg"), neck_cm: neck, forearm_cm: n("forearm_cm"),
+    calf_cm: n("calf_cm"), chest_cm: n("chest_cm"), waist_cm: waist,
+    hip_cm: hip, shoulders_cm: n("shoulders_cm"), upper_arm_cm: n("upper_arm_cm"),
+    bf_percentage: bfPct,
   });
 
   if (error) return { error: error.message };

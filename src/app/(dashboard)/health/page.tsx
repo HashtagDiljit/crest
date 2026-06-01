@@ -11,7 +11,18 @@ export default async function HealthPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const data = await getHealthData();
+  const [data, profileRes] = await Promise.all([
+    getHealthData(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    supabase.from("profiles").select("height_cm, date_of_birth, gender").eq("id", user.id).single() as any,
+  ]);
+
+  const profileStats = profileRes.data as {
+    height_cm: number | null;
+    date_of_birth: string | null;
+    gender: string | null;
+  } | null;
+
   const today = new Date().toISOString().split("T")[0];
 
   const todaySleep = data.sleepLogs.find((l) => l.logged_date === today) ?? null;
@@ -41,7 +52,7 @@ export default async function HealthPage() {
         <SleepPanel sleepLogs={data.sleepLogs} />
       </div>
 
-      <BodyMetricsPanel measurements={data.measurements} />
+      <BodyMetricsPanel measurements={data.measurements} profile={profileStats} />
     </div>
   );
 }

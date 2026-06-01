@@ -971,8 +971,189 @@ export async function finalizeSession(sessionId: string): Promise<{ prs: PRResul
     }
   }
 
+  // Check achievements non-blocking
+  checkWorkoutAchievements(supabase, user.id).catch(() => {});
+
   revalidatePath("/workouts");
   return { prs, sets_count: setsArr.length };
+}
+
+// ---------- Achievement checking ----------
+
+type SupabaseClient = Awaited<ReturnType<typeof createServerClient>>;
+
+async function checkWorkoutAchievements(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<void> {
+  // Fetch bodyweight, existing unlocks, and achievement definitions in parallel
+  const [bwRes, existingRes, defsRes] = await Promise.all([
+    supabase
+      .from("body_measurements")
+      .select("weight_kg")
+      .eq("user_id", userId)
+      .not("weight_kg", "is", null)
+      .order("logged_date", { ascending: false })
+      .limit(1),
+
+    supabase
+      .from("user_achievements")
+      .select("achievement_id")
+      .eq("user_id", userId),
+
+    supabase.from("achievements").select("id, slug, xp_reward"),
+  ]);
+
+  const bodyweight =
+    ((bwRes.data ?? []) as Array<{ weight_kg: number }>)[0]?.weight_kg ?? null;
+  const unlockedIds = new Set(
+    ((existingRes.data ?? []) as Array<{ achievement_id: string }>).map(
+      (a) => a.achievement_id
+    )
+  );
+  const slugToAch = new Map(
+    ((defsRes.data ?? []) as Array<{ id: string; slug: string; xp_reward: number }>).map(
+      (a) => [a.slug, a]
+    )
+  );
+
+  async function unlock(slug: string) {
+    const ach = slugToAch.get(slug);
+    if (!ach || unlockedIds.has(ach.id)) return;
+    unlockedIds.add(ach.id);
+    await supabase
+      .from("user_achievements")
+      .insert({ user_id: userId, achievement_id: ach.id });
+    // Award XP
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("xp")
+      .eq("id", userId)
+      .single();
+    if (p) {
+      await supabase
+        .from("profiles")
+        .update({ xp: ((p as { xp: number }).xp ?? 0) + ach.xp_reward })
+        .eq("id", userId);
+    }
+  }
+
+  // --- Workout count ---
+  const { count: workoutCount } = await supabase
+    .from("workout_sessions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .not("ended_at", "is", null);
+
+  const wc = workoutCount ?? 0;
+  if (wc >= 1) await unlock("workout_1");
+  if (wc >= 10) await unlock("workout_10");
+  if (wc >= 50) await unlock("workout_50");
+  if (wc >= 100) await unlock("workout_100");
+
+  // --- PR count ---
+  const { count: prCount } = await supabase
+    .from("personal_records")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  const pc = prCount ?? 0;
+  if (pc >= 1) await unlock("pr_1");
+  if (pc >= 10) await unlock("pr_10");
+
+  // --- Weekly volume (Volume King) ---
+  const now = new Date();
+  const dow = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  weekStart.setHours(0, 0, 0, 0);
+
+  const { data: weekSessions } = await supabase
+    .from("workout_sessions")
+    .select("id")
+    .eq("user_id", userId)
+    .gte("started_at", weekStart.toISOString())
+    .not("ended_at", "is", null);
+
+  if ((weekSessions ?? []).length > 0) {
+    const wsIds = (weekSessions as Array<{ id: string }>).map((s) => s.id);
+    const { data: weekSets } = await supabase
+      .from("session_sets")
+      .select("weight_kg, reps")
+      .in("session_id", wsIds);
+
+    const volume = ((weekSets ?? []) as Array<{ weight_kg: number | null; reps: number | null }>)
+      .reduce((sum, s) => sum + (s.weight_kg ?? 0) * (s.reps ?? 0), 0);
+
+    if (volume >= 10000) await unlock("volume_king");
+  }
+
+  // --- Bodyweight-based achievements (requires bodyweight from measurements) ---
+  if (bodyweight === null || bodyweight <= 0) return;
+
+  // Check all-time max PRs per exercise category against current bodyweight
+  const exerciseCategories = [
+    { pattern: /^squat$/i,               slugs: ["squat_bodyweight", "squat_1_5x", "squat_2x"],             ratios: [1.0, 1.5, 2.0] },
+    { pattern: /deadlift|rdl|romanian/i, slugs: ["deadlift_1x", "deadlift_1_75x", "deadlift_2_5x"],         ratios: [1.0, 1.75, 2.5] },
+    { pattern: /bench press/i,           slugs: ["bench_0_75x", "bench_1x", "bench_1_25x"],                 ratios: [0.75, 1.0, 1.25] },
+  ];
+
+  for (const cat of exerciseCategories) {
+    const { data: exercises } = await supabase
+      .from("exercises")
+      .select("id, name");
+
+    const matchIds = ((exercises ?? []) as Array<{ id: string; name: string }>)
+      .filter((e) => cat.pattern.test(e.name))
+      .map((e) => e.id);
+
+    if (!matchIds.length) continue;
+
+    const { data: allPRs } = await supabase
+      .from("personal_records")
+      .select("weight_kg")
+      .eq("user_id", userId)
+      .in("exercise_id", matchIds)
+      .eq("pr_type", "load")
+      .order("weight_kg", { ascending: false })
+      .limit(1);
+
+    const maxKg = ((allPRs ?? []) as Array<{ weight_kg: number | null }>)[0]?.weight_kg ?? 0;
+    if (!maxKg) continue;
+
+    const ratio = maxKg / bodyweight;
+    for (let i = 0; i < cat.ratios.length; i++) {
+      if (ratio >= cat.ratios[i]) await unlock(cat.slugs[i]);
+    }
+  }
+
+  // --- Pull-up achievements ---
+  const { data: pullupExercises } = await supabase
+    .from("exercises")
+    .select("id")
+    .ilike("name", "%pull%up%");
+
+  if ((pullupExercises ?? []).length > 0) {
+    const puIds = (pullupExercises as Array<{ id: string }>).map((e) => e.id);
+    const { data: puPRs } = await supabase
+      .from("personal_records")
+      .select("reps, weight_kg")
+      .eq("user_id", userId)
+      .in("exercise_id", puIds);
+
+    const maxReps = Math.max(
+      0,
+      ...((puPRs ?? []) as Array<{ reps: number | null }>).map((p) => p.reps ?? 0)
+    );
+    const maxWeight = Math.max(
+      0,
+      ...((puPRs ?? []) as Array<{ weight_kg: number | null }>).map((p) => p.weight_kg ?? 0)
+    );
+
+    if (maxReps >= 1) await unlock("pullup_1");
+    if (maxReps >= 10) await unlock("pullup_10");
+    if (maxWeight >= 20) await unlock("pullup_weighted_20");
+  }
 }
 
 // ---------- Deload detection ----------
