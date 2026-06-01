@@ -1,177 +1,181 @@
-import {
-  Dumbbell,
-  Flame,
-  Moon,
-  Heart,
-  BarChart2,
-  Sparkles,
-  Activity,
-} from "lucide-react";
+import { redirect } from "next/navigation";
+import { createServerClient } from "@/lib/supabase/server";
+import { DashboardContent } from "./_components/DashboardContent";
 
-export default function DashboardPage() {
-  return (
-    <div className="flex flex-col gap-4 md:gap-5">
-      <DashboardGreeting />
-      <DashboardGrid />
-    </div>
-  );
+function getWeekStart(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
 }
 
-function DashboardGreeting() {
+export default async function DashboardPage() {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const weekStart = getWeekStart();
+  const weekStartDate = weekStart.toISOString().split("T")[0];
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const [
+    profileResult,
+    workoutsThisWeek,
+    habitsResult,
+    habitLogsResult,
+    sleepThisWeek,
+    moodThisWeek,
+    sleepLast7,
+    restingHRResult,
+    hrvResult,
+    workoutDatesResult,
+    aiInsightResult,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("username, streak_current, dashboard_layout")
+      .eq("id", user.id)
+      .single(),
+
+    supabase
+      .from("workout_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("started_at", weekStart.toISOString()),
+
+    supabase
+      .from("habits")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("archived_at", null),
+
+    supabase
+      .from("habit_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("logged_date", weekStartDate)
+      .eq("completed", true),
+
+    supabase
+      .from("sleep_logs")
+      .select("duration_hrs")
+      .eq("user_id", user.id)
+      .gte("logged_date", weekStartDate),
+
+    supabase
+      .from("mood_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("logged_date", weekStartDate)
+      .gte("score", 3),
+
+    supabase
+      .from("sleep_logs")
+      .select("duration_hrs, quality_score, logged_date")
+      .eq("user_id", user.id)
+      .order("logged_date", { ascending: false })
+      .limit(7),
+
+    supabase
+      .from("health_metrics")
+      .select("value")
+      .eq("user_id", user.id)
+      .eq("metric_type", "resting_hr")
+      .order("logged_date", { ascending: false })
+      .limit(1),
+
+    supabase
+      .from("health_metrics")
+      .select("value")
+      .eq("user_id", user.id)
+      .eq("metric_type", "hrv")
+      .order("logged_date", { ascending: false })
+      .limit(1),
+
+    supabase
+      .from("workout_sessions")
+      .select("started_at")
+      .eq("user_id", user.id)
+      .gte("started_at", sixMonthsAgo.toISOString()),
+
+    supabase
+      .from("ai_insights")
+      .select("title, body, category")
+      .eq("user_id", user.id)
+      .is("dismissed_at", null)
+      .order("generated_at", { ascending: false })
+      .limit(1),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = profileResult.data as any;
+  const rawUsername: string = profile?.username ?? user.email?.split("@")[0] ?? "there";
+  const firstName = rawUsername.trim().split(/\s+/)[0];
+
+  const workoutCount = workoutsThisWeek.count ?? 0;
+  const habitTotal = habitsResult.count ?? 0;
+  const habitLogs = habitLogsResult.count ?? 0;
+
+  const sleepThisWeekRows = (sleepThisWeek.data ?? []) as { duration_hrs: number | null }[];
+  const sleepNights7hrs = sleepThisWeekRows.filter(
+    (s) => (s.duration_hrs ?? 0) >= 7
+  ).length;
+  const moodDaysThisWeek = moodThisWeek.count ?? 0;
+
+  const sleepLast7Rows = (sleepLast7.data ?? []) as {
+    duration_hrs: number | null;
+    quality_score: number | null;
+    logged_date: string;
+  }[];
+  const sleepSparkline = [...sleepLast7Rows]
+    .reverse()
+    .map((s) => s.duration_hrs ?? 0);
+  const lastSleep = sleepLast7Rows[0] ?? null;
+
+  const restingHRVal = (restingHRResult.data ?? [])[0]?.value ?? null;
+  const hrvVal = (hrvResult.data ?? [])[0]?.value ?? null;
+
+  const workoutDates = (
+    (workoutDatesResult.data ?? []) as { started_at: string }[]
+  ).map((w) => w.started_at.split("T")[0]);
+
+  const aiInsightRow = (aiInsightResult.data ?? [])[0] as
+    | { title: string; body: string; category: string }
+    | undefined;
+
+  const rawLayout = profile?.dashboard_layout;
+  const dashboardLayout =
+    rawLayout &&
+    typeof rawLayout === "object" &&
+    Array.isArray(rawLayout.cards)
+      ? (rawLayout as { cards: string[]; hidden: string[] })
+      : null;
+
   return (
-    <div className="flex flex-col gap-1">
-      <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">
-        Welcome to Crest.
-      </h1>
-      <p className="text-13 text-text-secondary">
-        Start logging to see your stats here.
-      </p>
-    </div>
-  );
-}
-
-function DashboardGrid() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="sm:col-span-2">
-        <WeeklyRingEmpty />
-      </div>
-      <StreakCardEmpty />
-
-      <StatCardEmpty label="Sleep" unit="hrs" icon={Moon} />
-      <StatCardEmpty label="Resting HR" unit="bpm" icon={Heart} />
-      <StatCardEmpty label="Workouts" unit="/ wk" icon={Dumbbell} />
-
-      <div className="sm:col-span-3">
-        <HeatmapEmpty />
-      </div>
-
-      <div className="sm:col-span-2">
-        <AIInsightEmpty />
-      </div>
-
-      <StatCardEmpty label="HRV" unit="ms" icon={Activity} />
-    </div>
-  );
-}
-
-function EmptyCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-r5 border border-border bg-bg-surface ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-function EmptyHint({ text }: { text: string }) {
-  return (
-    <p className="text-11 text-text-muted">{text}</p>
-  );
-}
-
-function WeeklyRingEmpty() {
-  const rings = [
-    { label: "Workouts", color: "var(--color-accent)" },
-    { label: "Habits", color: "var(--color-success)" },
-    { label: "Sleep ≥ 7 hr", color: "var(--color-warning)" },
-    { label: "Mood ≥ 3", color: "var(--color-info)" },
-  ];
-
-  return (
-    <EmptyCard className="p-5 h-48 flex items-center gap-6">
-      <div className="w-32 h-32 rounded-full border-4 border-bg-elevated flex-shrink-0 flex items-center justify-center">
-        <span className="font-mono text-13 text-text-muted">0%</span>
-      </div>
-      <div className="flex flex-col gap-3 flex-1">
-        {rings.map((r) => (
-          <div key={r.label} className="flex items-center gap-2">
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0 opacity-30"
-              style={{ background: r.color }}
-            />
-            <span className="text-13 text-text-muted">{r.label}</span>
-            <span className="ml-auto font-mono text-11 text-text-disabled">— / —</span>
-          </div>
-        ))}
-      </div>
-    </EmptyCard>
-  );
-}
-
-function StreakCardEmpty() {
-  return (
-    <EmptyCard className="p-5 h-48 flex flex-col items-center justify-center gap-3">
-      <Flame size={28} className="text-text-disabled" />
-      <span className="font-mono text-32 font-medium text-text-disabled">0</span>
-      <EmptyHint text="Log daily to build your streak" />
-    </EmptyCard>
-  );
-}
-
-interface StatCardEmptyProps {
-  label: string;
-  unit: string;
-  icon: React.ElementType;
-}
-
-function StatCardEmpty({ label, unit, icon: Icon }: StatCardEmptyProps) {
-  return (
-    <EmptyCard className="p-5 h-36 flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">
-          {label}
-        </span>
-        <Icon size={14} className="text-text-disabled" />
-      </div>
-      <div className="flex items-end gap-1.5">
-        <span className="font-mono text-32 font-medium text-text-disabled">—</span>
-        <span className="text-13 text-text-muted mb-1">{unit}</span>
-      </div>
-      <div className="h-1.5 rounded-pill bg-bg-elevated" />
-    </EmptyCard>
-  );
-}
-
-function HeatmapEmpty() {
-  return (
-    <EmptyCard className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">
-          Activity · 6 months
-        </span>
-        <BarChart2 size={14} className="text-text-disabled" />
-      </div>
-      <div className="flex gap-1">
-        {Array.from({ length: 26 }).map((_, w) => (
-          <div key={w} className="flex flex-col gap-1 flex-1">
-            {Array.from({ length: 7 }).map((_, d) => (
-              <div
-                key={d}
-                className="aspect-square rounded-r1 bg-bg-elevated"
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </EmptyCard>
-  );
-}
-
-function AIInsightEmpty() {
-  return (
-    <EmptyCard className="p-5 flex items-start gap-4">
-      <div className="w-8 h-8 rounded-r3 bg-bg-elevated flex items-center justify-center flex-shrink-0">
-        <Sparkles size={15} className="text-text-disabled" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <span className="text-13 font-semibold text-text-secondary">
-          AI insights will appear here
-        </span>
-        <p className="text-13 text-text-muted">
-          Log workouts, sleep, mood, and habits for a week — your first insight
-          will surface automatically.
-        </p>
-      </div>
-    </EmptyCard>
+    <DashboardContent
+      username={firstName}
+      streak={profile?.streak_current ?? 0}
+      dashboardLayout={dashboardLayout}
+      workoutCount={workoutCount}
+      workoutTarget={4}
+      habitTotal={habitTotal}
+      habitLogs={habitLogs}
+      sleepNights7hrs={sleepNights7hrs}
+      moodDaysThisWeek={moodDaysThisWeek}
+      lastSleepDuration={lastSleep?.duration_hrs ?? null}
+      lastSleepQuality={lastSleep?.quality_score ?? null}
+      sleepSparkline={sleepSparkline}
+      restingHR={restingHRVal !== null ? Number(restingHRVal) : null}
+      hrv={hrvVal !== null ? Number(hrvVal) : null}
+      workoutDates={workoutDates}
+      aiInsight={aiInsightRow ?? null}
+    />
   );
 }
