@@ -23,6 +23,7 @@ const TAB_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: stri
 ];
 
 const MORE_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
+  { id: "nutrition",    label: "Nutrition",   icon: Utensils, href: "/nutrition" },
   { id: "journal",      label: "Journal",     icon: PenLine,  href: "/journal" },
   { id: "goals",        label: "Goals",       icon: Target,   href: "/goals" },
   { id: "achievements", label: "Trophy room", icon: Trophy,   href: "/achievements" },

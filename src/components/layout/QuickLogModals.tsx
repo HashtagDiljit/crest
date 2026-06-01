@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import {
-  quickLogWater, quickLogMood, quickLogFood, getTodayProtein,
+  quickLogWater, quickLogMood,
   quickLogWeight, quickLogSleep, quickLogNote,
 } from "@/app/(dashboard)/quick-log-actions";
+import { MealLoggerModal } from "@/app/(dashboard)/nutrition/_components/MealLoggerModal";
 
 // ─── shared shell ─────────────────────────────────────────────────────────────
 
@@ -135,99 +136,10 @@ export function MoodModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Food / Protein ───────────────────────────────────────────────────────────
-
-const PROTEIN_TARGET = 140;
-const FOOD_PRESETS = [
-  { key: "oats_protein", label: "Oats + protein", protein: 35 },
-  { key: "eggs_3", label: "3 eggs", protein: 18 },
-  { key: "whey_shake", label: "Whey shake", protein: 25 },
-  { key: "chapatti_curry", label: "Chapatti + curry", protein: 15 },
-  { key: "greek_yogurt", label: "Greek yogurt", protein: 15 },
-  { key: "paneer_100g", label: "Paneer 100g", protein: 18 },
-  { key: "dal_lentils", label: "Dal/lentils", protein: 12 },
-  { key: "other", label: "Other…", protein: 0 },
-];
+// ─── Food / Protein — delegates to full MealLoggerModal ──────────────────────
 
 export function FoodModal({ onClose }: { onClose: () => void }) {
-  const [todayProtein, setTodayProtein] = useState(0);
-  const [added, setAdded] = useState(0);
-  const [customName, setCustomName] = useState("");
-  const [customProtein, setCustomProtein] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    getTodayProtein().then(setTodayProtein);
-  }, []);
-
-  async function addPreset(preset: typeof FOOD_PRESETS[0]) {
-    if (preset.key === "other") { setShowCustom(true); return; }
-    setSaving(true);
-    await quickLogFood(preset.key, preset.protein, preset.label);
-    setAdded((p) => p + preset.protein);
-    setSaving(false);
-  }
-
-  async function addCustom() {
-    const p = parseFloat(customProtein) || 0;
-    setSaving(true);
-    await quickLogFood("other", p, customName || "Custom");
-    setAdded((prev) => prev + p);
-    setShowCustom(false);
-    setCustomName("");
-    setCustomProtein("");
-    setSaving(false);
-  }
-
-  const total = todayProtein + added;
-  const pct = Math.min(100, (total / PROTEIN_TARGET) * 100);
-
-  return (
-    <Modal title="Log protein" onClose={onClose}>
-      <div className="flex flex-col gap-4">
-        {/* Running total */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-12">
-            <span className="text-text-secondary">Today&apos;s protein</span>
-            <span className="font-mono font-semibold" style={{ color: pct >= 100 ? "var(--color-success)" : "var(--color-text-primary)" }}>
-              {Math.round(total)}g / {PROTEIN_TARGET}g
-            </span>
-          </div>
-          <div className="h-2 rounded-pill bg-bg-elevated overflow-hidden">
-            <div className="h-full rounded-pill bg-accent transition-all duration-500" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-
-        {showCustom ? (
-          <div className="flex flex-col gap-2">
-            <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Meal name" className="rounded-r3 border border-border bg-bg-base px-3 py-2 text-13 text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors" />
-            <div className="flex gap-2 items-center">
-              <input type="number" value={customProtein} onChange={(e) => setCustomProtein(e.target.value)} placeholder="Protein (g)" className="flex-1 rounded-r3 border border-border bg-bg-base px-3 py-2 text-13 text-text-primary outline-none focus:border-accent transition-colors" />
-              <button onClick={addCustom} disabled={saving} className="px-4 py-2 rounded-r3 bg-accent text-white text-12 font-semibold disabled:opacity-50">Add</button>
-              <button onClick={() => setShowCustom(false)} className="px-3 py-2 rounded-r3 border border-border text-text-muted text-12 hover:text-text-primary transition-colors">✕</button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-1.5">
-            {FOOD_PRESETS.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => addPreset(p)}
-                disabled={saving}
-                className="flex items-center justify-between px-3 py-2 rounded-r3 border border-border bg-bg-elevated hover:border-border-strong text-left text-12 transition-colors disabled:opacity-50"
-              >
-                <span className="text-text-primary">{p.label}</span>
-                {p.protein > 0 && <span className="font-mono text-11 text-accent">+{p.protein}g</span>}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <button onClick={onClose} className="w-full py-2 rounded-r3 border border-border text-text-muted text-12 hover:text-text-secondary transition-colors">Done</button>
-      </div>
-    </Modal>
-  );
+  return <MealLoggerModal onClose={onClose} />;
 }
 
 // ─── Weight ───────────────────────────────────────────────────────────────────

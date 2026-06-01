@@ -15,13 +15,14 @@ import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
 const NAV_PRIMARY: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { id: "workouts",  label: "Workouts",  icon: Dumbbell,         href: "/workouts" },
-  { id: "health",    label: "Health",    icon: Heart,            href: "/health" },
-  { id: "habits",    label: "Habits",    icon: Target,           href: "/habits" },
-  { id: "mood",      label: "Mood",      icon: Smile,            href: "/mood" },
-  { id: "journal",   label: "Journal",   icon: PenLine,          href: "/journal" },
-  { id: "goals",     label: "Goals",     icon: Target,           href: "/goals" },
+  { id: "dashboard",  label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
+  { id: "workouts",   label: "Workouts",   icon: Dumbbell,        href: "/workouts" },
+  { id: "health",     label: "Health",     icon: Heart,           href: "/health" },
+  { id: "nutrition",  label: "Nutrition",  icon: Utensils,        href: "/nutrition" },
+  { id: "habits",     label: "Habits",     icon: Target,          href: "/habits" },
+  { id: "mood",       label: "Mood",       icon: Smile,           href: "/mood" },
+  { id: "journal",    label: "Journal",    icon: PenLine,         href: "/journal" },
+  { id: "goals",      label: "Goals",      icon: Target,          href: "/goals" },
 ];
 
 const NAV_PROGRESS: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [

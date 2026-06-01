@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getProfilePrefs } from "./actions";
+import { getNutritionSettings } from "@/app/(dashboard)/nutrition/actions";
 import { AccountSection } from "./_components/AccountSection";
 import { AppearanceSection } from "./_components/AppearanceSection";
 import { UnitsSection } from "./_components/UnitsSection";
 import { NotificationsSection } from "./_components/NotificationsSection";
 import { DataPrivacySection } from "./_components/DataPrivacySection";
+import { NutritionSection } from "./_components/NutritionSection";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,10 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const prefs = await getProfilePrefs();
+  const [prefs, nutritionSettings] = await Promise.all([
+    getProfilePrefs(),
+    getNutritionSettings(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
@@ -37,6 +42,10 @@ export default async function SettingsPage() {
 
       <Section id="notifications" title="Notifications">
         <NotificationsSection prefs={prefs?.notification_preferences as Record<string, boolean> | null} />
+      </Section>
+
+      <Section id="nutrition" title="Nutrition">
+        <NutritionSection settings={nutritionSettings} />
       </Section>
 
       <Section id="data" title="Data & Privacy">
