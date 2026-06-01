@@ -82,19 +82,19 @@ html, body {
   --topbar-bg: rgba(22, 22, 30, 0.82);
 }
 
-/* Dashboard main area — applies sidebar offset at lg+ with smooth transition */
+/* Dashboard main area — correct sidebar offset on desktop */
 .dashboard-main {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  transition: margin-left 0.2s ease;
 }
 
 @media (min-width: 1024px) {
   .dashboard-main {
     margin-left: var(--sidebar-w, 240px);
+    width: calc(100% - var(--sidebar-w, 240px));
+    transition: margin-left 0.2s ease, width 0.2s ease;
   }
 }
 

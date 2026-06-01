@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { ThemeInit } from "@/components/ThemeInit";
 
 export const metadata: Metadata = {
   title: "Crest",
@@ -18,7 +19,10 @@ export default function RootLayout({
         {/* Inline script prevents flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <ThemeInit />
+        {children}
+      </body>
     </html>
   );
 }
