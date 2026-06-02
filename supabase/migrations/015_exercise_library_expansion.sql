@@ -28,11 +28,11 @@ INSERT INTO exercises (name, category, muscle_primary, muscle_secondary, equipme
 -- ── Forearms ──────────────────────────────────────────────────────────────────
 ('Reverse Curl (Barbell)',   'forearms','forearms',ARRAY['biceps'],              'barbell',   false, null),
 ('Reverse Curl (Dumbbell)', 'forearms','forearms',ARRAY['biceps'],              'dumbbell',  false, null),
-('Wrist Curl (Dumbbell)',    'forearms','forearms',ARRAY[],                     'dumbbell',  false, null),
-('Wrist Extension (Dumbbell)','forearms','forearms',ARRAY[],                   'dumbbell',  false, null),
+('Wrist Curl (Dumbbell)',    'forearms','forearms',ARRAY[]::text[],                     'dumbbell',  false, null),
+('Wrist Extension (Dumbbell)','forearms','forearms',ARRAY[]::text[],                   'dumbbell',  false, null),
 ('Farmer Carry',             'forearms','forearms',ARRAY['traps','core','quads'],'dumbbell', false, null),
 ('Dead Hang',                'forearms','forearms',ARRAY['shoulders','lats'],   'pullup_bar',false, null),
-('Pinch Grip Hold',          'forearms','forearms',ARRAY[],                     'plate',     false, null),
+('Pinch Grip Hold',          'forearms','forearms',ARRAY[]::text[],                     'plate',     false, null),
 
 -- ── Cardio / Conditioning ──────────────────────────────────────────────────────
 ('Stairmaster',    'cardio','quads',    ARRAY['glutes','calves'],               'machine',   false, null),
@@ -53,7 +53,7 @@ INSERT INTO exercises (name, category, muscle_primary, muscle_secondary, equipme
 -- ── Mobility / Warm-up ────────────────────────────────────────────────────────
 ('90/90 Hip Stretch',      'mobility','hip_flexors',ARRAY['glutes','adductors'],'bodyweight',false,null),
 ('Hip Circle',             'mobility','hip_flexors',ARRAY['glutes'],            'bodyweight',false, null),
-('Ankle Circle',           'mobility','calves',     ARRAY[],                   'bodyweight',false, null),
+('Ankle Circle',           'mobility','calves',     ARRAY[]::text[],                   'bodyweight',false, null),
 ('Thoracic Rotation',      'mobility','upper_back', ARRAY['core'],             'bodyweight',false, null),
 ('Wall Slide',             'mobility','shoulders',  ARRAY['upper_back'],       'bodyweight',false, null),
 ('Scapular Push-up',       'mobility','upper_back', ARRAY['shoulders','serratus'],'bodyweight',false,null),
