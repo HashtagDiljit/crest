@@ -8,6 +8,7 @@ import {
   saveOnboardingHabits,
   saveOnboardingWorkoutSplit,
   completeOnboarding,
+  trackOnboardingStep,
 } from "../actions";
 
 const TOTAL_STEPS = 6;
@@ -184,7 +185,7 @@ function Step1({ firstName, onNext }: { firstName: string; onNext: () => void })
 
 // ─── step 2: stats ────────────────────────────────────────────────────────────
 
-function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function Step2({ onNext, onSkip, onBack }: { onNext: () => void; onSkip: () => void; onBack: () => void }) {
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -198,9 +199,9 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   return (
     <Shell step={2} onBack={onBack}>
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-22 font-semibold text-text-primary">Your stats</h2>
+        <h2 className="font-display text-22 font-semibold text-text-primary">Your stats <span className="text-13 font-normal text-text-muted ml-1">(optional)</span></h2>
         <p className="text-13 text-text-secondary">
-          Used for BMI, body fat estimates, and personalised targets.
+          Used for BMI, body fat estimates, and personalised targets. You can fill this in later from Health settings.
         </p>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -245,13 +246,18 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
             ))}
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold disabled:opacity-50 transition-colors"
-        >
-          {saving ? "Saving…" : "Continue"}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold disabled:opacity-50 transition-colors"
+          >
+            {saving ? "Saving…" : "Continue"}
+          </button>
+          <button type="button" onClick={onSkip} className="w-full py-2.5 rounded-r3 border border-border text-13 text-text-secondary hover:bg-bg-elevated transition-colors">
+            Skip for now
+          </button>
+        </div>
       </form>
     </Shell>
   );
@@ -638,7 +644,15 @@ export function OnboardingFlow({ firstName }: { firstName: string }) {
 
   function advance(from: number) {
     setCompletedSteps((s) => { const n = new Set(s); n.add(from); return n; });
-    setStep((s) => s + 1);
+    const next = from + 1;
+    setStep(next);
+    trackOnboardingStep(next).catch(() => {});
+  }
+
+  function skip(from: number) {
+    const next = from + 1;
+    setStep(next);
+    trackOnboardingStep(next).catch(() => {});
   }
 
   function goBack() {
@@ -646,7 +660,7 @@ export function OnboardingFlow({ firstName }: { firstName: string }) {
   }
 
   if (step === 1) return <Step1 firstName={firstName} onNext={() => advance(1)} />;
-  if (step === 2) return <Step2 onNext={() => advance(2)} onBack={goBack} />;
+  if (step === 2) return <Step2 onNext={() => advance(2)} onSkip={() => skip(2)} onBack={goBack} />;
   if (step === 3) return <Step3 onNext={() => advance(3)} onBack={goBack} />;
   if (step === 4) return <Step4 onNext={() => advance(4)} onBack={goBack} />;
   if (step === 5) return <Step5 onNext={() => advance(5)} onBack={goBack} />;

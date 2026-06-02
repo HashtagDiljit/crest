@@ -163,6 +163,25 @@ export async function getRecentMeals(): Promise<Array<{ meal_name: string; prote
   return result;
 }
 
+export interface FoodPreset {
+  id: string;
+  name: string;
+  category: string;
+  meal_type: string;
+  protein_g: number;
+}
+
+export async function getGlobalFoodPresets(): Promise<FoodPreset[]> {
+  const supabase = await createServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("food_presets") as any)
+    .select("id, name, category, meal_type, protein_g")
+    .is("user_id", null)
+    .order("category")
+    .order("name");
+  return (data ?? []) as FoodPreset[];
+}
+
 export async function getNutritionSettings(): Promise<NutritionSettings> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

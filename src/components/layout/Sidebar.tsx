@@ -47,7 +47,7 @@ function isActive(href: string, pathname: string): boolean {
 const EXPANDED_W = 240;
 const COLLAPSED_W = 64;
 
-export function Sidebar() {
+export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   const pathname = usePathname();
   const [openModal, setOpenModal] = useState<ModalKey>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -73,7 +73,7 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className="hidden lg:flex bg-bg-inset border-r border-border flex-col h-full overflow-y-auto overflow-x-hidden fixed left-0 top-0 bottom-0 z-20 transition-[width] duration-200"
+        className="hidden md:flex bg-bg-inset border-r border-border flex-col h-full overflow-y-auto overflow-x-hidden fixed left-0 top-0 bottom-0 z-20 transition-[width] duration-200"
         style={{ width: c ? COLLAPSED_W : EXPANDED_W }}
       >
         {/* Brand */}
@@ -84,7 +84,7 @@ export function Sidebar() {
 
         {/* Primary nav */}
         <nav className={`flex flex-col gap-0.5 ${c ? "px-2" : "px-3.5"}`}>
-          {NAV_PRIMARY.map((item) => {
+          {NAV_PRIMARY.filter((item) => !hiddenNavIds.includes(item.id)).map((item) => {
             const active = isActive(item.href, pathname);
             const Icon = item.icon;
             return (

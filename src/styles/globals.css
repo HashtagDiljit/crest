@@ -95,7 +95,7 @@ html, body {
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .dashboard-main {
     margin-left: var(--sidebar-w, 240px);
     width: calc(100% - var(--sidebar-w, 240px));

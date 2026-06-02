@@ -4,6 +4,9 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ConsentGate } from "@/components/ConsentGate";
+import { getConsent } from "@/app/(dashboard)/consent/actions";
+import { CONSENT_VERSION } from "@/app/(dashboard)/consent/types";
 
 export default async function DashboardLayout({
   children,
@@ -39,6 +42,15 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  const consent = await getConsent();
+  const needsConsent = !consent || consent.consent_version !== CONSENT_VERSION;
+
+  // Nav items hidden based on consent choices
+  const hiddenNavIds: string[] = [];
+  if (!consent?.mental_emotional) {
+    hiddenNavIds.push("mood", "journal");
+  }
+
   const username = profile?.username ?? user!.email?.split("@")[0] ?? "You";
   const parts = username.trim().split(/\s+/);
   const initials = parts.length >= 2
@@ -52,27 +64,29 @@ export default async function DashboardLayout({
   return (
     <>
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
-      <div className="flex min-h-screen bg-bg-base">
-        <Sidebar />
-        {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
-        <div className="dashboard-main">
-          <TopBar
-            level={level}
-            xp={xp}
-            xpNeeded={xpNeeded}
-            streak={streak}
-            username={username}
-            initials={initials}
-            avatarUrl={profile?.avatar_url ?? null}
-          />
-          <main className="flex-1 overflow-y-auto">
-            <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
-              {children}
-            </div>
-          </main>
+      <ConsentGate needsConsent={needsConsent}>
+        <div className="flex min-h-screen bg-bg-base">
+          <Sidebar hiddenNavIds={hiddenNavIds} />
+          {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
+          <div className="dashboard-main">
+            <TopBar
+              level={level}
+              xp={xp}
+              xpNeeded={xpNeeded}
+              streak={streak}
+              username={username}
+              initials={initials}
+              avatarUrl={profile?.avatar_url ?? null}
+            />
+            <main className="flex-1 overflow-y-auto">
+              <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
-      <BottomTabBar />
+        <BottomTabBar />
+      </ConsentGate>
     </>
   );
 }

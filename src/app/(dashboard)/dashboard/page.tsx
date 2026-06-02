@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("username, streak_current, dashboard_layout")
+      .select("username, streak_current, dashboard_layout, onboarding_step_reached")
       .eq("id", user.id)
       .single(),
 
@@ -222,10 +222,15 @@ export default async function DashboardPage() {
       ? (rawLayout as { cards: string[]; hidden: string[] })
       : null;
 
+  const onboardingStepReached: number = profile?.onboarding_step_reached ?? 6;
+  // Steps 2–5 are the optional setup steps; step 6 = complete
+  const setupPct = Math.min(100, Math.round(((onboardingStepReached - 1) / 5) * 100));
+
   return (
     <DashboardContent
       username={firstName}
       streak={profile?.streak_current ?? 0}
+      setupPct={setupPct}
       dashboardLayout={dashboardLayout}
       workoutCount={workoutCount}
       workoutTarget={4}

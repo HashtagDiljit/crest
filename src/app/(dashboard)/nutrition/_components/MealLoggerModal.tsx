@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Check, ChevronRight } from "lucide-react";
-import { logMeal, getRecentMeals } from "../actions";
+import { useState, useEffect, useMemo } from "react";
+import { X, Check, ChevronRight, Search } from "lucide-react";
+import { logMeal, getRecentMeals, getGlobalFoodPresets } from "../actions";
+import type { FoodPreset } from "../actions";
 import { getTodayProtein } from "@/app/(dashboard)/quick-log-actions";
 
 type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
@@ -66,11 +67,20 @@ export function MealLoggerModal({
   const [saving, setSaving]           = useState(false);
   const [recentlySaved, setRecentlySaved] = useState<string | null>(null);
   const [recentMeals, setRecentMeals] = useState<Array<{ meal_name: string; protein_g: number; food_preset: string | null }>>([]);
+  const [foodDb, setFoodDb]           = useState<FoodPreset[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     getTodayProtein().then(setTodayProtein);
     getRecentMeals().then(setRecentMeals);
+    getGlobalFoodPresets().then(setFoodDb);
   }, []);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return foodDb.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [searchQuery, foodDb]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
@@ -224,6 +234,46 @@ export function MealLoggerModal({
             <div className="flex items-center gap-2 px-3 py-2 rounded-r3 bg-[var(--color-success-soft,rgba(52,211,153,0.15))] text-12 text-text-secondary">
               <Check size={14} className="text-[var(--color-success)]" />
               <span><span className="font-medium text-text-primary">{recentlySaved}</span> logged — add another?</span>
+            </div>
+          )}
+
+          {/* Food database search */}
+          {!showCustom && (
+            <div className="flex flex-col gap-1.5">
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setSelected(null); }}
+                  placeholder="Search food database…"
+                  className="w-full rounded-r3 border border-border bg-bg-base pl-8 pr-3 py-2 text-13 text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors"
+                />
+              </div>
+              {searchResults.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  {searchResults.map((f) => {
+                    const isSelected = selected?.key === `db:${f.id}`;
+                    const protein = Math.round(f.protein_g * portion * 10) / 10;
+                    return (
+                      <button
+                        key={f.id}
+                        onClick={() => setSelected(isSelected ? null : { key: `db:${f.id}`, label: f.name, protein: f.protein_g })}
+                        className={`flex items-center justify-between px-3 py-2 rounded-r3 border text-left transition-colors ${isSelected ? "border-[var(--color-accent-ring)] bg-[var(--color-accent-soft)]" : "border-border bg-bg-elevated hover:border-border-strong"}`}
+                      >
+                        <div>
+                          <span className={`text-13 ${isSelected ? "text-text-primary font-medium" : "text-text-secondary"}`}>{f.name}</span>
+                          <span className="text-10 text-text-muted ml-2">{f.category}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-12 text-accent">+{protein}g</span>
+                          {isSelected && <Check size={14} className="text-accent" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

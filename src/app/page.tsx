@@ -233,13 +233,15 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8">
-        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <CrestLogo size={20} />
             <span className="font-display text-14 font-semibold text-text-secondary">Crest</span>
             <span className="text-13 text-text-disabled ml-1">— Your personal life OS</span>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-5 flex-wrap justify-center">
+            <Link href="/privacy" className="text-13 text-text-muted hover:text-text-secondary transition-colors">Privacy policy</Link>
+            <Link href="/terms" className="text-13 text-text-muted hover:text-text-secondary transition-colors">Terms</Link>
             <Link href="/login" className="text-13 text-text-muted hover:text-text-secondary transition-colors">Sign in</Link>
             <Link href="/signup" className="text-13 text-accent hover:text-accent-hover transition-colors">Get started free</Link>
           </div>

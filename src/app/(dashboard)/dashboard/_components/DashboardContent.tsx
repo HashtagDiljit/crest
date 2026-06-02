@@ -20,6 +20,7 @@ import {
   EyeOff,
   X,
 } from "lucide-react";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { saveDashboardLayout } from "../actions";
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ import { saveDashboardLayout } from "../actions";
 export interface DashboardData {
   username: string;
   streak: number;
+  setupPct: number;
   dashboardLayout: { cards: string[]; hidden: string[] } | null;
   workoutCount: number;
   workoutTarget: number;
@@ -301,6 +303,41 @@ function SleepCard({
 
 // ─── weekly digest card ───────────────────────────────────────────────────────
 
+function SetupCard({ pct }: { pct: number }) {
+  const steps = [
+    { label: "Stats saved", href: "/settings#account" },
+    { label: "Goals added", href: "/goals" },
+    { label: "Habits created", href: "/habits" },
+    { label: "Workout split configured", href: "/settings#training" },
+  ];
+  const done = Math.floor((pct / 100) * steps.length);
+
+  return (
+    <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-3" style={{ borderLeftColor: "var(--color-accent)", borderLeftWidth: 3 }}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-13 font-semibold text-text-primary">Your setup is {pct}% complete</p>
+          <p className="text-12 text-text-muted mt-0.5">Finish setting up Crest to unlock all features.</p>
+        </div>
+        <span className="font-mono text-22 font-bold" style={{ color: pct >= 75 ? "var(--color-success)" : "var(--color-accent)" }}>{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill bg-accent transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        {steps.map((s, i) => (
+          <a key={s.label} href={s.href} className={`flex items-center gap-1.5 text-11 transition-colors ${i < done ? "text-success" : "text-text-muted hover:text-text-secondary"}`}>
+            <span className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 flex items-center justify-center ${i < done ? "bg-success border-success" : "border-border"}`}>
+              {i < done && <span className="text-[8px] text-white font-bold">✓</span>}
+            </span>
+            {s.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function WeeklyDigestCard({ digest, onDismiss }: { digest: DashboardData["lastWeekDigest"]; onDismiss: () => void }) {
   const items: Array<{ label: string; value: string | null }> = [
     { label: "Workouts", value: `${digest.workouts} sessions` },
@@ -352,6 +389,11 @@ function WeeklyDigestCard({ digest, onDismiss }: { digest: DashboardData["lastWe
 
 // ─── stat card ────────────────────────────────────────────────────────────────
 
+const STAT_TOOLTIPS: Record<string, string> = {
+  HRV: "Heart Rate Variability — higher values generally indicate better recovery. Track your trend over time, not the absolute number.",
+  "Resting HR": "Resting heart rate. Lower typically indicates better cardiovascular fitness (normal range: 60–100 bpm).",
+};
+
 function StatCard({
   label,
   value,
@@ -366,8 +408,9 @@ function StatCard({
   return (
     <Card className="p-5 h-36 flex flex-col justify-between">
       <div className="flex items-center justify-between">
-        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1">
           {label}
+          {STAT_TOOLTIPS[label] && <InfoTooltip text={STAT_TOOLTIPS[label]} size={10} />}
         </span>
         <Icon size={14} className="text-text-disabled" />
       </div>
@@ -826,6 +869,10 @@ export function DashboardContent(props: DashboardData) {
 
       {showDigest && (
         <WeeklyDigestCard digest={props.lastWeekDigest} onDismiss={dismissDigest} />
+      )}
+
+      {props.setupPct < 100 && (
+        <SetupCard pct={props.setupPct} />
       )}
 
       {editMode ? (
