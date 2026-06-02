@@ -65,6 +65,13 @@ export async function logMeal(
   isPreset: boolean,
   foodPreset: string | null,
   portionMultiplier: number,
+  extras?: {
+    caloriesKcal?: number;
+    carbsG?: number;
+    fatG?: number;
+    fdcId?: string;
+    barcode?: string;
+  },
 ): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -81,6 +88,11 @@ export async function logMeal(
     meal_type: mealType,
     is_preset: isPreset,
     portion_multiplier: portionMultiplier,
+    ...(extras?.caloriesKcal !== undefined ? { calories_kcal: Math.round(extras.caloriesKcal * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.carbsG !== undefined ? { carbs_g: Math.round(extras.carbsG * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.fatG !== undefined ? { fat_g: Math.round(extras.fatG * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.fdcId ? { fdc_id: extras.fdcId } : {}),
+    ...(extras?.barcode ? { barcode: extras.barcode } : {}),
   });
 
   if (error) return { error: error.message };

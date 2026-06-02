@@ -4,13 +4,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
-import { getExercises } from "../actions";
+import { getExercises, getExerciseCount, seedExercisesFromExerciseDB } from "../actions";
 import { ExerciseLibrary } from "./_components/ExerciseLibrary";
 
 export default async function ExercisesPage() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // Auto-seed from ExerciseDB if library is small
+  const count = await getExerciseCount();
+  if (count < 200 && process.env.NEXT_PUBLIC_RAPIDAPI_KEY) {
+    await seedExercisesFromExerciseDB();
+  }
 
   const exercises = await getExercises();
 

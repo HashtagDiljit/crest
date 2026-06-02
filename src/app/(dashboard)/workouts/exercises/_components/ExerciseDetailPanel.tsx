@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, Trophy, BarChart2, Clock, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { getExerciseStats } from "../../actions";
+import { getExerciseStats, fetchAndCacheExerciseGif } from "../../actions";
 import type { ExerciseRow, ExerciseStats } from "../../actions";
 
 function fmtDate(iso: string) {
@@ -21,8 +21,9 @@ interface Props {
 }
 
 export function ExerciseDetailPanel({ exercise, onClose }: Props) {
-  const [stats, setStats] = useState<ExerciseStats | null>(null);
+  const [stats, setStats]     = useState<ExerciseStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [gifUrl, setGifUrl]   = useState<string | null>(exercise.demo_gif_url ?? null);
 
   useEffect(() => {
     setLoading(true);
@@ -30,7 +31,13 @@ export function ExerciseDetailPanel({ exercise, onClose }: Props) {
       setStats(s);
       setLoading(false);
     });
-  }, [exercise.id]);
+    // Fetch and cache GIF if not already available
+    if (!exercise.demo_gif_url) {
+      fetchAndCacheExerciseGif(exercise.id, exercise.name).then((url) => {
+        if (url) setGifUrl(url);
+      });
+    }
+  }, [exercise.id, exercise.name, exercise.demo_gif_url]);
 
   return (
     <>
@@ -67,6 +74,20 @@ export function ExerciseDetailPanel({ exercise, onClose }: Props) {
             <X size={16} />
           </button>
         </div>
+
+        {/* Exercise demonstration GIF */}
+        {gifUrl && (
+          <div className="px-6 py-4 border-b border-border flex flex-col gap-2 flex-shrink-0">
+            <p className="text-11 font-semibold uppercase tracking-widest text-text-muted">Demonstration</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={gifUrl}
+              alt={`${exercise.name} demonstration`}
+              className="rounded-r4 w-full max-h-48 object-contain bg-bg-elevated"
+              loading="lazy"
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center text-text-muted text-13">Loading…</div>
