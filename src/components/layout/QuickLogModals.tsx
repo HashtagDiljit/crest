@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Minus, Plus as PlusIcon } from "lucide-react";
 import {
   quickLogWater, quickLogMood,
   quickLogWeight, quickLogSleep, quickLogNote,
+  getLastSleepTimes, getLastWeight,
 } from "@/app/(dashboard)/quick-log-actions";
 import { MealLoggerModal } from "@/app/(dashboard)/nutrition/_components/MealLoggerModal";
 
@@ -53,7 +54,7 @@ export function WaterModal({ onClose }: { onClose: () => void }) {
     <Modal title="Log water" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex gap-2">
-          {[150, 250, 500, 750].map((preset) => (
+          {[150, 250, 330, 500].map((preset) => (
             <button
               key={preset}
               type="button"
@@ -145,34 +146,49 @@ export function FoodModal({ onClose }: { onClose: () => void }) {
 // ─── Weight ───────────────────────────────────────────────────────────────────
 
 export function WeightModal({ onClose }: { onClose: () => void }) {
-  const [kg, setKg] = useState("");
+  const [kg, setKg] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getLastWeight().then((last) => { if (last !== null) setKg(Math.round(last * 10) / 10); });
+  }, []);
+
+  function step(delta: number) {
+    setKg((prev) => Math.round(((prev ?? 70) + delta) * 10) / 10);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const v = parseFloat(kg);
-    if (isNaN(v)) return;
+    if (kg === null) return;
     setSaving(true);
-    await quickLogWeight(v);
+    await quickLogWeight(kg);
     onClose();
   }
+
+  const display = kg !== null ? String(kg) : "";
 
   return (
     <Modal title="Log weight" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => step(-0.1)} className="w-10 h-10 flex items-center justify-center rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-text-muted transition-colors flex-shrink-0">
+            <Minus size={14} />
+          </button>
           <input
             autoFocus
             type="number"
             step="0.1"
-            value={kg}
-            onChange={(e) => setKg(e.target.value)}
+            value={display}
+            onChange={(e) => setKg(parseFloat(e.target.value) || null)}
             placeholder="75.0"
-            className="flex-1 rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors"
+            className="flex-1 rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors text-center"
           />
+          <button type="button" onClick={() => step(0.1)} className="w-10 h-10 flex items-center justify-center rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-text-muted transition-colors flex-shrink-0">
+            <PlusIcon size={14} />
+          </button>
           <span className="text-15 font-semibold text-text-muted">kg</span>
         </div>
-        <SaveBtn saving={saving} label={kg ? `Log ${kg}kg` : "Log weight"} />
+        <SaveBtn saving={saving} label={kg !== null ? `Log ${kg}kg` : "Log weight"} />
       </form>
     </Modal>
   );
@@ -185,6 +201,13 @@ export function SleepModal({ onClose }: { onClose: () => void }) {
   const [wakeTime, setWakeTime] = useState("06:30");
   const [quality, setQuality] = useState(3);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getLastSleepTimes().then(({ bedtime: b, wakeTime: w }) => {
+      if (b) setBedtime(b);
+      if (w) setWakeTime(w);
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -1269,3 +1269,34 @@ export async function deleteWorkoutSession(sessionId: string): Promise<{ error?:
   revalidatePath("/workouts");
   return {};
 }
+
+export async function getActiveSession(): Promise<{ id: string; templateName: string | null; startedAt: string } | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: session } = await supabase
+    .from("workout_sessions")
+    .select("id, started_at, template_id")
+    .eq("user_id", user.id)
+    .is("ended_at", null)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!session) return null;
+
+  const sess = session as { id: string; started_at: string; template_id: string | null };
+  let templateName: string | null = null;
+  if (sess.template_id) {
+    const { data: tmpl } = await supabase
+      .from("workout_templates")
+      .select("name")
+      .eq("id", sess.template_id)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    templateName = (tmpl as any)?.name ?? null;
+  }
+
+  return { id: sess.id, templateName, startedAt: sess.started_at };
+}

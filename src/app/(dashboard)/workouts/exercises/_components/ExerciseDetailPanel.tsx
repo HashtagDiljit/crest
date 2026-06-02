@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Trophy, BarChart2, Clock } from "lucide-react";
+import Link from "next/link";
+import { X, Trophy, BarChart2, Clock, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { getExerciseStats } from "../../actions";
 import type { ExerciseRow, ExerciseStats } from "../../actions";
@@ -79,13 +80,22 @@ export function ExerciseDetailPanel({ exercise, onClose }: Props) {
           <div className="flex flex-col gap-6 px-6 py-5">
             {/* PR */}
             {stats.pr && (
-              <div className="rounded-r4 border border-[var(--color-warning)] bg-[rgba(245,158,11,0.08)] p-4 flex items-start gap-3">
-                <Trophy size={16} className="text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-12 font-semibold text-text-muted uppercase tracking-widest mb-1">Personal record</p>
-                  <p className="font-mono text-24 font-bold text-text-primary">{stats.pr.weightKg} kg</p>
-                  <p className="text-12 text-text-secondary">{stats.pr.reps} reps · set {fmtDate(stats.pr.date)}</p>
+              <div className="rounded-r4 border border-[var(--color-warning)] bg-[rgba(245,158,11,0.08)] p-4 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Trophy size={16} className="text-warning flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-12 font-semibold text-text-muted uppercase tracking-widest mb-1">Personal record</p>
+                    <p className="font-mono text-24 font-bold text-text-primary">{stats.pr.weightKg} kg</p>
+                    <p className="text-12 text-text-secondary">{stats.pr.reps} reps · set {fmtDate(stats.pr.date)}</p>
+                  </div>
                 </div>
+                <Link
+                  href={`/tools/1rm?weight=${stats.pr.weightKg}&reps=${stats.pr.reps}&exercise=${encodeURIComponent(exercise.name)}&exerciseId=${exercise.id}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-12 font-medium text-text-muted hover:text-text-secondary transition-colors flex-shrink-0"
+                >
+                  <Calculator size={12} />
+                  1RM
+                </Link>
               </div>
             )}
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Check, ChevronRight } from "lucide-react";
-import { logMeal } from "../actions";
+import { logMeal, getRecentMeals } from "../actions";
 import { getTodayProtein } from "@/app/(dashboard)/quick-log-actions";
 
 type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
@@ -65,9 +65,11 @@ export function MealLoggerModal({
   const [todayProtein, setTodayProtein] = useState(0);
   const [saving, setSaving]           = useState(false);
   const [recentlySaved, setRecentlySaved] = useState<string | null>(null);
+  const [recentMeals, setRecentMeals] = useState<Array<{ meal_name: string; protein_g: number; food_preset: string | null }>>([]);
 
   useEffect(() => {
     getTodayProtein().then(setTodayProtein);
+    getRecentMeals().then(setRecentMeals);
   }, []);
 
   useEffect(() => {
@@ -186,6 +188,36 @@ export function MealLoggerModal({
               ))}
             </div>
           </div>
+
+          {/* Recent meals quick-log */}
+          {recentMeals.length > 0 && !showCustom && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-11 font-semibold uppercase tracking-[0.08em] text-text-muted">Recent</span>
+              <div className="flex flex-col gap-1">
+                {recentMeals.map((m) => {
+                  const protein = Math.round(m.protein_g * portion * 10) / 10;
+                  const isSelected = selected?.key === (m.food_preset ?? `recent:${m.meal_name}`) && selected?.label === m.meal_name;
+                  return (
+                    <button
+                      key={m.meal_name}
+                      onClick={() => setSelected(isSelected ? null : { key: m.food_preset ?? `recent:${m.meal_name}`, label: m.meal_name, protein: m.protein_g })}
+                      className={`flex items-center justify-between px-3 py-2 rounded-r3 border text-left transition-colors ${
+                        isSelected
+                          ? "border-[var(--color-accent-ring)] bg-[var(--color-accent-soft)]"
+                          : "border-border bg-bg-elevated hover:border-border-strong"
+                      }`}
+                    >
+                      <span className={`text-13 ${isSelected ? "text-text-primary font-medium" : "text-text-secondary"}`}>{m.meal_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-12 text-accent">+{protein}g</span>
+                        {isSelected && <Check size={14} className="text-accent" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recently saved toast */}
           {recentlySaved && (

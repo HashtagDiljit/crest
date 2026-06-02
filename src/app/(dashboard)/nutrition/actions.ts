@@ -140,6 +140,29 @@ export async function saveNutritionSettings(settings: NutritionSettings): Promis
   return {};
 }
 
+export async function getRecentMeals(): Promise<Array<{ meal_name: string; protein_g: number; food_preset: string | null }>> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("nutrition_logs")
+    .select("meal_name, protein_g, food_preset")
+    .eq("user_id", user.id)
+    .not("meal_name", "is", null)
+    .order("logged_at", { ascending: false })
+    .limit(20);
+  // Deduplicate by meal_name, keep most recent 3
+  const seen = new Set<string>();
+  const result: Array<{ meal_name: string; protein_g: number; food_preset: string | null }> = [];
+  for (const row of data ?? []) {
+    if (!row.meal_name || seen.has(row.meal_name)) continue;
+    seen.add(row.meal_name);
+    result.push({ meal_name: row.meal_name, protein_g: row.protein_g ?? 0, food_preset: row.food_preset });
+    if (result.length >= 3) break;
+  }
+  return result;
+}
+
 export async function getNutritionSettings(): Promise<NutritionSettings> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

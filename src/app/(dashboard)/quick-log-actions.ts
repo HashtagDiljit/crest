@@ -99,6 +99,36 @@ export async function quickLogSleep(
   return {};
 }
 
+export async function getLastSleepTimes(): Promise<{ bedtime: string | null; wakeTime: string | null }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { bedtime: null, wakeTime: null };
+  const { data } = await supabase
+    .from("sleep_logs")
+    .select("bedtime, wake_time")
+    .eq("user_id", user.id)
+    .order("logged_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return { bedtime: data?.bedtime ?? null, wakeTime: data?.wake_time ?? null };
+}
+
+export async function getLastWeight(): Promise<number | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("body_measurements")
+    .select("weight_kg")
+    .eq("user_id", user.id)
+    .not("weight_kg", "is", null)
+    .order("logged_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any)?.weight_kg ?? null;
+}
+
 export async function quickLogNote(body: string): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
