@@ -6,8 +6,14 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Crest",
-  description: "Your personal life tracking OS",
+  title: "Arc",
+  description: "Your life. Tracked. Understood.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Arc",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {

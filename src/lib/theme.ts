@@ -31,7 +31,7 @@ export function applyAccent(hex: string) {
   root.style.setProperty("--color-accent-ring", `rgba(${r},${g},${b},0.45)`);
   root.style.setProperty("--color-border-focus", hex);
 
-  try { localStorage.setItem("crest-accent", hex); } catch { /* noop */ }
+  try { localStorage.setItem("arc-accent", hex); } catch { /* noop */ }
 }
 
 export function applyTheme(theme: string) {
@@ -58,16 +58,16 @@ export function applyTheme(theme: string) {
     document.head.appendChild(tag);
   }
 
-  try { localStorage.setItem("crest-theme", theme); } catch { /* noop */ }
+  try { localStorage.setItem("arc-theme", theme); } catch { /* noop */ }
 }
 
 // Inline script string for root layout — prevents flash on load
 export const THEME_INIT_SCRIPT = `(function(){
   try {
-    var t=localStorage.getItem('crest-theme')||'dark';
+    var t=localStorage.getItem('arc-theme')||'dark';
     if(t==='system')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
     if(t==='light')document.documentElement.setAttribute('data-theme','light');
-    var a=localStorage.getItem('crest-accent');
+    var a=localStorage.getItem('arc-accent');
     if(a){
       var el=document.documentElement;
       el.style.setProperty('--color-accent',a);
@@ -76,7 +76,7 @@ export const THEME_INIT_SCRIPT = `(function(){
       el.style.setProperty('--color-accent-soft','rgba('+r+','+g+','+b+',0.15)');
       el.style.setProperty('--color-accent-ring','rgba('+r+','+g+','+b+',0.45)');
     }
-    if(localStorage.getItem('crest-sidebar-collapsed')==='true'){
+    if(localStorage.getItem('arc-sidebar-collapsed')==='true'){
       document.documentElement.style.setProperty('--sidebar-w','64px');
     }
   }catch(e){}

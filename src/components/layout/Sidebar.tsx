@@ -53,7 +53,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("crest-sidebar-collapsed");
+    const stored = localStorage.getItem("arc-sidebar-collapsed");
     if (stored === "true") {
       setCollapsed(true);
       document.documentElement.style.setProperty("--sidebar-w", `${COLLAPSED_W}px`);
@@ -65,7 +65,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
     setCollapsed(next);
     const w = next ? COLLAPSED_W : EXPANDED_W;
     document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
-    try { localStorage.setItem("crest-sidebar-collapsed", String(next)); } catch { /* noop */ }
+    try { localStorage.setItem("arc-sidebar-collapsed", String(next)); } catch { /* noop */ }
   }
 
   const c = collapsed;
@@ -78,8 +78,8 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       >
         {/* Brand */}
         <div className={`flex items-center gap-2.5 px-3.5 py-5 pb-4 ${c ? "justify-center" : ""}`}>
-          <CrestLogo />
-          {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Crest</span>}
+          <ArcLogo />
+          {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Arc</span>}
         </div>
 
         {/* Primary nav */}
@@ -217,7 +217,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   );
 }
 
-function CrestLogo() {
+function ArcLogo() {
   return (
     <svg width="26" height="26" viewBox="0 0 64 64" fill="none" className="flex-shrink-0">
       <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />

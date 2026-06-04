@@ -109,7 +109,7 @@ export function TrainingSection({ prefs }: { prefs: TrainingPreferences | null }
             </button>
           ))}
         </div>
-        <p className="text-11 text-text-muted">Crest will suggest a deload week after this many training weeks.</p>
+        <p className="text-11 text-text-muted">Arc will suggest a deload week after this many training weeks.</p>
       </div>
 
       {/* Rest timer */}

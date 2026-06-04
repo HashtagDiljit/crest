@@ -10,8 +10,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 md:px-10 py-5 border-b border-border max-w-[1200px] w-full mx-auto">
         <div className="flex items-center gap-2.5">
-          <CrestLogo />
-          <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Crest</span>
+          <ArcLogo />
+          <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Arc</span>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login" className="text-13 font-medium text-text-secondary hover:text-text-primary transition-colors px-3 py-2">
@@ -51,7 +51,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-15 md:text-18 text-text-secondary max-w-xl leading-relaxed">
-            Crest brings workouts, health, habits, mood, journaling, and goals into one unified dashboard — with built-in gamification to keep you coming back.
+            Arc brings workouts, health, habits, mood, journaling, and goals into one unified dashboard — with built-in gamification to keep you coming back.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
@@ -114,7 +114,7 @@ export default function LandingPage() {
               Progress that feels rewarding
             </h2>
             <p className="text-15 text-text-secondary mt-3 max-w-lg mx-auto">
-              Every action earns XP. Streaks compound. Achievements unlock. Crest turns your routines into a game you want to win.
+              Every action earns XP. Streaks compound. Achievements unlock. Arc turns your routines into a game you want to win.
             </p>
           </div>
 
@@ -196,7 +196,7 @@ export default function LandingPage() {
               Your data stays yours
             </h2>
             <p className="text-14 text-text-secondary leading-relaxed max-w-2xl">
-              Crest stores all your data securely in your own Supabase database. Nothing is sold, shared, or processed for advertising. You can export everything at any time from Settings, or delete your account with one click. Your health data is personal — we treat it that way.
+              Arc stores all your data securely in your own Supabase database. Nothing is sold, shared, or processed for advertising. You can export everything at any time from Settings, or delete your account with one click. Your health data is personal — we treat it that way.
             </p>
             <div className="flex flex-wrap gap-3 mt-2">
               {["End-to-end auth", "Exportable data", "Never sold", "Delete anytime"].map((item) => (
@@ -212,7 +212,7 @@ export default function LandingPage() {
       {/* CTA banner */}
       <section className="px-6 py-16 text-center border-t border-border" style={{ background: "var(--color-bg-inset)" }}>
         <div className="max-w-xl mx-auto flex flex-col items-center gap-5">
-          <CrestLogo size={48} />
+          <ArcLogo size={48} />
           <h2 className="font-display text-22 md:text-28 font-semibold text-text-primary tracking-tight">
             Ready to take control?
           </h2>
@@ -235,8 +235,8 @@ export default function LandingPage() {
       <footer className="border-t border-border px-6 py-8">
         <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <CrestLogo size={20} />
-            <span className="font-display text-14 font-semibold text-text-secondary">Crest</span>
+            <ArcLogo size={20} />
+            <span className="font-display text-14 font-semibold text-text-secondary">Arc</span>
             <span className="text-13 text-text-disabled ml-1">— Your personal life OS</span>
           </div>
           <div className="flex items-center gap-5 flex-wrap justify-center">
@@ -296,7 +296,7 @@ const ACHIEVEMENTS = [
   { name: "Iron will", icon: "🥇", color: "#FFD700", xp: 250 },
 ];
 
-function CrestLogo({ size = 28 }: { size?: number }) {
+function ArcLogo({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
       <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />

@@ -1,13 +1,13 @@
 import Link from "next/link";
 
-export const metadata = { title: "Privacy Policy — Crest" };
+export const metadata = { title: "Privacy Policy — Arc" };
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-bg-base">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <div className="mb-10">
-          <Link href="/" className="text-13 text-text-muted hover:text-text-secondary transition-colors">← Back to Crest</Link>
+          <Link href="/" className="text-13 text-text-muted hover:text-text-secondary transition-colors">← Back to Arc</Link>
         </div>
 
         <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight mb-2">Privacy Policy</h1>
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-display text-20 font-semibold text-text-primary mb-4">Who we are</h2>
-            <p>Crest is a personal health and fitness tracking application. We are committed to protecting your personal data and complying with UK GDPR and the Data Protection Act 2018. For data-related enquiries, contact us at <span className="text-text-primary">privacy@crest-weld.vercel.app</span>.</p>
+            <p>Arc is a personal health and fitness tracking application. We are committed to protecting your personal data and complying with UK GDPR and the Data Protection Act 2018. For data-related enquiries, contact us at <span className="text-text-primary">privacy@crest-weld.vercel.app</span>.</p>
           </section>
 
           <section>
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-display text-20 font-semibold text-text-primary mb-4">Why we collect it</h2>
             <ul className="flex flex-col gap-2 list-disc list-inside marker:text-text-muted">
-              <li>To provide the core tracking features you use Crest for</li>
+              <li>To provide the core tracking features you use Arc for</li>
               <li>To calculate trends, streaks, and personal bests</li>
               <li>To surface correlations and insights across your data (with your consent)</li>
               <li>To maintain your account and send essential service communications</li>
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex items-center justify-between text-13 text-text-muted">
-          <Link href="/" className="hover:text-text-secondary transition-colors">← Crest home</Link>
+          <Link href="/" className="hover:text-text-secondary transition-colors">← Arc home</Link>
           <Link href="/terms" className="hover:text-text-secondary transition-colors">Terms of service →</Link>
         </div>
       </div>

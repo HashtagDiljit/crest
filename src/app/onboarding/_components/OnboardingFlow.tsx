@@ -157,10 +157,10 @@ function Step1({ firstName, onNext }: { firstName: string; onNext: () => void })
     <Shell step={1}>
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-28 font-semibold text-text-primary tracking-tight">
-          Welcome to Crest, {firstName} 👋
+          Welcome to Arc, {firstName} 👋
         </h1>
         <p className="text-15 text-text-secondary">
-          Crest helps you track workouts, sleep, habits, mood, and goals — all
+          Arc helps you track workouts, sleep, habits, mood, and goals — all
           in one place. XP and streaks keep you accountable.
         </p>
       </div>

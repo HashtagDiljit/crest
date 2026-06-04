@@ -319,7 +319,7 @@ function SetupCard({ pct }: { pct: number }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-13 font-semibold text-text-primary">Your setup is {pct}% complete</p>
-          <p className="text-12 text-text-muted mt-0.5">Finish setting up Crest to unlock all features.</p>
+          <p className="text-12 text-text-muted mt-0.5">Finish setting up Arc to unlock all features.</p>
         </div>
         <span className="font-mono text-22 font-bold" style={{ color: pct >= 75 ? "var(--color-success)" : "var(--color-accent)" }}>{pct}%</span>
       </div>
