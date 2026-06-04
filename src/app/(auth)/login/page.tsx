@@ -37,9 +37,9 @@ export default function LoginPage() {
         style={{ boxShadow: "var(--shadow-3)" }}
       >
         <div className="flex items-center gap-3 mb-8">
-          <CrestLogo />
+          <ArcLogo />
           <span className="font-display text-18 font-semibold text-text-primary tracking-tight">
-            Crest
+            Arc
           </span>
         </div>
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
   );
 }
 
-function CrestLogo() {
+function ArcLogo() {
   return (
     <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
       <rect width="64" height="64" rx="14" fill="#16161E" />

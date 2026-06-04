@@ -28,8 +28,8 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
       <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)" }}>
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2">
-            <CrestLogoMini />
-            <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Crest</span>
+            <ArcLogoMini />
+            <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Arc</span>
           </Link>
           <MobileStreakChip streak={streak} />
           <Avatar initials={initials} avatarUrl={avatarUrl} />
@@ -75,7 +75,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   );
 }
 
-function CrestLogoMini() {
+function ArcLogoMini() {
   return (
     <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
       <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />

@@ -99,6 +99,55 @@ export async function quickLogSleep(
   return {};
 }
 
+export async function getLastSleepTimes(): Promise<{ bedtime: string | null; wakeTime: string | null }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { bedtime: null, wakeTime: null };
+  const { data } = await supabase
+    .from("sleep_logs")
+    .select("bedtime, wake_time")
+    .eq("user_id", user.id)
+    .order("logged_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return { bedtime: data?.bedtime ?? null, wakeTime: data?.wake_time ?? null };
+}
+
+export async function getLastWeight(): Promise<number | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("body_measurements")
+    .select("weight_kg")
+    .eq("user_id", user.id)
+    .not("weight_kg", "is", null)
+    .order("logged_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any)?.weight_kg ?? null;
+}
+
+export async function quickLogBP(systolic: number, diastolic: number): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("health_metrics") as any).upsert(
+    { user_id: user.id, logged_date: today, metric_type: "bp_systolic", value: systolic, unit: "mmHg" },
+    { onConflict: "user_id,logged_date,metric_type" }
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("health_metrics") as any).upsert(
+    { user_id: user.id, logged_date: today, metric_type: "bp_diastolic", value: diastolic, unit: "mmHg" },
+    { onConflict: "user_id,logged_date,metric_type" }
+  );
+  revalidatePath("/health");
+  return {};
+}
+
 export async function quickLogNote(body: string): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

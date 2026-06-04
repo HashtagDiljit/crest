@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { logReadiness, logSoreness } from "../actions";
 import type { ReadinessRow, MetricRow } from "../actions";
+import { InfoTooltip } from "@/components/InfoTooltip";
 
 const MUSCLE_GROUPS = ["chest", "back", "shoulders", "biceps", "triceps", "quads", "hamstrings", "glutes", "calves", "core"];
 const SEVERITY_OPTIONS = ["none", "mild", "moderate", "severe"] as const;
@@ -61,7 +62,7 @@ export function RecoveryPanel({ readinessLogs, hrvMetrics, hrMetrics, todaySoren
 
       {/* Readiness */}
       <div className="flex flex-col gap-2">
-        <span className="text-12 font-semibold text-text-muted uppercase tracking-widest">Morning readiness</span>
+        <span className="text-12 font-semibold text-text-muted uppercase tracking-widest flex items-center gap-1">Morning readiness <InfoTooltip text="Your subjective readiness score (1–10). Self-reported — how recovered and energised you feel this morning." /></span>
         {todayReadiness ? (
           <div className="flex items-center gap-3">
             <span className="font-mono text-32 font-bold" style={{ color: todayReadiness.score >= 7 ? "var(--color-success)" : todayReadiness.score >= 5 ? "var(--color-warning)" : "var(--color-danger)" }}>{todayReadiness.score}</span>
@@ -120,6 +121,11 @@ export function RecoveryPanel({ readinessLogs, hrvMetrics, hrMetrics, todaySoren
   );
 }
 
+const METRIC_TOOLTIPS: Record<string, string> = {
+  "HRV (7d)": "Heart Rate Variability — higher values generally indicate better recovery. Varies widely between individuals; track your own trend, not absolute numbers.",
+  "Resting HR (7d)": "Resting heart rate measured at rest. Lower is generally better for aerobic fitness, though normal range is 60–100 bpm.",
+};
+
 function MiniLineChart({ label, data, unit }: { label: string; data: MetricRow[]; unit: string }) {
   const sorted = [...data].sort((a, b) => a.logged_date.localeCompare(b.logged_date));
   const vals = sorted.map((d) => d.value);
@@ -134,7 +140,10 @@ function MiniLineChart({ label, data, unit }: { label: string; data: MetricRow[]
 
   return (
     <div className="rounded-r4 border border-border bg-bg-elevated p-3 flex flex-col gap-2">
-      <span className="text-11 font-mono text-text-muted">{label}</span>
+      <span className="text-11 font-mono text-text-muted flex items-center gap-1">
+        {label}
+        {METRIC_TOOLTIPS[label] && <InfoTooltip text={METRIC_TOOLTIPS[label]} size={10} />}
+      </span>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}>
         <polyline points={points} fill="none" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinejoin="round" />
       </svg>

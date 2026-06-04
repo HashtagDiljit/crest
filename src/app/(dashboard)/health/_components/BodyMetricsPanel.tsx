@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { logBodyweight, logMeasurements, logSteps } from "../actions";
 import type { BodyMeasurementRow } from "../actions";
+import { InfoTooltip } from "@/components/InfoTooltip";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -71,16 +72,19 @@ function StatTile({
   value,
   sub,
   subColor,
+  tooltip,
 }: {
   label: string;
   value: string;
   sub?: string;
   subColor?: string;
+  tooltip?: string;
 }) {
   return (
     <div className="flex flex-col gap-0.5 px-4 py-3 rounded-r4 border border-border bg-bg-elevated">
-      <span className="text-10 font-semibold uppercase tracking-widest text-text-muted">
+      <span className="text-10 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1">
         {label}
+        {tooltip && <InfoTooltip text={tooltip} size={10} />}
       </span>
       <span className="font-mono text-18 font-semibold text-text-primary leading-none">
         {value}
@@ -509,6 +513,7 @@ export function BodyMetricsPanel({ measurements, profile }: Props) {
                 ? bfColor(bf, profile.gender)
                 : undefined
             }
+            tooltip="Estimated using the US Navy tape method. This is a trend indicator, not a clinical measurement — accuracy ±3–4%."
           />
           <StatTile label="Age" value={age !== null ? `${age} yrs` : "—"} />
         </div>

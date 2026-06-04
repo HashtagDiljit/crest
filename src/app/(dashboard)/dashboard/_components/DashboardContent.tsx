@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   DragDropContext,
   Droppable,
@@ -20,6 +22,8 @@ import {
   EyeOff,
   X,
 } from "lucide-react";
+import { InfoTooltip } from "@/components/InfoTooltip";
+import { FocusBanner } from "@/components/FocusBanner";
 import { saveDashboardLayout } from "../actions";
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -27,6 +31,7 @@ import { saveDashboardLayout } from "../actions";
 export interface DashboardData {
   username: string;
   streak: number;
+  setupPct: number;
   dashboardLayout: { cards: string[]; hidden: string[] } | null;
   workoutCount: number;
   workoutTarget: number;
@@ -41,6 +46,12 @@ export interface DashboardData {
   hrv: number | null;
   workoutDates: string[];
   aiInsight: { title: string; body: string; category: string } | null;
+  lastWeekDigest: { workouts: number; sleepAvg: number | null; habitPct: number | null; moodAvg: number | null };
+  lastSession: { date: string; templateName: string | null } | null;
+  weeklyVolume: number[];
+  currentFocus?: string | null;
+  focusStartDate?: string | null;
+  focusEndDate?: string | null;
 }
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -296,7 +307,98 @@ function SleepCard({
   );
 }
 
+// ─── weekly digest card ───────────────────────────────────────────────────────
+
+function SetupCard({ pct }: { pct: number }) {
+  const steps = [
+    { label: "Stats saved", href: "/settings#account" },
+    { label: "Goals added", href: "/goals" },
+    { label: "Habits created", href: "/habits" },
+    { label: "Workout split configured", href: "/settings#training" },
+  ];
+  const done = Math.floor((pct / 100) * steps.length);
+
+  return (
+    <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-3" style={{ borderLeftColor: "var(--color-accent)", borderLeftWidth: 3 }}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-13 font-semibold text-text-primary">Your setup is {pct}% complete</p>
+          <p className="text-12 text-text-muted mt-0.5">Finish setting up Arc to unlock all features.</p>
+        </div>
+        <span className="font-mono text-22 font-bold" style={{ color: pct >= 75 ? "var(--color-success)" : "var(--color-accent)" }}>{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill bg-accent transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        {steps.map((s, i) => (
+          <a key={s.label} href={s.href} className={`flex items-center gap-1.5 text-11 transition-colors ${i < done ? "text-success" : "text-text-muted hover:text-text-secondary"}`}>
+            <span className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 flex items-center justify-center ${i < done ? "bg-success border-success" : "border-border"}`}>
+              {i < done && <span className="text-[8px] text-white font-bold">✓</span>}
+            </span>
+            {s.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WeeklyDigestCard({ digest, onDismiss }: { digest: DashboardData["lastWeekDigest"]; onDismiss: () => void }) {
+  const items: Array<{ label: string; value: string | null }> = [
+    { label: "Workouts", value: `${digest.workouts} sessions` },
+    { label: "Sleep avg", value: digest.sleepAvg !== null ? `${digest.sleepAvg}h` : null },
+    { label: "Habit completion", value: digest.habitPct !== null ? `${digest.habitPct}%` : null },
+    { label: "Avg mood", value: digest.moodAvg !== null ? `${digest.moodAvg}/5` : null },
+  ].filter((i) => i.value !== null);
+
+  const focusSuggestion = digest.habitPct !== null && digest.habitPct < 50
+    ? "Your habit completion was below 50% — pick one habit and protect it this week."
+    : digest.sleepAvg !== null && digest.sleepAvg < 6.5
+    ? "Sleep was under 6.5h last week. Prioritise an earlier bedtime tonight."
+    : digest.workouts === 0
+    ? "No workouts logged last week. Even one session this week builds momentum."
+    : digest.moodAvg !== null && digest.moodAvg < 3
+    ? "Low mood week — be intentional about recovery and connection this week."
+    : null;
+
+  return (
+    <div className="rounded-r5 border border-border bg-bg-surface flex overflow-hidden">
+      <div className="w-1 flex-shrink-0" style={{ background: "#2DD4BF" }} />
+      <div className="flex-1 p-5 flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-11 font-semibold uppercase tracking-widest" style={{ color: "#2DD4BF" }}>Last week</p>
+            <h3 className="font-display text-15 font-semibold text-text-primary mt-0.5">Weekly recap</h3>
+          </div>
+          <button onClick={onDismiss} className="w-7 h-7 flex items-center justify-center rounded-pill hover:bg-bg-elevated text-text-disabled hover:text-text-muted transition-colors flex-shrink-0" aria-label="Dismiss">
+            <X size={13} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {items.map((item) => (
+            <div key={item.label} className="rounded-r3 bg-bg-elevated border border-border px-3 py-2">
+              <p className="font-mono text-15 font-semibold text-text-primary">{item.value}</p>
+              <p className="text-10 text-text-muted mt-0.5">{item.label}</p>
+            </div>
+          ))}
+        </div>
+        {focusSuggestion && (
+          <p className="text-12 text-text-secondary leading-relaxed">
+            <span className="font-semibold text-text-primary">This week: </span>{focusSuggestion}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── stat card ────────────────────────────────────────────────────────────────
+
+const STAT_TOOLTIPS: Record<string, string> = {
+  HRV: "Heart Rate Variability — higher values generally indicate better recovery. Track your trend over time, not the absolute number.",
+  "Resting HR": "Resting heart rate. Lower typically indicates better cardiovascular fitness (normal range: 60–100 bpm).",
+};
 
 function StatCard({
   label,
@@ -312,8 +414,9 @@ function StatCard({
   return (
     <Card className="p-5 h-36 flex flex-col justify-between">
       <div className="flex items-center justify-between">
-        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1">
           {label}
+          {STAT_TOOLTIPS[label] && <InfoTooltip text={STAT_TOOLTIPS[label]} size={10} />}
         </span>
         <Icon size={14} className="text-text-disabled" />
       </div>
@@ -344,11 +447,17 @@ function StatCard({
 function WorkoutsCard({
   count,
   target,
+  lastSession,
+  weeklyVolume,
 }: {
   count: number;
   target: number;
+  lastSession: DashboardData["lastSession"];
+  weeklyVolume: number[];
 }) {
   const pct = Math.min((count / target) * 100, 100);
+  const hasVolume = weeklyVolume.some((v) => v > 0);
+
   return (
     <Card className="p-5 h-36 flex flex-col justify-between">
       <div className="flex items-center justify-between">
@@ -357,20 +466,27 @@ function WorkoutsCard({
         </span>
         <Dumbbell size={14} className="text-text-disabled" />
       </div>
-      <div className="flex items-end gap-1.5">
-        <span
-          className="font-mono text-32 font-medium leading-none"
-          style={{ color: count > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}
-        >
-          {count}
-        </span>
-        <span className="text-13 text-text-muted mb-0.5">/ {target} wk</span>
+      <div className="flex items-end justify-between">
+        <div className="flex items-end gap-1.5">
+          <span
+            className="font-mono text-32 font-medium leading-none"
+            style={{ color: count > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}
+          >
+            {count}
+          </span>
+          <span className="text-13 text-text-muted mb-0.5">/ {target} wk</span>
+        </div>
+        {hasVolume && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
       </div>
-      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
-        <div
-          className="h-full rounded-pill bg-accent transition-all"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="flex flex-col gap-1">
+        <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+          <div className="h-full rounded-pill bg-accent transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        {lastSession && (
+          <span className="text-10 text-text-disabled truncate">
+            Last: {lastSession.templateName ?? "Ad-hoc"} · {new Date(lastSession.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+          </span>
+        )}
       </div>
     </Card>
   );
@@ -515,7 +631,7 @@ function renderCard(id: string, d: DashboardData): React.ReactNode {
         />
       );
     case "workouts":
-      return <WorkoutsCard count={d.workoutCount} target={d.workoutTarget} />;
+      return <WorkoutsCard count={d.workoutCount} target={d.workoutTarget} lastSession={d.lastSession} weeklyVolume={d.weeklyVolume} />;
     case "heatmap":
       return <HeatmapCard workoutDates={d.workoutDates} />;
     case "ai-insight":
@@ -629,7 +745,16 @@ function EditPanel({
 
 // ─── main export ──────────────────────────────────────────────────────────────
 
+function getISOWeekNumber(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+}
+
 export function DashboardContent(props: DashboardData) {
+  const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [cardOrder, setCardOrder] = useState<string[]>(
     props.dashboardLayout?.cards ?? DEFAULT_CARDS
@@ -638,6 +763,37 @@ export function DashboardContent(props: DashboardData) {
     props.dashboardLayout?.hidden ?? []
   );
   const [saving, setSaving] = useState(false);
+
+  // Live updates: habit ticks on mobile, session completions — update dashboard
+  // immediately without a manual refresh.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("dashboard-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs" },
+        () => router.refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "workout_sessions" },
+        () => router.refresh())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [router]);
+
+  const [digestDismissed, setDigestDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const key = `weekly-digest-dismissed-${getISOWeekNumber()}`;
+    return localStorage.getItem(key) === "1";
+  });
+
+  function dismissDigest() {
+    const key = `weekly-digest-dismissed-${getISOWeekNumber()}`;
+    localStorage.setItem(key, "1");
+    setDigestDismissed(true);
+  }
+
+  const isMonday = new Date().getDay() === 1;
+  const showDigest = isMonday && !digestDismissed &&
+    (props.lastWeekDigest.workouts > 0 || props.lastWeekDigest.sleepAvg !== null || props.lastWeekDigest.habitPct !== null);
 
   const hour = new Date().getHours();
   const greeting =
@@ -733,6 +889,22 @@ export function DashboardContent(props: DashboardData) {
           )}
         </div>
       </div>
+
+      {props.currentFocus && props.focusStartDate && props.focusEndDate && (
+        <FocusBanner
+          focus={props.currentFocus}
+          startDate={props.focusStartDate}
+          endDate={props.focusEndDate}
+        />
+      )}
+
+      {showDigest && (
+        <WeeklyDigestCard digest={props.lastWeekDigest} onDismiss={dismissDigest} />
+      )}
+
+      {props.setupPct < 100 && (
+        <SetupCard pct={props.setupPct} />
+      )}
 
       {editMode ? (
         <EditPanel

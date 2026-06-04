@@ -135,6 +135,35 @@ export async function exportUserData(): Promise<{ data?: Record<string, unknown[
   };
 }
 
+export interface TrainingPreferences {
+  weekly_target: number;
+  rest_days: string[];
+  overload_increment_kg: number;
+  deload_every_weeks: number;
+  rest_timer_seconds: number;
+}
+
+export async function getTrainingPreferences(): Promise<TrainingPreferences | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("profiles").select("training_preferences").eq("id", user.id).single()) as any;
+  return (data?.training_preferences as TrainingPreferences) ?? null;
+}
+
+export async function saveTrainingPreferences(prefs: TrainingPreferences): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("profiles") as any).update({ training_preferences: prefs }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/settings");
+  revalidatePath("/workouts");
+  return {};
+}
+
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

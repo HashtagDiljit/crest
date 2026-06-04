@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: dark;
   --color-bg-base: #0D0D12;
   --color-bg-inset: #111118;
   --color-bg-surface: #16161E;
@@ -46,7 +47,7 @@
 }
 
 html, body {
-  background: var(--color-bg-base);
+  background-color: var(--color-bg-base);
   color: var(--color-text-primary);
   font-family: var(--font-body);
   font-size: 15px;
@@ -95,7 +96,7 @@ html, body {
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .dashboard-main {
     margin-left: var(--sidebar-w, 240px);
     width: calc(100% - var(--sidebar-w, 240px));
@@ -105,19 +106,20 @@ html, body {
 
 /* Light theme overrides */
 [data-theme="light"] {
-  --topbar-bg: rgba(248, 248, 245, 0.88);
-  --color-bg-base: #F8F8F5;
-  --color-bg-inset: #F0F0ED;
-  --color-bg-surface: #FFFFFF;
-  --color-bg-elevated: #F4F4F1;
+  color-scheme: light;
+  --topbar-bg: rgba(255, 255, 255, 0.88);
+  --color-bg-base: #FFFFFF;
+  --color-bg-inset: #F8F8F5;
+  --color-bg-surface: #F8F8F5;
+  --color-bg-elevated: #F0F0ED;
   --color-bg-overlay: #E8E8E4;
   --color-text-primary: #0D0D12;
-  --color-text-secondary: #3D3B38;
-  --color-text-muted: #6B6966;
+  --color-text-secondary: #3D3D45;
+  --color-text-muted: #6B6B78;
   --color-text-disabled: #9E9B97;
-  --color-border: #E2E2DE;
+  --color-border: #E2E2E8;
   --color-border-strong: #D0D0CC;
-  --color-xp-track: #E2E2DE;
+  --color-xp-track: #E2E2E8;
   --shadow-1: 0 1px 0 rgba(0,0,0,0.04) inset, 0 1px 2px rgba(0,0,0,0.08);
   --shadow-2: 0 1px 0 rgba(0,0,0,0.04) inset, 0 4px 14px rgba(0,0,0,0.10);
   --shadow-3: 0 1px 0 rgba(0,0,0,0.04) inset, 0 12px 32px rgba(0,0,0,0.14);

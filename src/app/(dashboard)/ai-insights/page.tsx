@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, RefreshCw, X, ChevronDown, ChevronUp, Dumbbell, Moon, Target, Leaf, Zap, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, RefreshCw, X, ChevronDown, ChevronUp, Dumbbell, Moon, Target, Leaf, Zap, Loader2, GitBranch } from "lucide-react";
 
 interface Insight {
   id: string;
@@ -99,7 +100,14 @@ export default function AIInsightsPage() {
             {lastGeneratedStr ? `Last generated ${lastGeneratedStr}` : "Generate your first insights"}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href="/ai-insights/correlations"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-pill border border-border bg-bg-elevated hover:bg-bg-overlay text-text-secondary text-13 font-medium transition-colors"
+          >
+            <GitBranch size={14} />
+            Correlations
+          </Link>
           <button
             onClick={handleGenerate}
             disabled={generating || generatedToday}

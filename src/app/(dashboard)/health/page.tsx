@@ -5,6 +5,8 @@ import { DailyOverviewCard } from "./_components/DailyOverviewCard";
 import { RecoveryPanel } from "./_components/RecoveryPanel";
 import { SleepPanel } from "./_components/SleepPanel";
 import { BodyMetricsPanel } from "./_components/BodyMetricsPanel";
+import { VitalMetricsPanel } from "./_components/VitalMetricsPanel";
+import { CircadianCard } from "./_components/CircadianCard";
 
 export default async function HealthPage() {
   const supabase = await createServerClient();
@@ -53,6 +55,16 @@ export default async function HealthPage() {
       </div>
 
       <BodyMetricsPanel measurements={data.measurements} profile={profileStats} />
+
+      <CircadianCard sleepLogs={data.sleepLogs} />
+
+      <VitalMetricsPanel
+        bpMetrics={data.bpMetrics}
+        gripMetrics={data.gripMetrics}
+        tempMetrics={data.tempMetrics}
+        respMetrics={data.respMetrics}
+        gutMetrics={data.gutMetrics}
+      />
     </div>
   );
 }

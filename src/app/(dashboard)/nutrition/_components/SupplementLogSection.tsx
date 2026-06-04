@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { SupplementLogRow, NutritionSettings } from "../types";
+import { SUPPLEMENT_EVIDENCE } from "../types";
 
 function buildCalendar(logs: SupplementLogRow[], name: string): Array<{ date: string; taken: boolean }> {
   const taken = new Set(
@@ -99,7 +100,7 @@ export function SupplementLogSection({
               </button>
 
               {isOpen && (
-                <div className="px-4 pb-4">
+                <div className="px-4 pb-4 flex flex-col gap-3">
                   {/* 30-day calendar grid */}
                   <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(10, 1fr)" }}>
                     {calendar.map(({ date, taken }) => {
@@ -125,10 +126,21 @@ export function SupplementLogSection({
                     })}
                   </div>
                   {/* Month label context */}
-                  <div className="flex justify-between mt-2 text-10 text-text-muted">
+                  <div className="flex justify-between text-10 text-text-muted">
                     <span>{fmtMonth(calendar[0]?.date ?? "")}</span>
                     <span>{fmtMonth(calendar[calendar.length - 1]?.date ?? "")}</span>
                   </div>
+                  {/* Evidence note */}
+                  {SUPPLEMENT_EVIDENCE[name] && (
+                    <div className="rounded-r3 border border-border bg-bg-surface p-3 flex flex-col gap-2 mt-1">
+                      <span className="text-10 font-semibold uppercase tracking-widest text-accent">{SUPPLEMENT_EVIDENCE[name].tier}</span>
+                      <p className="text-12 text-text-secondary leading-relaxed">{SUPPLEMENT_EVIDENCE[name].evidence}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                        <span className="text-11 text-text-muted"><span className="font-semibold text-text-secondary">Dose:</span> {SUPPLEMENT_EVIDENCE[name].dose}</span>
+                        <span className="text-11 text-text-muted"><span className="font-semibold text-text-secondary">Timing:</span> {SUPPLEMENT_EVIDENCE[name].timing}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

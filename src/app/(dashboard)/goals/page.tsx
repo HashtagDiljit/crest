@@ -3,21 +3,27 @@
 import { useState, useEffect } from "react";
 import { Plus, ChevronDown, ChevronUp, Target } from "lucide-react";
 import { getGoals } from "./actions";
+import { getFocus } from "./focus-actions";
 import { GoalCard } from "./_components/GoalCard";
 import { GoalModal } from "./_components/GoalModal";
+import { FocusModal } from "./_components/FocusModal";
 import { useRouter } from "next/navigation";
 import type { GoalRow } from "./actions";
+import type { FocusData } from "./focus-actions";
 
 export default function GoalsPage() {
   const router = useRouter();
   const [goals, setGoals] = useState<GoalRow[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showFocus, setShowFocus] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [focus, setFocus] = useState<FocusData | null>(null);
 
   async function load() {
-    const data = await getGoals();
+    const [data, focusData] = await Promise.all([getGoals(), getFocus()]);
     setGoals(data);
+    setFocus(focusData);
     setLoading(false);
   }
 
@@ -36,12 +42,20 @@ export default function GoalsPage() {
               {active.length} active goal{active.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
-          >
-            <Plus size={14} /> Add goal
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowFocus(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-pill border text-13 font-semibold transition-colors ${focus?.current_focus ? "border-[var(--color-accent-ring)] bg-[var(--color-accent-soft)] text-accent" : "border-border bg-bg-elevated text-text-secondary hover:bg-bg-overlay"}`}
+            >
+              <Target size={13} /> {focus?.current_focus ? "Focus" : "Set focus"}
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
+            >
+              <Plus size={14} /> Add goal
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -87,6 +101,14 @@ export default function GoalsPage() {
         <GoalModal
           onClose={() => setShowModal(false)}
           onCreated={() => { setShowModal(false); load(); router.refresh(); }}
+        />
+      )}
+
+      {showFocus && focus && (
+        <FocusModal
+          focus={focus}
+          onClose={() => setShowFocus(false)}
+          onChanged={() => { load(); router.refresh(); }}
         />
       )}
     </>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { getProfilePrefs } from "./actions";
+import { getProfilePrefs, getTrainingPreferences } from "./actions";
 import { getNutritionSettings } from "@/app/(dashboard)/nutrition/actions";
 import { AccountSection } from "./_components/AccountSection";
 import { AppearanceSection } from "./_components/AppearanceSection";
@@ -8,6 +8,7 @@ import { UnitsSection } from "./_components/UnitsSection";
 import { NotificationsSection } from "./_components/NotificationsSection";
 import { DataPrivacySection } from "./_components/DataPrivacySection";
 import { NutritionSection } from "./_components/NutritionSection";
+import { TrainingSection } from "./_components/TrainingSection";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,10 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [prefs, nutritionSettings] = await Promise.all([
+  const [prefs, nutritionSettings, trainingPrefs] = await Promise.all([
     getProfilePrefs(),
     getNutritionSettings(),
+    getTrainingPreferences(),
   ]);
 
   return (
@@ -46,6 +48,10 @@ export default async function SettingsPage() {
 
       <Section id="nutrition" title="Nutrition">
         <NutritionSection settings={nutritionSettings} />
+      </Section>
+
+      <Section id="training" title="Training Preferences">
+        <TrainingSection prefs={trainingPrefs} />
       </Section>
 
       <Section id="data" title="Data & Privacy">

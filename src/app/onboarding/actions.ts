@@ -102,6 +102,17 @@ export async function saveOnboardingWorkoutSplit(
   }
 }
 
+export async function trackOnboardingStep(step: number) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("profiles") as any)
+    .update({ onboarding_step_reached: step })
+    .eq("id", user.id)
+    .lt("onboarding_step_reached", step); // only update if we're advancing
+}
+
 export async function completeOnboarding() {
   const supabase = await createServerClient();
   const {

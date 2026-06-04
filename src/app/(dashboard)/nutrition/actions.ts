@@ -65,6 +65,13 @@ export async function logMeal(
   isPreset: boolean,
   foodPreset: string | null,
   portionMultiplier: number,
+  extras?: {
+    caloriesKcal?: number;
+    carbsG?: number;
+    fatG?: number;
+    fdcId?: string;
+    barcode?: string;
+  },
 ): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -81,6 +88,11 @@ export async function logMeal(
     meal_type: mealType,
     is_preset: isPreset,
     portion_multiplier: portionMultiplier,
+    ...(extras?.caloriesKcal !== undefined ? { calories_kcal: Math.round(extras.caloriesKcal * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.carbsG !== undefined ? { carbs_g: Math.round(extras.carbsG * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.fatG !== undefined ? { fat_g: Math.round(extras.fatG * portionMultiplier * 10) / 10 } : {}),
+    ...(extras?.fdcId ? { fdc_id: extras.fdcId } : {}),
+    ...(extras?.barcode ? { barcode: extras.barcode } : {}),
   });
 
   if (error) return { error: error.message };
@@ -138,6 +150,48 @@ export async function saveNutritionSettings(settings: NutritionSettings): Promis
   revalidatePath("/settings");
   revalidatePath("/nutrition");
   return {};
+}
+
+export async function getRecentMeals(): Promise<Array<{ meal_name: string; protein_g: number; food_preset: string | null }>> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("nutrition_logs")
+    .select("meal_name, protein_g, food_preset")
+    .eq("user_id", user.id)
+    .not("meal_name", "is", null)
+    .order("logged_at", { ascending: false })
+    .limit(20);
+  // Deduplicate by meal_name, keep most recent 3
+  const seen = new Set<string>();
+  const result: Array<{ meal_name: string; protein_g: number; food_preset: string | null }> = [];
+  for (const row of data ?? []) {
+    if (!row.meal_name || seen.has(row.meal_name)) continue;
+    seen.add(row.meal_name);
+    result.push({ meal_name: row.meal_name, protein_g: row.protein_g ?? 0, food_preset: row.food_preset });
+    if (result.length >= 3) break;
+  }
+  return result;
+}
+
+export interface FoodPreset {
+  id: string;
+  name: string;
+  category: string;
+  meal_type: string;
+  protein_g: number;
+}
+
+export async function getGlobalFoodPresets(): Promise<FoodPreset[]> {
+  const supabase = await createServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("food_presets") as any)
+    .select("id, name, category, meal_type, protein_g")
+    .is("user_id", null)
+    .order("category")
+    .order("name");
+  return (data ?? []) as FoodPreset[];
 }
 
 export async function getNutritionSettings(): Promise<NutritionSettings> {

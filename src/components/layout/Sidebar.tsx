@@ -47,13 +47,13 @@ function isActive(href: string, pathname: string): boolean {
 const EXPANDED_W = 240;
 const COLLAPSED_W = 64;
 
-export function Sidebar() {
+export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   const pathname = usePathname();
   const [openModal, setOpenModal] = useState<ModalKey>(null);
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("crest-sidebar-collapsed");
+    const stored = localStorage.getItem("arc-sidebar-collapsed");
     if (stored === "true") {
       setCollapsed(true);
       document.documentElement.style.setProperty("--sidebar-w", `${COLLAPSED_W}px`);
@@ -65,7 +65,7 @@ export function Sidebar() {
     setCollapsed(next);
     const w = next ? COLLAPSED_W : EXPANDED_W;
     document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
-    try { localStorage.setItem("crest-sidebar-collapsed", String(next)); } catch { /* noop */ }
+    try { localStorage.setItem("arc-sidebar-collapsed", String(next)); } catch { /* noop */ }
   }
 
   const c = collapsed;
@@ -73,18 +73,18 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className="hidden lg:flex bg-bg-inset border-r border-border flex-col h-full overflow-y-auto overflow-x-hidden fixed left-0 top-0 bottom-0 z-20 transition-[width] duration-200"
+        className="hidden md:flex bg-bg-inset border-r border-border flex-col h-full overflow-y-auto overflow-x-hidden fixed left-0 top-0 bottom-0 z-20 transition-[width] duration-200"
         style={{ width: c ? COLLAPSED_W : EXPANDED_W }}
       >
         {/* Brand */}
         <div className={`flex items-center gap-2.5 px-3.5 py-5 pb-4 ${c ? "justify-center" : ""}`}>
-          <CrestLogo />
-          {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Crest</span>}
+          <ArcLogo />
+          {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Arc</span>}
         </div>
 
         {/* Primary nav */}
         <nav className={`flex flex-col gap-0.5 ${c ? "px-2" : "px-3.5"}`}>
-          {NAV_PRIMARY.map((item) => {
+          {NAV_PRIMARY.filter((item) => !hiddenNavIds.includes(item.id)).map((item) => {
             const active = isActive(item.href, pathname);
             const Icon = item.icon;
             return (
@@ -217,7 +217,7 @@ export function Sidebar() {
   );
 }
 
-function CrestLogo() {
+function ArcLogo() {
   return (
     <svg width="26" height="26" viewBox="0 0 64 64" fill="none" className="flex-shrink-0">
       <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />

@@ -18,6 +18,7 @@ export interface ExerciseRow {
   category: string | null;
   muscle_primary: string | null;
   equipment: string | null;
+  demo_gif_url?: string | null;
   is_custom?: boolean;
   user_id?: string | null;
 }
@@ -435,12 +436,119 @@ export async function getExercises(): Promise<ExerciseRow[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data } = await supabase
-    .from("exercises")
-    .select("id, name, category, muscle_primary, equipment, is_custom, user_id")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("exercises") as any)
+    .select("id, name, category, muscle_primary, equipment, demo_gif_url, is_custom, user_id")
     .order("name");
 
   return (data ?? []) as ExerciseRow[];
+}
+
+export async function getExerciseCount(): Promise<number> {
+  const supabase = await createServerClient();
+  const { count } = await supabase
+    .from("exercises")
+    .select("id", { count: "exact", head: true })
+    .is("user_id", null);
+  return count ?? 0;
+}
+
+export async function seedExercisesFromExerciseDB(): Promise<{ seeded: number; error?: string }> {
+  const key = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
+  if (!key) return { seeded: 0, error: "No RapidAPI key configured" };
+
+  const supabase = await createServerClient();
+
+  try {
+    const res = await fetch(
+      "https://exercisedb.p.rapidapi.com/exercises?limit=500&offset=0",
+      {
+        headers: {
+          "X-RapidAPI-Key": key,
+          "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+        },
+        cache: "no-store",
+      }
+    );
+    if (!res.ok) return { seeded: 0, error: `ExerciseDB API error: ${res.status}` };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const exercises: any[] = await res.json();
+
+    // Get existing exercise names (case-insensitive dedup)
+    const { data: existing } = await supabase
+      .from("exercises")
+      .select("name")
+      .is("user_id", null);
+    const existingNames = new Set((existing ?? []).map((e: { name: string }) => e.name.toLowerCase()));
+
+    const toInsert = exercises
+      .filter((e) => e.name && !existingNames.has((e.name as string).toLowerCase()))
+      .map((e) => ({
+        name:            e.name as string,
+        category:        e.bodyPart as string ?? null,
+        muscle_primary:  e.target as string ?? null,
+        equipment:       e.equipment as string ?? null,
+        demo_gif_url:    e.gifUrl as string ?? null,
+        is_custom:       false,
+        user_id:         null,
+      }));
+
+    if (toInsert.length === 0) return { seeded: 0 };
+
+    // Insert in batches of 100
+    let seeded = 0;
+    for (let i = 0; i < toInsert.length; i += 100) {
+      const batch = toInsert.slice(i, i + 100);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("exercises") as any).insert(batch);
+      if (!error) seeded += batch.length;
+    }
+    return { seeded };
+  } catch (err) {
+    return { seeded: 0, error: String(err) };
+  }
+}
+
+export async function fetchAndCacheExerciseGif(exerciseId: string, exerciseName: string): Promise<string | null> {
+  const key = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
+  if (!key) return null;
+
+  const supabase = await createServerClient();
+
+  // Return cached URL if it exists
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing } = await (supabase.from("exercises") as any)
+    .select("demo_gif_url")
+    .eq("id", exerciseId)
+    .single();
+  if (existing?.demo_gif_url) return existing.demo_gif_url as string;
+
+  try {
+    const res = await fetch(
+      `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(exerciseName.toLowerCase())}?limit=1`,
+      {
+        headers: {
+          "X-RapidAPI-Key": key,
+          "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
+        },
+        cache: "no-store",
+      }
+    );
+    if (!res.ok) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any[] = await res.json();
+    const gifUrl: string | null = data[0]?.gifUrl ?? null;
+    if (gifUrl) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("exercises") as any)
+        .update({ demo_gif_url: gifUrl })
+        .eq("id", exerciseId);
+    }
+    return gifUrl;
+  } catch {
+    return null;
+  }
 }
 
 export async function updateCustomExercise(
@@ -1264,6 +1372,77 @@ export async function deleteWorkoutSession(sessionId: string): Promise<{ error?:
     .delete()
     .eq("id", sessionId)
     .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts");
+  return {};
+}
+
+export async function getActiveSession(): Promise<{ id: string; templateName: string | null; startedAt: string } | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: session } = await supabase
+    .from("workout_sessions")
+    .select("id, started_at, template_id")
+    .eq("user_id", user.id)
+    .is("ended_at", null)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!session) return null;
+
+  const sess = session as { id: string; started_at: string; template_id: string | null };
+  let templateName: string | null = null;
+  if (sess.template_id) {
+    const { data: tmpl } = await supabase
+      .from("workout_templates")
+      .select("name")
+      .eq("id", sess.template_id)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    templateName = (tmpl as any)?.name ?? null;
+  }
+
+  return { id: sess.id, templateName, startedAt: sess.started_at };
+}
+
+export type TrainingBlock = "base" | "build" | "peak" | "deload";
+
+export interface TrainingBlockData {
+  current_training_block: TrainingBlock | null;
+  block_start_date: string | null;
+}
+
+export async function getTrainingBlock(): Promise<TrainingBlockData> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { current_training_block: null, block_start_date: null };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("profiles") as any)
+    .select("current_training_block, block_start_date")
+    .eq("id", user.id)
+    .single();
+
+  return {
+    current_training_block: (data?.current_training_block as TrainingBlock) ?? null,
+    block_start_date: data?.block_start_date ?? null,
+  };
+}
+
+export async function setTrainingBlock(block: TrainingBlock): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("profiles") as any)
+    .update({ current_training_block: block, block_start_date: today })
+    .eq("id", user.id);
 
   if (error) return { error: error.message };
   revalidatePath("/workouts");

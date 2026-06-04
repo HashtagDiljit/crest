@@ -40,7 +40,7 @@ export function HabitModal({ onClose, onCreated }: Props) {
         className="relative z-10 w-full max-w-sm rounded-r5 border border-border bg-bg-surface p-6 flex flex-col gap-4 shadow-2xl"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-18 font-semibold text-text-primary">New habit</h2>
+          <h2 className="font-display text-18 font-semibold text-text-primary">Build a practice</h2>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <X size={18} />
           </button>
