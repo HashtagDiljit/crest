@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("username, streak_current, dashboard_layout, onboarding_step_reached")
+      .select("username, streak_current, dashboard_layout, onboarding_step_reached, current_focus, focus_start_date, focus_end_date")
       .eq("id", user.id)
       .single(),
 
@@ -248,6 +248,9 @@ export default async function DashboardPage() {
       lastWeekDigest={{ workouts: lwWorkouts, sleepAvg: lwSleepAvg, habitPct: lwHabitPct, moodAvg: lwMoodAvg }}
       lastSession={lastSession}
       weeklyVolume={weeklyVolumeRounded}
+      currentFocus={profile?.current_focus ?? null}
+      focusStartDate={profile?.focus_start_date ?? null}
+      focusEndDate={profile?.focus_end_date ?? null}
     />
   );
 }

@@ -1408,3 +1408,43 @@ export async function getActiveSession(): Promise<{ id: string; templateName: st
 
   return { id: sess.id, templateName, startedAt: sess.started_at };
 }
+
+export type TrainingBlock = "base" | "build" | "peak" | "deload";
+
+export interface TrainingBlockData {
+  current_training_block: TrainingBlock | null;
+  block_start_date: string | null;
+}
+
+export async function getTrainingBlock(): Promise<TrainingBlockData> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { current_training_block: null, block_start_date: null };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("profiles") as any)
+    .select("current_training_block, block_start_date")
+    .eq("id", user.id)
+    .single();
+
+  return {
+    current_training_block: (data?.current_training_block as TrainingBlock) ?? null,
+    block_start_date: data?.block_start_date ?? null,
+  };
+}
+
+export async function setTrainingBlock(block: TrainingBlock): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("profiles") as any)
+    .update({ current_training_block: block, block_start_date: today })
+    .eq("id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts");
+  return {};
+}

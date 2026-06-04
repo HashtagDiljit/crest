@@ -45,6 +45,12 @@ export interface SorenessRow {
   severity: string;
 }
 
+export interface VitalMetricRow {
+  logged_date: string;
+  metric_type: string;
+  value: number;
+}
+
 export interface HealthData {
   sleepLogs: SleepLogRow[];
   readinessLogs: ReadinessRow[];
@@ -52,12 +58,17 @@ export interface HealthData {
   hrvMetrics: MetricRow[];
   hrMetrics: MetricRow[];
   todaySoreness: SorenessRow[];
+  bpMetrics: VitalMetricRow[];
+  gripMetrics: MetricRow[];
+  tempMetrics: MetricRow[];
+  respMetrics: MetricRow[];
+  gutMetrics: MetricRow[];
 }
 
 export async function getHealthData(): Promise<HealthData> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { sleepLogs: [], readinessLogs: [], measurements: [], hrvMetrics: [], hrMetrics: [], todaySoreness: [] };
+  if (!user) return { sleepLogs: [], readinessLogs: [], measurements: [], hrvMetrics: [], hrMetrics: [], todaySoreness: [], bpMetrics: [], gripMetrics: [], tempMetrics: [], respMetrics: [], gutMetrics: [] };
 
   const since7 = new Date();
   since7.setDate(since7.getDate() - 7);
@@ -69,15 +80,21 @@ export async function getHealthData(): Promise<HealthData> {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [sleepRes, readinessRes, measureRes, metricRes, sorenessRes] = await Promise.all([
+  const since30 = new Date();
+  since30.setDate(since30.getDate() - 30);
+  const since30Str = since30.toISOString().split("T")[0];
+
+  const [sleepRes, readinessRes, measureRes, metricRes, sorenessRes, vitalRes] = await Promise.all([
     supabase.from("sleep_logs").select("*").eq("user_id", user.id).gte("logged_date", since7Str).order("logged_date", { ascending: false }),
     supabase.from("readiness_logs").select("*").eq("user_id", user.id).gte("logged_date", since7Str).order("logged_date", { ascending: false }),
     supabase.from("body_measurements").select("*").eq("user_id", user.id).gte("logged_date", since90Str).order("logged_date", { ascending: false }),
     supabase.from("health_metrics").select("logged_date, metric_type, value").eq("user_id", user.id).gte("logged_date", since7Str),
     supabase.from("soreness_logs").select("muscle_group, severity").eq("user_id", user.id).eq("logged_date", today),
+    supabase.from("health_metrics").select("logged_date, metric_type, value").eq("user_id", user.id).gte("logged_date", since30Str).in("metric_type", ["bp_systolic", "bp_diastolic", "grip_strength_kg", "body_temp_c", "respiratory_rate", "gut_score"]).order("logged_date", { ascending: false }),
   ]);
 
   const metrics = (metricRes.data ?? []) as Array<{ logged_date: string; metric_type: string; value: number }>;
+  const vitals = (vitalRes.data ?? []) as Array<{ logged_date: string; metric_type: string; value: number }>;
 
   return {
     sleepLogs: (sleepRes.data ?? []).map((l) => ({ id: l.id, logged_date: l.logged_date, duration_hrs: l.duration_hrs, quality_score: l.quality_score, bedtime: l.bedtime, wake_time: l.wake_time })),
@@ -93,7 +110,28 @@ export async function getHealthData(): Promise<HealthData> {
     hrvMetrics: metrics.filter((m) => m.metric_type === "hrv").map((m) => ({ logged_date: m.logged_date, value: m.value })),
     hrMetrics: metrics.filter((m) => m.metric_type === "resting_hr").map((m) => ({ logged_date: m.logged_date, value: m.value })),
     todaySoreness: (sorenessRes.data ?? []).map((s) => ({ muscle_group: s.muscle_group, severity: s.severity })),
+    bpMetrics: vitals.filter((m) => m.metric_type === "bp_systolic" || m.metric_type === "bp_diastolic"),
+    gripMetrics: vitals.filter((m) => m.metric_type === "grip_strength_kg").map((m) => ({ logged_date: m.logged_date, value: m.value })),
+    tempMetrics: vitals.filter((m) => m.metric_type === "body_temp_c").map((m) => ({ logged_date: m.logged_date, value: m.value })),
+    respMetrics: vitals.filter((m) => m.metric_type === "respiratory_rate").map((m) => ({ logged_date: m.logged_date, value: m.value })),
+    gutMetrics: vitals.filter((m) => m.metric_type === "gut_score").map((m) => ({ logged_date: m.logged_date, value: m.value })),
   };
+}
+
+export async function logHealthMetric(metricType: string, value: number, unit?: string): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("health_metrics") as any).upsert(
+    { user_id: user.id, logged_date: today, metric_type: metricType, value, unit: unit ?? null },
+    { onConflict: "user_id,logged_date,metric_type" }
+  );
+  if (error) return { error: error.message };
+  revalidatePath("/health");
+  return {};
 }
 
 export async function logSleep(formData: FormData): Promise<{ error?: string }> {

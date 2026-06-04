@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { FocusBanner } from "@/components/FocusBanner";
 import { saveDashboardLayout } from "../actions";
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -48,6 +49,9 @@ export interface DashboardData {
   lastWeekDigest: { workouts: number; sleepAvg: number | null; habitPct: number | null; moodAvg: number | null };
   lastSession: { date: string; templateName: string | null } | null;
   weeklyVolume: number[];
+  currentFocus?: string | null;
+  focusStartDate?: string | null;
+  focusEndDate?: string | null;
 }
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -885,6 +889,14 @@ export function DashboardContent(props: DashboardData) {
           )}
         </div>
       </div>
+
+      {props.currentFocus && props.focusStartDate && props.focusEndDate && (
+        <FocusBanner
+          focus={props.currentFocus}
+          startDate={props.focusStartDate}
+          endDate={props.focusEndDate}
+        />
+      )}
 
       {showDigest && (
         <WeeklyDigestCard digest={props.lastWeekDigest} onDismiss={dismissDigest} />

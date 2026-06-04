@@ -129,6 +129,25 @@ export async function getLastWeight(): Promise<number | null> {
   return (data as any)?.weight_kg ?? null;
 }
 
+export async function quickLogBP(systolic: number, diastolic: number): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("health_metrics") as any).upsert(
+    { user_id: user.id, logged_date: today, metric_type: "bp_systolic", value: systolic, unit: "mmHg" },
+    { onConflict: "user_id,logged_date,metric_type" }
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("health_metrics") as any).upsert(
+    { user_id: user.id, logged_date: today, metric_type: "bp_diastolic", value: diastolic, unit: "mmHg" },
+    { onConflict: "user_id,logged_date,metric_type" }
+  );
+  revalidatePath("/health");
+  return {};
+}
+
 export async function quickLogNote(body: string): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

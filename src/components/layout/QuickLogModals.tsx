@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Minus, Plus as PlusIcon } from "lucide-react";
 import {
   quickLogWater, quickLogMood,
-  quickLogWeight, quickLogSleep, quickLogNote,
+  quickLogWeight, quickLogSleep, quickLogNote, quickLogBP,
   getLastSleepTimes, getLastWeight,
 } from "@/app/(dashboard)/quick-log-actions";
 import { MealLoggerModal } from "@/app/(dashboard)/nutrition/_components/MealLoggerModal";
@@ -243,6 +243,55 @@ export function SleepModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <SaveBtn saving={saving} />
+      </form>
+    </Modal>
+  );
+}
+
+// ─── Blood pressure ───────────────────────────────────────────────────────────
+
+export function BPModal({ onClose }: { onClose: () => void }) {
+  const [sys, setSys] = useState("");
+  const [dia, setDia] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const s = parseInt(sys), d = parseInt(dia);
+    if (isNaN(s) || isNaN(d)) return;
+    setSaving(true);
+    await quickLogBP(s, d);
+    onClose();
+  }
+
+  return (
+    <Modal title="Log blood pressure" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-11 font-semibold uppercase tracking-widest text-text-muted">Systolic</label>
+            <input
+              autoFocus
+              type="number"
+              value={sys}
+              onChange={(e) => setSys(e.target.value)}
+              placeholder="120"
+              className="rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors text-center"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-11 font-semibold uppercase tracking-widest text-text-muted">Diastolic</label>
+            <input
+              type="number"
+              value={dia}
+              onChange={(e) => setDia(e.target.value)}
+              placeholder="80"
+              className="rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors text-center"
+            />
+          </div>
+        </div>
+        <p className="text-11 text-text-muted text-center">mmHg — measure sitting, arm at heart level</p>
+        <SaveBtn saving={saving} label={sys && dia ? `Log ${sys}/${dia} mmHg` : "Log BP"} />
       </form>
     </Modal>
   );

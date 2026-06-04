@@ -4,11 +4,12 @@ import Link from "next/link";
 import { Plus, BookOpen, Play } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { getTemplates, getWorkoutHistory, seedDefaultTemplates, getTrainingWeekCount, getActiveSession } from "./actions";
+import { getTemplates, getWorkoutHistory, seedDefaultTemplates, getTrainingWeekCount, getActiveSession, getTrainingBlock } from "./actions";
 import { TemplatesSection } from "./_components/TemplatesSection";
 import { HistorySection } from "./_components/HistorySection";
 import { WeekPanel } from "./_components/WeekPanel";
 import { DeloadBanner } from "./_components/DeloadBanner";
+import { TrainingBlockSection } from "./_components/TrainingBlockSection";
 
 export default async function WorkoutsPage() {
   const supabase = await createServerClient();
@@ -19,8 +20,8 @@ export default async function WorkoutsPage() {
 
   await seedDefaultTemplates();
 
-  const [templates, history, weekCount, activeSession] = await Promise.all([
-    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(), getActiveSession(),
+  const [templates, history, weekCount, activeSession, blockData] = await Promise.all([
+    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(), getActiveSession(), getTrainingBlock(),
   ]);
 
   const showDeloadBanner = weekCount > 0 && weekCount % 4 === 0;
@@ -70,6 +71,8 @@ export default async function WorkoutsPage() {
           <span className="text-13 font-medium text-accent">Continue →</span>
         </Link>
       )}
+
+      <TrainingBlockSection blockData={blockData} />
 
       <TemplatesSection templates={templates} />
 
