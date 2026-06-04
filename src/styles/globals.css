@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: dark;
   --color-bg-base: #0D0D12;
   --color-bg-inset: #111118;
   --color-bg-surface: #16161E;
@@ -105,6 +106,7 @@ html, body {
 
 /* Light theme overrides */
 [data-theme="light"] {
+  color-scheme: light;
   --topbar-bg: rgba(255, 255, 255, 0.88);
   --color-bg-base: #FFFFFF;
   --color-bg-inset: #F8F8F5;

@@ -45,6 +45,19 @@ export function applyTheme(theme: string) {
     document.documentElement.removeAttribute("data-theme");
   }
 
+  // Keep theme-color meta in sync with the active theme so iOS status bar
+  // and Android browser chrome match the page background.
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])') as HTMLMetaElement | null;
+  if (metaThemeColor) {
+    metaThemeColor.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+  } else {
+    // Next.js emits media-scoped tags; inject a plain one for runtime overrides.
+    const tag = document.createElement("meta");
+    tag.name = "theme-color";
+    tag.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+    document.head.appendChild(tag);
+  }
+
   try { localStorage.setItem("crest-theme", theme); } catch { /* noop */ }
 }
 
