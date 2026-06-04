@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
 import { logSet, finalizeSession, getExerciseHistory } from "../actions";
+import { track } from "@vercel/analytics";
 import type { TemplateExerciseRow, SessionSetRow, SessionRow, ExerciseSessionHistory, PRResult } from "../actions";
 import { SessionHeader } from "./_components/SessionHeader";
 import { SetTable } from "./_components/SetTable";
@@ -273,6 +274,7 @@ function SessionPage() {
     setEnding(true);
     const result = await finalizeSession(sessionId);
     setSummary({ ...result, started_at: data.session.started_at });
+    track("workout_logged", { sets: result.sets_count ?? 0 });
   }, [sessionId, data, elapsedSeconds]);
 
   if (loading) {

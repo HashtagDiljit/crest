@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { X, Check, ChevronRight, Search, Barcode, ArrowLeft, Loader2 } from "lucide-react";
 import { logMeal, getRecentMeals, getGlobalFoodPresets } from "../actions";
+import { track } from "@vercel/analytics";
 import type { FoodPreset } from "../actions";
 import { getTodayProtein } from "@/app/(dashboard)/quick-log-actions";
 import { BarcodeScanner } from "./BarcodeScanner";
@@ -196,6 +197,7 @@ function PortionScreen({
       },
     );
     setSaving(false);
+    track("meal_logged", { mealType, source: food.fdcId ? "usda" : food.barcode ? "barcode" : "manual", proteinG: protein });
     onLogged(protein);
   }
 
@@ -363,6 +365,7 @@ export function MealLoggerModal({
     }
     setSaving(false);
     if (res.error) return;
+    track("meal_logged", { mealType, source: "preset", proteinG: activeProtein });
     const savedLabel = showCustom ? customName.trim() : selected!.label;
     setTodayProtein(projectedTotal);
     setRecentlySaved(savedLabel);

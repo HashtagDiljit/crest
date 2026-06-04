@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   DragDropContext,
   Droppable,
@@ -748,6 +750,7 @@ function getISOWeekNumber(): number {
 }
 
 export function DashboardContent(props: DashboardData) {
+  const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [cardOrder, setCardOrder] = useState<string[]>(
     props.dashboardLayout?.cards ?? DEFAULT_CARDS
@@ -756,6 +759,22 @@ export function DashboardContent(props: DashboardData) {
     props.dashboardLayout?.hidden ?? []
   );
   const [saving, setSaving] = useState(false);
+
+  // Live updates: habit ticks on mobile, session completions — update dashboard
+  // immediately without a manual refresh.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("dashboard-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs" },
+        () => router.refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "workout_sessions" },
+        () => router.refresh())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [router]);
+
   const [digestDismissed, setDigestDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
     const key = `weekly-digest-dismissed-${getISOWeekNumber()}`;

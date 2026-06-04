@@ -8,63 +8,57 @@ const MIN_POINTS = 14;
 
 async function getCorrelationData(userId: string) {
   const supabase = await createServerClient();
-  const since = new Date();
-  since.setDate(since.getDate() - 90);
-  const sinceStr = since.toISOString().split("T")[0];
+  const DAYS = 90;
 
-  const [sleepRes, moodRes, sessionsRes, habitsRes, logsRes] = await Promise.all([
-    supabase.from("sleep_logs").select("logged_date,duration_hrs,bedtime").eq("user_id", userId).gte("logged_date", sinceStr),
-    supabase.from("mood_logs").select("logged_date,score").eq("user_id", userId).gte("logged_date", sinceStr),
-    supabase.from("workout_sessions").select("started_at").eq("user_id", userId).not("ended_at", "is", null).gte("started_at", sinceStr),
-    supabase.from("habits").select("id,name").eq("user_id", userId).is("archived_at", null),
-    supabase.from("habit_logs").select("habit_id,logged_date").eq("user_id", userId).eq("completed", true).gte("logged_date", sinceStr),
-  ]);
+  // Run the three server-side RPC functions and the sleep consistency query in parallel.
+  // The RPCs run entirely in Postgres, using the indexed columns — no raw row transfer.
+  const [sleepMoodRpc, trainingMoodRpc, habitMoodRpc, sleepConsistencyRes, moodCountRes] =
+    await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).rpc("get_sleep_mood_correlation",   { p_user_id: userId, p_days: DAYS }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).rpc("get_training_mood_correlation", { p_user_id: userId, p_days: DAYS }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).rpc("get_habit_mood_correlation",   { p_user_id: userId, p_days: DAYS }),
+      // Bedtime std-dev still needs raw rows (time arithmetic done in JS)
+      supabase.from("sleep_logs")
+        .select("logged_date,bedtime")
+        .eq("user_id", userId)
+        .gte("logged_date", new Date(Date.now() - DAYS * 86400000).toISOString().split("T")[0]),
+      supabase.from("mood_logs")
+        .select("logged_date", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("logged_date", new Date(Date.now() - DAYS * 86400000).toISOString().split("T")[0]),
+    ]);
 
-  const sleepByDate = new Map<string, { hrs: number; bedtimeMin: number | null }>();
-  for (const s of sleepRes.data ?? []) {
-    let bedMin: number | null = null;
-    if (s.bedtime) {
-      const [h, m] = (s.bedtime as string).split(":").map(Number);
-      // Convert bedtime to minutes from noon (so 22:00 = 600, 00:30 = 750 wrapping)
-      bedMin = h * 60 + m;
-      if (bedMin < 12 * 60) bedMin += 24 * 60; // wrap midnight times
-    }
-    sleepByDate.set(s.logged_date as string, { hrs: (s.duration_hrs as number) ?? 0, bedtimeMin: bedMin });
-  }
+  // ── Sleep → mood scatter points (from RPC) ──────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sleepMoodPoints: Array<{ sleepHrs: number; mood: number; date: string }> = (sleepMoodRpc.data ?? []).map((r: any, i: number) => ({
+    sleepHrs: Math.round((r.sleep_hrs as number) * 10) / 10,
+    mood:     r.next_day_mood as number,
+    date:     String(i),
+  }));
 
-  const moodByDate = new Map<string, number>();
-  for (const m of moodRes.data ?? []) {
-    moodByDate.set(m.logged_date as string, m.score as number);
-  }
-
-  const trainingDates = new Set<string>(
-    (sessionsRes.data ?? []).map((s) => (s.started_at as string).split("T")[0])
-  );
-
-  // Sleep→mood scatter points
-  const sleepMoodPoints: Array<{ sleepHrs: number; mood: number; date: string }> = [];
-  Array.from(sleepByDate.entries()).forEach(([date, sleep]) => {
-    const mood = moodByDate.get(date);
-    if (mood !== undefined && sleep.hrs > 0) {
-      sleepMoodPoints.push({ sleepHrs: Math.round(sleep.hrs * 10) / 10, mood, date });
-    }
-  });
-
-  // Training vs rest mood
-  const trainingMoods: number[] = [];
-  const restMoods: number[] = [];
-  Array.from(moodByDate.entries()).forEach(([date, mood]) => {
-    if (trainingDates.has(date)) trainingMoods.push(mood);
-    else restMoods.push(mood);
-  });
-  const avg = (arr: number[]) => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0;
+  // ── Training vs rest mood (from RPC) ────────────────────────────────────────
+  const avg = (v: number) => Math.round(v * 10) / 10;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const trainingRow = (trainingMoodRpc.data ?? []).find((r: any) => r.is_training_day === true);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const restRow     = (trainingMoodRpc.data ?? []).find((r: any) => r.is_training_day === false);
   const trainingMoodData = [
-    { name: "Training days", avgMood: avg(trainingMoods), count: trainingMoods.length },
-    { name: "Rest days", avgMood: avg(restMoods), count: restMoods.length },
+    { name: "Training days", avgMood: avg(trainingRow?.avg_mood ?? 0), count: Number(trainingRow?.day_count ?? 0) },
+    { name: "Rest days",     avgMood: avg(restRow?.avg_mood ?? 0),     count: Number(restRow?.day_count ?? 0)     },
   ];
 
-  // Sleep consistency (bedtime std dev)
-  const bedtimeMins = Array.from(sleepByDate.values()).map((s: { hrs: number; bedtimeMin: number | null }) => s.bedtimeMin).filter((v): v is number => v !== null);
+  // ── Bedtime consistency (still computed in JS from raw bedtime strings) ──────
+  const bedtimeMins: number[] = [];
+  for (const s of sleepConsistencyRes.data ?? []) {
+    if (!s.bedtime) continue;
+    const [h, m] = (s.bedtime as string).split(":").map(Number);
+    let mins = h * 60 + m;
+    if (mins < 12 * 60) mins += 24 * 60; // wrap midnight times past noon
+    bedtimeMins.push(mins);
+  }
   let sleepStdDev = 0;
   let avgBedtimeStr = "";
   if (bedtimeMins.length >= 3) {
@@ -75,41 +69,21 @@ async function getCorrelationData(userId: string) {
     avgBedtimeStr = `${String(avgH).padStart(2, "0")}:${String(avgM).padStart(2, "0")}`;
   }
 
-  // Habit→mood correlation (top habits by days done)
-  const completedByHabit = new Map<string, Set<string>>();
-  for (const log of logsRes.data ?? []) {
-    if (!completedByHabit.has(log.habit_id as string)) completedByHabit.set(log.habit_id as string, new Set());
-    completedByHabit.get(log.habit_id as string)!.add(log.logged_date as string);
-  }
-
-  const habitCorrelations: Array<{ habitName: string; avgMoodWith: number; avgMoodWithout: number; completionDays: number }> = [];
-  for (const habit of habitsRes.data ?? []) {
-    const doneDates = completedByHabit.get(habit.id as string) ?? new Set<string>();
-    if (doneDates.size < 5) continue;
-    const withMoods: number[] = [];
-    const withoutMoods: number[] = [];
-    Array.from(moodByDate.entries()).forEach(([date, mood]) => {
-      if (doneDates.has(date)) withMoods.push(mood);
-      else withoutMoods.push(mood);
-    });
-    if (withMoods.length < 3 || withoutMoods.length < 3) continue;
-    habitCorrelations.push({
-      habitName: habit.name as string,
-      avgMoodWith: avg(withMoods),
-      avgMoodWithout: avg(withoutMoods),
-      completionDays: doneDates.size,
-    });
-  }
-  // Sort by absolute difference
-  habitCorrelations.sort((a, b) => Math.abs(b.avgMoodWith - b.avgMoodWithout) - Math.abs(a.avgMoodWith - a.avgMoodWithout));
-  const topHabitCorrelations = habitCorrelations.slice(0, 3);
+  // ── Habit → mood (from RPC) ──────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const topHabitCorrelations = (habitMoodRpc.data ?? []).map((r: any) => ({
+    habitName:       r.habit_name as string,
+    avgMoodWith:     avg(r.avg_mood_with as number),
+    avgMoodWithout:  avg(r.avg_mood_without as number),
+    completionDays:  Number(r.completion_days),
+  }));
 
   return {
     sleepMoodPoints,
     trainingMoodData,
     sleepConsistency: { stdDevMinutes: sleepStdDev, avgBedtimeStr },
     topHabitCorrelations,
-    dataPointCount: moodByDate.size,
+    dataPointCount: moodCountRes.count ?? 0,
   };
 }
 

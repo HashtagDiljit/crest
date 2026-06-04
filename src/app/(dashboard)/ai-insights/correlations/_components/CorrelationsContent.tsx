@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine, LabelList,
 } from "recharts";
+import { track } from "@vercel/analytics";
 
 interface Props {
   data: {
@@ -37,6 +39,10 @@ function Finding({ text }: { text: string }) {
 
 export function CorrelationsContent({ data }: Props) {
   const { sleepMoodPoints, trainingMoodData, sleepConsistency, topHabitCorrelations } = data;
+
+  useEffect(() => {
+    track("correlation_viewed", { dataPoints: data.dataPointCount });
+  }, [data.dataPointCount]);
 
   // Sleep→mood finding
   let sleepFinding: string | null = null;

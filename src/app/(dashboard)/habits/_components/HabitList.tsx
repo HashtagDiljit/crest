@@ -3,6 +3,7 @@
 import { useState, useOptimistic, useTransition } from "react";
 import { Flame, Plus, Check, Copy } from "lucide-react";
 import { toggleHabit, copyYesterdayHabits } from "../actions";
+import { track } from "@vercel/analytics";
 import { HabitModal } from "./HabitModal";
 import type { HabitRow } from "../actions";
 import { useRouter } from "next/navigation";
@@ -57,6 +58,7 @@ export function HabitList({ habits, username }: Props) {
       setOptimistic({ id: habit.id, done });
       await toggleHabit(habit.id, today, habit.completedToday);
       if (done) {
+        track("habit_completed", { habitId: habit.id, streak: habit.streak + 1 });
         const milestone = milestoneMessage(habit.name, habit.streak + 1);
         if (milestone) {
           showToast(milestone);

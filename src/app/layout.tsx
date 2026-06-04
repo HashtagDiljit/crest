@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ThemeInit } from "@/components/ThemeInit";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Crest",
@@ -32,6 +34,8 @@ export default function RootLayout({
       <body>
         <ThemeInit />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

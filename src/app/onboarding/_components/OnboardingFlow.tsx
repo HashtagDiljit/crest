@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@vercel/analytics";
 import { Check, ChevronRight, Plus, X } from "lucide-react";
 import {
   saveOnboardingStats,
@@ -590,6 +591,7 @@ function Step6({
 
   async function handleDone() {
     setLoading(true);
+    track("onboarding_completed", { stepsCompleted: completedSteps.size });
     await completeOnboarding();
   }
 
