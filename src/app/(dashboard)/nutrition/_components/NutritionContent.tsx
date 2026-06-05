@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useOptimistic, useTransition } from "react";
-import { Plus, Trash2, Clock, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Clock, AlertCircle, X } from "lucide-react";
 import { MealLoggerModal } from "./MealLoggerModal";
 import { WeeklyOverviewCard } from "./WeeklyOverviewCard";
 import { SupplementLogSection } from "./SupplementLogSection";
@@ -35,6 +35,7 @@ export function NutritionContent({
   today: string;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   // Optimistic supplement state
@@ -77,6 +78,7 @@ export function NutritionContent({
   }
 
   function handleDeleteMeal(id: string) {
+    setConfirmDeleteId(null);
     startTransition(async () => {
       removeMealOptimistic(id);
       await deleteMeal(id);
@@ -217,14 +219,32 @@ export function NutritionContent({
                       <span className="text-11 text-text-muted">{fmtTime(meal.logged_at)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <span className="font-mono text-13 font-semibold text-accent">+{meal.protein_g ?? 0}g</span>
-                    <button
-                      onClick={() => handleDeleteMeal(meal.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-text-muted hover:text-red-400 transition-all"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {confirmDeleteId === meal.id ? (
+                      <>
+                        <button
+                          onClick={() => handleDeleteMeal(meal.id)}
+                          className="ml-1 px-2 py-0.5 rounded-r2 bg-red-500 text-white text-11 font-semibold hover:bg-red-600 transition-colors"
+                        >
+                          Remove
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="p-1 rounded text-text-muted hover:text-text-primary transition-colors"
+                        >
+                          <X size={12} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(meal.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-text-muted hover:text-red-400 transition-all"
+                        title="Remove from log"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -38,6 +38,9 @@ export default async function DashboardPage() {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+  const today = new Date().toISOString().split("T")[0];
+  const since30 = new Date(Date.now() - 29 * 86400000).toISOString().split("T")[0];
+
   const [
     profileResult,
     workoutsThisWeek,
@@ -57,6 +60,12 @@ export default async function DashboardPage() {
     lastWeekMoodResult,
     lastSessionResult,
     weeklyVolumeResult,
+    waterTodayResult,
+    proteinTodayResult,
+    weightTrendResult,
+    journalDaysResult,
+    activeGoalsResult,
+    nextWorkoutResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -142,6 +151,18 @@ export default async function DashboardPage() {
     supabase.from("workout_sessions").select("started_at, template_id, workout_templates(name)").eq("user_id", user.id).not("ended_at", "is", null).order("started_at", { ascending: false }).limit(1).maybeSingle(),
     // Sets from last 4 weeks for volume sparkline
     supabase.from("session_sets").select("weight_kg, reps, workout_sessions!inner(started_at, user_id)").eq("workout_sessions.user_id", user.id).gte("workout_sessions.started_at", new Date(Date.now() - 28 * 86400000).toISOString()),
+    // Water today
+    supabase.from("health_metrics").select("value").eq("user_id", user.id).eq("metric_type", "water_ml").eq("logged_date", today),
+    // Protein today
+    supabase.from("nutrition_logs").select("protein_g").eq("user_id", user.id).eq("logged_date", today),
+    // Weight trend last 7 logged entries
+    supabase.from("body_measurements").select("weight_kg, logged_date").eq("user_id", user.id).not("weight_kg", "is", null).order("logged_date", { ascending: false }).limit(7),
+    // Journal days in last 30
+    supabase.from("journal_entries").select("logged_date").eq("user_id", user.id).gte("logged_date", since30),
+    // Active goals count
+    supabase.from("goals").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("completed_at", null),
+    // Next workout: templates with last used date
+    supabase.from("workout_templates").select("id, name").eq("user_id", user.id).limit(10),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,6 +235,22 @@ export default async function DashboardPage() {
     ? Math.round(lwMoodRows.reduce((s, r) => s + r.score, 0) / lwMoodRows.length * 10) / 10
     : null;
 
+  const waterToday = ((waterTodayResult.data ?? []) as { value: number }[])
+    .reduce((sum, r) => sum + (r.value ?? 0), 0);
+  const proteinToday = Math.round(((proteinTodayResult.data ?? []) as { protein_g: number | null }[])
+    .reduce((sum, r) => sum + (r.protein_g ?? 0), 0));
+  const proteinTarget: number = (profile as { nutrition_settings?: { protein_target?: number } } | null)
+    ?.nutrition_settings?.protein_target ?? 150;
+  const weightTrendRows = (weightTrendResult.data ?? []) as { weight_kg: number }[];
+  const weightTrend = [...weightTrendRows].reverse().map((r) => r.weight_kg);
+  const journalDates = new Set(((journalDaysResult.data ?? []) as { logged_date: string }[]).map((r) => r.logged_date));
+  const journalDays30 = journalDates.size;
+  const activeGoalCount = activeGoalsResult.count ?? 0;
+  const templates = (nextWorkoutResult.data ?? []) as { id: string; name: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lastTemplateName = (lastSessionRow as any)?.workout_templates?.name ?? null;
+  const nextWorkoutName = templates.find((t) => t.name !== lastTemplateName)?.name ?? templates[0]?.name ?? null;
+
   const rawLayout = profile?.dashboard_layout;
   const dashboardLayout =
     rawLayout &&
@@ -251,6 +288,13 @@ export default async function DashboardPage() {
       currentFocus={profile?.current_focus ?? null}
       focusStartDate={profile?.focus_start_date ?? null}
       focusEndDate={profile?.focus_end_date ?? null}
+      waterToday={Math.round(waterToday)}
+      proteinToday={proteinToday}
+      proteinTarget={proteinTarget}
+      weightTrend={weightTrend}
+      journalDays30={journalDays30}
+      activeGoalCount={activeGoalCount}
+      nextWorkoutName={nextWorkoutName}
     />
   );
 }

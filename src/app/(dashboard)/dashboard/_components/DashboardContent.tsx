@@ -21,6 +21,12 @@ import {
   Eye,
   EyeOff,
   X,
+  Droplets,
+  Utensils,
+  Target,
+  TrendingUp,
+  BookOpen,
+  Weight,
 } from "lucide-react";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { FocusBanner } from "@/components/FocusBanner";
@@ -52,6 +58,13 @@ export interface DashboardData {
   currentFocus?: string | null;
   focusStartDate?: string | null;
   focusEndDate?: string | null;
+  waterToday?: number;
+  proteinToday?: number;
+  proteinTarget?: number;
+  weightTrend?: number[];
+  journalDays30?: number;
+  activeGoalCount?: number;
+  nextWorkoutName?: string | null;
 }
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -65,17 +78,33 @@ const DEFAULT_CARDS = [
   "heatmap",
   "ai-insight",
   "hrv",
+  "water-today",
+  "nutrition-summary",
+  "next-workout",
+  "focus-widget",
+  "weight-trend",
+  "goals-progress",
+  "journal-streak",
+  "weekly-volume",
 ];
 
 const CARD_META: Record<string, { label: string; Icon: React.ElementType; span: number }> = {
-  "weekly-ring": { label: "Weekly progress", Icon: Activity, span: 2 },
-  streak:        { label: "Streak",          Icon: Flame,    span: 1 },
-  sleep:         { label: "Sleep",           Icon: Moon,     span: 1 },
-  "resting-hr":  { label: "Resting HR",      Icon: Heart,    span: 1 },
-  workouts:      { label: "Workouts",        Icon: Dumbbell, span: 1 },
-  heatmap:       { label: "Activity heatmap",Icon: BarChart2,span: 3 },
-  "ai-insight":  { label: "AI insight",      Icon: Sparkles, span: 2 },
-  hrv:           { label: "HRV",             Icon: Activity, span: 1 },
+  "weekly-ring":      { label: "Weekly progress",    Icon: Activity,    span: 2 },
+  streak:             { label: "Streak",             Icon: Flame,       span: 1 },
+  sleep:              { label: "Sleep",              Icon: Moon,        span: 1 },
+  "resting-hr":       { label: "Resting HR",         Icon: Heart,       span: 1 },
+  workouts:           { label: "Workouts",           Icon: Dumbbell,    span: 1 },
+  heatmap:            { label: "Activity heatmap",   Icon: BarChart2,   span: 3 },
+  "ai-insight":       { label: "AI insight",         Icon: Sparkles,    span: 2 },
+  hrv:                { label: "HRV",                Icon: Activity,    span: 1 },
+  "water-today":      { label: "Water intake",       Icon: Droplets,    span: 1 },
+  "nutrition-summary":{ label: "Nutrition summary",  Icon: Utensils,    span: 1 },
+  "next-workout":     { label: "Next workout",       Icon: Dumbbell,    span: 1 },
+  "focus-widget":     { label: "90-day focus",       Icon: Target,      span: 2 },
+  "weight-trend":     { label: "Body weight trend",  Icon: Weight,      span: 1 },
+  "goals-progress":   { label: "Goals progress",     Icon: Target,      span: 1 },
+  "journal-streak":   { label: "Journal streak",     Icon: BookOpen,    span: 2 },
+  "weekly-volume":    { label: "Training volume",    Icon: TrendingUp,  span: 1 },
 };
 
 // ─── base card ────────────────────────────────────────────────────────────────
@@ -605,6 +634,225 @@ function AIInsightCard({
   );
 }
 
+// ─── water today card ────────────────────────────────────────────────────────
+
+const WATER_TARGET_ML = 3000;
+
+function WaterTodayCard({ ml }: { ml: number }) {
+  const pct = Math.min(100, (ml / WATER_TARGET_ML) * 100);
+  const glasses = Math.round(ml / 250);
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Water</span>
+        <Droplets size={14} className="text-[var(--color-info)]" />
+      </div>
+      <div className="flex items-end justify-between">
+        <div className="flex items-end gap-1.5">
+          <span className="font-mono text-28 font-medium leading-none" style={{ color: pct >= 100 ? "var(--color-success)" : "var(--color-info)" }}>
+            {ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`}
+          </span>
+        </div>
+        <div className="text-right">
+          <p className="text-11 text-text-muted">{WATER_TARGET_ML / 1000}L target</p>
+          <p className="text-11 text-text-muted">{glasses} glasses</p>
+        </div>
+      </div>
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill bg-[var(--color-info)] transition-all" style={{ width: `${pct}%` }} />
+      </div>
+    </Card>
+  );
+}
+
+// ─── nutrition summary card ───────────────────────────────────────────────────
+
+function NutritionSummaryCard({ protein, target }: { protein: number; target: number }) {
+  const pct = Math.min(100, (protein / target) * 100);
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Protein today</span>
+        <Utensils size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex items-end gap-1.5">
+        <span className="font-mono text-32 font-medium leading-none" style={{ color: pct >= 100 ? "var(--color-success)" : "var(--color-text-primary)" }}>
+          {protein}
+        </span>
+        <span className="text-13 text-text-muted mb-0.5">/ {target}g</span>
+      </div>
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? "var(--color-success)" : "var(--color-accent)" }} />
+      </div>
+    </Card>
+  );
+}
+
+// ─── next workout card ────────────────────────────────────────────────────────
+
+function NextWorkoutCard({ name }: { name: string | null | undefined }) {
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Next workout</span>
+        <Dumbbell size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex-1 flex items-center">
+        {name ? (
+          <p className="text-14 font-semibold text-text-primary leading-snug">{name}</p>
+        ) : (
+          <p className="text-13 text-text-muted">No templates yet</p>
+        )}
+      </div>
+      <a href="/workouts" className="text-12 text-accent hover:text-accent-hover transition-colors">
+        Go to workouts →
+      </a>
+    </Card>
+  );
+}
+
+// ─── focus widget card ────────────────────────────────────────────────────────
+
+function FocusWidgetCard({ focus, startDate, endDate }: { focus?: string | null; startDate?: string | null; endDate?: string | null }) {
+  if (!focus || !startDate || !endDate) {
+    return (
+      <Card className="p-5 flex items-center gap-4">
+        <div className="w-8 h-8 rounded-r3 bg-bg-elevated flex items-center justify-center flex-shrink-0">
+          <Target size={14} className="text-text-disabled" />
+        </div>
+        <div>
+          <p className="text-13 font-semibold text-text-secondary">No 90-day focus set</p>
+          <a href="/goals" className="text-12 text-accent hover:text-accent-hover transition-colors">Set your focus →</a>
+        </div>
+      </Card>
+    );
+  }
+  const dayElapsed = Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000));
+  const dayLeft = Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000));
+  const pct = Math.min(100, Math.round((dayElapsed / 90) * 100));
+  return (
+    <Card className="p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <Target size={13} className="text-accent flex-shrink-0" />
+        <span className="text-11 font-semibold uppercase tracking-widest text-accent">90-day focus · day {dayElapsed}</span>
+      </div>
+      <p className="text-14 font-semibold text-text-primary leading-snug">{focus}</p>
+      <div className="flex flex-col gap-1">
+        <div className="flex justify-between text-11 text-text-muted">
+          <span>{pct}% complete</span>
+          <span>{dayLeft} days left</span>
+        </div>
+        <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+          <div className="h-full rounded-pill bg-accent transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ─── weight trend card ────────────────────────────────────────────────────────
+
+function WeightTrendCard({ trend }: { trend: number[] }) {
+  const latest = trend[trend.length - 1] ?? null;
+  const prev = trend[trend.length - 2] ?? null;
+  const delta = latest !== null && prev !== null ? Math.round((latest - prev) * 10) / 10 : null;
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Body weight</span>
+        <Weight size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex items-end justify-between">
+        <div className="flex items-end gap-1.5">
+          {latest !== null ? (
+            <>
+              <span className="font-mono text-32 font-medium leading-none text-text-primary">{latest.toFixed(1)}</span>
+              <span className="text-13 text-text-muted mb-0.5">kg</span>
+            </>
+          ) : (
+            <span className="text-13 text-text-muted">No data</span>
+          )}
+        </div>
+        {trend.length >= 2 && <Sparkline data={trend} color={delta !== null && delta > 0 ? "var(--color-warning)" : "var(--color-success)"} />}
+      </div>
+      {delta !== null && (
+        <p className="text-11 text-text-muted">{delta > 0 ? `+${delta}` : delta}kg vs last weigh-in</p>
+      )}
+    </Card>
+  );
+}
+
+// ─── goals progress card ──────────────────────────────────────────────────────
+
+function GoalsProgressCard({ count }: { count: number }) {
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Active goals</span>
+        <Target size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex items-end gap-1.5">
+        <span className="font-mono text-40 font-medium leading-none text-text-primary">{count}</span>
+        <span className="text-13 text-text-muted mb-1">goal{count !== 1 ? "s" : ""}</span>
+      </div>
+      <a href="/goals" className="text-12 text-accent hover:text-accent-hover transition-colors">View goals →</a>
+    </Card>
+  );
+}
+
+// ─── journal streak card ──────────────────────────────────────────────────────
+
+function JournalStreakCard({ days30 }: { days30: number }) {
+  const pct = Math.round((days30 / 30) * 100);
+  return (
+    <Card className="p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Journal (30 days)</span>
+        <BookOpen size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="font-mono text-32 font-medium text-text-primary leading-none">{days30}</span>
+        <span className="text-13 text-text-muted">/ 30 days</span>
+      </div>
+      <div className="flex flex-col gap-1">
+        <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+          <div className="h-full rounded-pill bg-[#A39CFF] transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-11 text-text-muted">{pct}% consistency this month</p>
+      </div>
+    </Card>
+  );
+}
+
+// ─── weekly volume card ───────────────────────────────────────────────────────
+
+function WeeklyVolumeCard({ weeklyVolume }: { weeklyVolume: number[] }) {
+  const thisWeek = weeklyVolume[3] ?? 0;
+  const lastWeek = weeklyVolume[2] ?? 0;
+  const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : null;
+  const fmt = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v);
+  return (
+    <Card className="p-5 h-36 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Volume this week</span>
+        <TrendingUp size={14} className="text-text-disabled" />
+      </div>
+      <div className="flex items-end justify-between">
+        <div className="flex items-end gap-1.5">
+          <span className="font-mono text-28 font-medium leading-none text-text-primary">{fmt(thisWeek)}</span>
+          <span className="text-13 text-text-muted mb-0.5">kg</span>
+        </div>
+        {weeklyVolume.some((v) => v > 0) && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
+      </div>
+      {delta !== null ? (
+        <p className="text-11 text-text-muted">
+          {delta >= 0 ? "+" : ""}{delta}% vs last week
+        </p>
+      ) : <p className="text-11 text-text-muted">4-week training load</p>}
+    </Card>
+  );
+}
+
 // ─── render card by ID ────────────────────────────────────────────────────────
 
 function renderCard(id: string, d: DashboardData): React.ReactNode {
@@ -638,6 +886,22 @@ function renderCard(id: string, d: DashboardData): React.ReactNode {
       return <AIInsightCard insight={d.aiInsight} />;
     case "hrv":
       return <StatCard label="HRV" value={d.hrv} unit="ms" Icon={Activity} />;
+    case "water-today":
+      return <WaterTodayCard ml={d.waterToday ?? 0} />;
+    case "nutrition-summary":
+      return <NutritionSummaryCard protein={d.proteinToday ?? 0} target={d.proteinTarget ?? 150} />;
+    case "next-workout":
+      return <NextWorkoutCard name={d.nextWorkoutName} />;
+    case "focus-widget":
+      return <FocusWidgetCard focus={d.currentFocus} startDate={d.focusStartDate} endDate={d.focusEndDate} />;
+    case "weight-trend":
+      return <WeightTrendCard trend={d.weightTrend ?? []} />;
+    case "goals-progress":
+      return <GoalsProgressCard count={d.activeGoalCount ?? 0} />;
+    case "journal-streak":
+      return <JournalStreakCard days30={d.journalDays30 ?? 0} />;
+    case "weekly-volume":
+      return <WeeklyVolumeCard weeklyVolume={d.weeklyVolume} />;
     default:
       return null;
   }
