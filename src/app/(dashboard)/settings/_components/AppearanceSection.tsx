@@ -21,8 +21,9 @@ const ACCENT_SWATCHES = [
 ];
 
 const THEMES = [
-  { value: "dark", label: "Dark" },
-  { value: "light", label: "Light" },
+  { value: "dark",   label: "Dark" },
+  { value: "light",  label: "Light" },
+  { value: "amoled", label: "AMOLED" },
   { value: "system", label: "System" },
 ];
 

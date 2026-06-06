@@ -104,6 +104,27 @@ html, body {
   }
 }
 
+/* AMOLED / pure black theme */
+[data-theme="amoled"] {
+  color-scheme: dark;
+  --topbar-bg: rgba(0, 0, 0, 0.95);
+  --color-bg-base: #000000;
+  --color-bg-inset: #050505;
+  --color-bg-surface: #0A0A0A;
+  --color-bg-elevated: #111111;
+  --color-bg-overlay: #1A1A1A;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0A0A0;
+  --color-text-muted: #606060;
+  --color-text-disabled: #404040;
+  --color-border: #222222;
+  --color-border-strong: #333333;
+  --color-xp-track: #1A1A1A;
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.8);
+  --shadow-2: 0 1px 0 rgba(255,255,255,0.02) inset, 0 4px 14px rgba(0,0,0,0.9);
+  --shadow-3: 0 1px 0 rgba(255,255,255,0.02) inset, 0 12px 32px rgba(0,0,0,0.95);
+}
+
 /* Samsung Internet / legacy browser fallback for light mode */
 html[data-theme="light"],
 html[data-theme="light"] body,
@@ -131,4 +152,34 @@ html[data-theme="light"] body,
   --shadow-1: 0 1px 0 rgba(0,0,0,0.04) inset, 0 1px 2px rgba(0,0,0,0.08);
   --shadow-2: 0 1px 0 rgba(0,0,0,0.04) inset, 0 4px 14px rgba(0,0,0,0.10);
   --shadow-3: 0 1px 0 rgba(0,0,0,0.04) inset, 0 12px 32px rgba(0,0,0,0.14);
+}
+
+/* Samsung Internet — high-specificity overrides for light mode backgrounds */
+html[data-theme="light"] { background-color: #FFFFFF !important; }
+html[data-theme="light"] body { background-color: #FFFFFF !important; }
+html[data-theme="light"] #__next { background-color: #FFFFFF !important; }
+html[data-theme="light"] main { background-color: #FFFFFF !important; }
+
+/* react-grid-layout edit mode visual feedback */
+.rgl-edit-container {
+  background-image: radial-gradient(circle, var(--color-border-strong) 1px, transparent 1px);
+  background-size: 32px 32px;
+  border-radius: 12px;
+}
+.react-grid-item.react-grid-placeholder {
+  background: var(--color-accent-soft) !important;
+  border: 1px dashed var(--color-accent-ring) !important;
+  border-radius: 12px;
+  opacity: 1 !important;
+}
+.react-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.react-grid-item:hover .react-resizable-handle,
+.react-grid-item.react-draggable-dragging .react-resizable-handle {
+  opacity: 1;
+}
+.react-resizable-handle::after {
+  border-color: var(--color-accent) !important;
 }

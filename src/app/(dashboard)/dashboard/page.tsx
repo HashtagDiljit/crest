@@ -66,6 +66,7 @@ export default async function DashboardPage() {
     journalDaysResult,
     activeGoalsResult,
     nextWorkoutResult,
+    habitsTodayResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -163,12 +164,15 @@ export default async function DashboardPage() {
     supabase.from("goals").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("completed_at", null),
     // Next workout: templates with last used date
     supabase.from("workout_templates").select("id, name").eq("user_id", user.id).limit(10),
+    // Habits completed today
+    supabase.from("habit_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("logged_date", today).eq("completed", true),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = profileResult.data as any;
   const rawUsername: string = profile?.username ?? user.email?.split("@")[0] ?? "there";
-  const firstName = rawUsername.trim().split(/\s+/)[0];
+  const firstWord = rawUsername.trim().split(/\s+/)[0];
+  const firstName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
 
   const workoutCount = workoutsThisWeek.count ?? 0;
   const habitTotal = habitsResult.count ?? 0;
@@ -250,13 +254,14 @@ export default async function DashboardPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastTemplateName = (lastSessionRow as any)?.workout_templates?.name ?? null;
   const nextWorkoutName = templates.find((t) => t.name !== lastTemplateName)?.name ?? templates[0]?.name ?? null;
+  const habitsTodayDone = habitsTodayResult.count ?? 0;
 
   const rawLayout = profile?.dashboard_layout;
+  // Support both old format ({cards,hidden}) and new react-grid-layout format ({lg,hidden}).
+  // Old format is ignored; new format is used directly.
   const dashboardLayout =
-    rawLayout &&
-    typeof rawLayout === "object" &&
-    Array.isArray(rawLayout.cards)
-      ? (rawLayout as { cards: string[]; hidden: string[] })
+    rawLayout && typeof rawLayout === "object" && Array.isArray((rawLayout as { lg?: unknown }).lg)
+      ? (rawLayout as { lg: Array<{ i: string; x: number; y: number; w: number; h: number }>; hidden: string[] })
       : null;
 
   const onboardingStepReached: number = profile?.onboarding_step_reached ?? 6;
@@ -295,6 +300,7 @@ export default async function DashboardPage() {
       journalDays30={journalDays30}
       activeGoalCount={activeGoalCount}
       nextWorkoutName={nextWorkoutName}
+      habitsTodayDone={habitsTodayDone}
     />
   );
 }

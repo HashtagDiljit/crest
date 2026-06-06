@@ -51,7 +51,8 @@ export default async function DashboardLayout({
     hiddenNavIds.push("mood", "journal");
   }
 
-  const username = profile?.username ?? user!.email?.split("@")[0] ?? "You";
+  const rawName = profile?.username ?? user!.email?.split("@")[0] ?? "You";
+  const username = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const parts = username.trim().split(/\s+/);
   const initials = parts.length >= 2
     ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
