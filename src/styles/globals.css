@@ -104,6 +104,14 @@ html, body {
   }
 }
 
+/* Samsung Internet / legacy browser fallback for light mode */
+html[data-theme="light"],
+html[data-theme="light"] body,
+:root[data-theme="light"] {
+  background-color: #FFFFFF !important;
+  color: #0D0D12 !important;
+}
+
 /* Light theme overrides */
 [data-theme="light"] {
   color-scheme: light;

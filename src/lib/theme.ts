@@ -39,22 +39,31 @@ export function applyTheme(theme: string) {
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
     : theme;
 
-  if (resolved === "light") {
+  const isLight = resolved === "light";
+
+  if (isLight) {
     document.documentElement.setAttribute("data-theme", "light");
+    document.body.setAttribute("data-theme", "light");
   } else {
     document.documentElement.removeAttribute("data-theme");
+    document.body.removeAttribute("data-theme");
   }
+
+  // Inline style fallback for Samsung Internet which may not honour CSS custom
+  // properties set via data-theme on the html element.
+  document.body.style.backgroundColor = isLight ? "#FFFFFF" : "#0D0D12";
+  document.body.style.color = isLight ? "#0D0D12" : "#E8E6E0";
 
   // Keep theme-color meta in sync with the active theme so iOS status bar
   // and Android browser chrome match the page background.
   const metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])') as HTMLMetaElement | null;
   if (metaThemeColor) {
-    metaThemeColor.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+    metaThemeColor.content = isLight ? "#FFFFFF" : "#0D0D12";
   } else {
     // Next.js emits media-scoped tags; inject a plain one for runtime overrides.
     const tag = document.createElement("meta");
     tag.name = "theme-color";
-    tag.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+    tag.content = isLight ? "#FFFFFF" : "#0D0D12";
     document.head.appendChild(tag);
   }
 
@@ -66,7 +75,14 @@ export const THEME_INIT_SCRIPT = `(function(){
   try {
     var t=localStorage.getItem('arc-theme')||'dark';
     if(t==='system')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
-    if(t==='light')document.documentElement.setAttribute('data-theme','light');
+    var light=t==='light';
+    if(light){
+      document.documentElement.setAttribute('data-theme','light');
+      // Apply to body too for Samsung Internet which can miss html[data-theme]
+      if(document.body){document.body.setAttribute('data-theme','light');}
+      document.documentElement.style.backgroundColor='#FFFFFF';
+      document.documentElement.style.color='#0D0D12';
+    }
     var a=localStorage.getItem('arc-accent');
     if(a){
       var el=document.documentElement;
