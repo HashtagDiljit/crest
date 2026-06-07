@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WidthProvider, ResponsiveReactGridLayout, type LayoutItem as RGLItem, type ResponsiveLayouts } from "react-grid-layout/legacy";
@@ -160,9 +160,32 @@ function Card({
   className?: string;
 }) {
   return (
-    <div className={`h-full rounded-r5 border border-border bg-bg-surface ${className}`}>
+    <div
+      className={`relative h-full rounded-r5 border border-border bg-bg-surface overflow-hidden ${className}`}
+      style={{
+        boxShadow: "var(--card-inner-glow, inset 0 1px 0 rgba(255,255,255,0.06))",
+      }}
+    >
+      <div
+        className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
+        style={{ background: "color-mix(in oklab, var(--color-accent) 60%, transparent)" }}
+        aria-hidden
+      />
       {children}
     </div>
+  );
+}
+
+// ─── icon badge ──────────────────────────────────────────────────────────────
+
+function IconBadge({ icon: Icon, color, size = 14 }: { icon: React.ElementType; color: string; size?: number }) {
+  return (
+    <span
+      className="w-8 h-8 rounded-pill flex items-center justify-center flex-shrink-0"
+      style={{ background: `color-mix(in oklab, ${color} 15%, transparent)` }}
+    >
+      <Icon size={size} style={{ color }} />
+    </span>
   );
 }
 
@@ -216,7 +239,7 @@ function WeeklyRingCard({ d }: { d: DashboardData }) {
   ];
 
   return (
-    <Card className="p-5 flex items-center gap-5">
+    <Card className="p-4 md:p-5 flex items-center gap-5">
       <svg width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0" aria-hidden>
         {rings.map((ring) => {
           const circ = 2 * Math.PI * ring.r;
@@ -249,7 +272,7 @@ function WeeklyRingCard({ d }: { d: DashboardData }) {
 
 function StreakCard({ streak }: { streak: number }) {
   return (
-    <Card className="p-5 flex flex-col items-center justify-center gap-2">
+    <Card className="p-4 md:p-5 flex flex-col items-center justify-center gap-2">
       <Flame size={28} style={{ color: streak > 0 ? "var(--color-streak)" : "var(--color-text-disabled)" }} />
       <span className="font-mono text-40 font-semibold leading-none" style={{ color: streak > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>
         {streak}
@@ -264,20 +287,20 @@ function StreakCard({ streak }: { streak: number }) {
 function SleepCard({ duration, quality, sparkline }: { duration: number | null; quality: number | null; sparkline: number[] }) {
   const qualityLabel = quality === null ? null : quality >= 4 ? "Great" : quality >= 3 ? "Good" : quality >= 2 ? "Fair" : "Poor";
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Sleep</span>
-        <Moon size={14} className="text-text-disabled" />
+        <IconBadge icon={Moon} color="#38BDF8" />
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
           {duration !== null ? (
             <>
-              <span className="font-mono text-32 font-medium text-text-primary leading-none">{duration.toFixed(1)}</span>
+              <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{duration.toFixed(1)}</span>
               <span className="text-13 text-text-muted mb-0.5">hrs</span>
             </>
           ) : (
-            <span className="font-mono text-32 font-medium text-text-disabled leading-none">—</span>
+            <div className="shimmer w-16 h-8 rounded-r2" aria-hidden />
           )}
         </div>
         {sparkline.length >= 2 && <Sparkline data={sparkline} color="var(--color-warning)" />}
@@ -300,23 +323,23 @@ const STAT_TOOLTIPS: Record<string, string> = {
 
 function StatCard({ label, value, unit, Icon }: { label: string; value: number | null; unit: string; Icon: React.ElementType }) {
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1">
           {label}
           {STAT_TOOLTIPS[label] && <InfoTooltip text={STAT_TOOLTIPS[label]} size={10} />}
         </span>
-        <Icon size={14} className="text-text-disabled" />
+        <IconBadge icon={Icon} color="var(--color-danger)" />
       </div>
       <div className="flex items-end gap-1.5">
         {value !== null ? (
           <>
-            <span className="font-mono text-32 font-medium text-text-primary leading-none">{Math.round(value)}</span>
+            <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{Math.round(value)}</span>
             <span className="text-13 text-text-muted mb-0.5">{unit}</span>
           </>
         ) : (
           <>
-            <span className="font-mono text-32 font-medium text-text-disabled leading-none">—</span>
+            <div className="shimmer w-12 h-8 rounded-r2" aria-hidden />
             <span className="text-13 text-text-muted mb-0.5">{unit}</span>
           </>
         )}
@@ -332,14 +355,14 @@ function WorkoutsCard({ count, target, lastSession, weeklyVolume }: { count: num
   const pct = Math.min((count / target) * 100, 100);
   const hasVolume = weeklyVolume.some((v) => v > 0);
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Workouts</span>
-        <Dumbbell size={14} className="text-text-disabled" />
+        <IconBadge icon={Dumbbell} color="#2DD4BF" />
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
-          <span className="font-mono text-32 font-medium leading-none" style={{ color: count > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>
+          <span className="font-mono text-28 md:text-32 font-medium leading-none" style={{ color: count > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>
             {count}
           </span>
           <span className="text-13 text-text-muted mb-0.5">/ {target} wk</span>
@@ -362,7 +385,34 @@ function WorkoutsCard({ count, target, lastSession, weeklyVolume }: { count: num
 
 // ─── heatmap card ─────────────────────────────────────────────────────────────
 
+const HEATMAP_WEEKS = 26;
+const HEATMAP_GAP = 4;
+const MIN_SQUARE = 8;
+const MAX_SQUARE = 20;
+
 function HeatmapCard({ workoutDates }: { workoutDates: string[] }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [squareSize, setSquareSize] = useState(MAX_SQUARE);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const recalc = (width: number) => {
+      const raw = (width - HEATMAP_GAP * (HEATMAP_WEEKS - 1)) / HEATMAP_WEEKS;
+      setSquareSize(Math.max(MIN_SQUARE, Math.min(MAX_SQUARE, Math.floor(raw))));
+    };
+
+    recalc(el.clientWidth);
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        recalc(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const today = new Date();
   const dayOfWeek = today.getDay();
   const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -370,14 +420,14 @@ function HeatmapCard({ workoutDates }: { workoutDates: string[] }) {
   thisMonday.setDate(today.getDate() - daysToMonday);
   thisMonday.setHours(0, 0, 0, 0);
   const startDate = new Date(thisMonday);
-  startDate.setDate(thisMonday.getDate() - 25 * 7);
+  startDate.setDate(thisMonday.getDate() - (HEATMAP_WEEKS - 1) * 7);
 
   const countMap = new Map<string, number>();
   for (const d of workoutDates) countMap.set(d, (countMap.get(d) ?? 0) + 1);
 
   const weeks: Array<Array<{ date: string; count: number }>> = [];
   const cursor = new Date(startDate);
-  for (let w = 0; w < 26; w++) {
+  for (let w = 0; w < HEATMAP_WEEKS; w++) {
     const week: Array<{ date: string; count: number }> = [];
     for (let d = 0; d < 7; d++) {
       const dateStr = cursor.toISOString().split("T")[0];
@@ -389,30 +439,40 @@ function HeatmapCard({ workoutDates }: { workoutDates: string[] }) {
   const todayStr = today.toISOString().split("T")[0];
 
   return (
-    <Card className="p-5">
+    <Card className="p-4 md:p-5 flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Activity · 6 months</span>
         <BarChart2 size={14} className="text-text-muted" />
       </div>
-      <div className="flex gap-1 overflow-x-auto">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-1 flex-1 min-w-[10px]">
-            {week.map((day) => {
+      <div ref={containerRef} className="flex-1 min-h-0 overflow-x-auto">
+        <div
+          className="grid h-full"
+          style={{
+            gridTemplateColumns: `repeat(${HEATMAP_WEEKS}, ${squareSize}px)`,
+            gridTemplateRows: `repeat(7, ${squareSize}px)`,
+            gridAutoFlow: "column",
+            gap: HEATMAP_GAP,
+          }}
+        >
+          {weeks.map((week, wi) =>
+            week.map((day) => {
               const isFuture = day.date > todayStr;
               return (
                 <div
-                  key={day.date}
-                  className="aspect-square rounded-r1"
+                  key={`${wi}-${day.date}`}
+                  className="rounded-r1"
                   style={{
+                    width: squareSize,
+                    height: squareSize,
                     background: isFuture ? "transparent" : day.count === 0 ? "var(--color-bg-elevated)" : "var(--color-accent)",
                     opacity: isFuture ? 0 : day.count === 1 ? 0.5 : 1,
                   }}
                   title={isFuture ? undefined : `${day.date}: ${day.count} workout${day.count !== 1 ? "s" : ""}`}
                 />
               );
-            })}
-          </div>
-        ))}
+            })
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -422,7 +482,7 @@ function HeatmapCard({ workoutDates }: { workoutDates: string[] }) {
 
 function AIInsightCard({ insight }: { insight: { title: string; body: string; category: string } | null }) {
   return (
-    <Card className="p-5 flex items-start gap-4">
+    <Card className="p-4 md:p-5 flex items-start gap-4">
       <div className="w-8 h-8 rounded-r3 bg-accent/15 flex items-center justify-center flex-shrink-0">
         <Sparkles size={15} className="text-accent" />
       </div>
@@ -450,7 +510,7 @@ function WaterTodayCard({ ml }: { ml: number }) {
   const pct = Math.min(100, (ml / WATER_TARGET_ML) * 100);
   const glasses = Math.round(ml / 250);
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Water</span>
         <Droplets size={14} className="text-[var(--color-info)]" />
@@ -478,13 +538,13 @@ function WaterTodayCard({ ml }: { ml: number }) {
 function NutritionSummaryCard({ protein, target }: { protein: number; target: number }) {
   const pct = Math.min(100, (protein / target) * 100);
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Protein today</span>
-        <Utensils size={14} className="text-text-disabled" />
+        <IconBadge icon={Utensils} color="var(--color-success)" />
       </div>
       <div className="flex items-end gap-1.5">
-        <span className="font-mono text-32 font-medium leading-none" style={{ color: pct >= 100 ? "var(--color-success)" : "var(--color-text-primary)" }}>
+        <span className="font-mono text-28 md:text-32 font-medium leading-none" style={{ color: pct >= 100 ? "var(--color-success)" : "var(--color-text-primary)" }}>
           {protein}
         </span>
         <span className="text-13 text-text-muted mb-0.5">/ {target}g</span>
@@ -500,10 +560,10 @@ function NutritionSummaryCard({ protein, target }: { protein: number; target: nu
 
 function NextWorkoutCard({ name }: { name: string | null | undefined }) {
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Next workout</span>
-        <Dumbbell size={14} className="text-text-disabled" />
+        <IconBadge icon={Dumbbell} color="#2DD4BF" />
       </div>
       <div className="flex-1 flex items-center">
         {name ? (
@@ -522,9 +582,9 @@ function NextWorkoutCard({ name }: { name: string | null | undefined }) {
 function FocusWidgetCard({ focus, startDate, endDate }: { focus?: string | null; startDate?: string | null; endDate?: string | null }) {
   if (!focus || !startDate || !endDate) {
     return (
-      <Card className="p-5 flex items-center gap-4">
+      <Card className="p-4 md:p-5 flex items-center gap-4">
         <div className="w-8 h-8 rounded-r3 bg-bg-elevated flex items-center justify-center flex-shrink-0">
-          <Target size={14} className="text-text-disabled" />
+          <IconBadge icon={Target} color="var(--color-accent)" />
         </div>
         <div>
           <p className="text-13 font-semibold text-text-secondary">No 90-day focus set</p>
@@ -537,7 +597,7 @@ function FocusWidgetCard({ focus, startDate, endDate }: { focus?: string | null;
   const dayLeft = Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000));
   const pct = Math.min(100, Math.round((dayElapsed / 90) * 100));
   return (
-    <Card className="p-5 flex flex-col gap-3">
+    <Card className="p-4 md:p-5 flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <Target size={13} className="text-accent flex-shrink-0" />
         <span className="text-11 font-semibold uppercase tracking-widest text-accent">90-day focus · day {dayElapsed}</span>
@@ -563,16 +623,16 @@ function WeightTrendCard({ trend }: { trend: number[] }) {
   const prev = trend[trend.length - 2] ?? null;
   const delta = latest !== null && prev !== null ? Math.round((latest - prev) * 10) / 10 : null;
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Body weight</span>
-        <Weight size={14} className="text-text-disabled" />
+        <IconBadge icon={Weight} color="var(--color-text-secondary)" />
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
           {latest !== null ? (
             <>
-              <span className="font-mono text-32 font-medium leading-none text-text-primary">{latest.toFixed(1)}</span>
+              <span className="font-mono text-28 md:text-32 font-medium leading-none text-text-primary">{latest.toFixed(1)}</span>
               <span className="text-13 text-text-muted mb-0.5">kg</span>
             </>
           ) : (
@@ -592,10 +652,10 @@ function WeightTrendCard({ trend }: { trend: number[] }) {
 
 function GoalsProgressCard({ count }: { count: number }) {
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Active goals</span>
-        <Target size={14} className="text-text-disabled" />
+        <IconBadge icon={Target} color="var(--color-accent)" />
       </div>
       <div className="flex items-end gap-1.5">
         <span className="font-mono text-40 font-medium leading-none text-text-primary">{count}</span>
@@ -611,13 +671,13 @@ function GoalsProgressCard({ count }: { count: number }) {
 function JournalStreakCard({ days30 }: { days30: number }) {
   const pct = Math.round((days30 / 30) * 100);
   return (
-    <Card className="p-5 flex flex-col gap-3">
+    <Card className="p-4 md:p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Journal (30 days)</span>
-        <BookOpen size={14} className="text-text-disabled" />
+        <IconBadge icon={BookOpen} color="var(--color-warning)" />
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-32 font-medium text-text-primary leading-none">{days30}</span>
+        <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{days30}</span>
         <span className="text-13 text-text-muted">/ 30 days</span>
       </div>
       <div className="flex flex-col gap-1">
@@ -638,10 +698,10 @@ function WeeklyVolumeCard({ weeklyVolume }: { weeklyVolume: number[] }) {
   const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : null;
   const fmt = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v);
   return (
-    <Card className="p-5 flex flex-col justify-between">
+    <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Volume this week</span>
-        <TrendingUp size={14} className="text-text-disabled" />
+        <IconBadge icon={TrendingUp} color="var(--color-accent)" />
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">

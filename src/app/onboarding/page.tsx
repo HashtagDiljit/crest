@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { resolveDisplayName } from "@/lib/displayName";
 import { OnboardingFlow } from "./_components/OnboardingFlow";
 
 export default async function OnboardingPage() {
@@ -19,8 +20,8 @@ export default async function OnboardingPage() {
 
   if (profile?.onboarding_completed) redirect("/dashboard");
 
-  const rawName: string = profile?.username ?? user.email?.split("@")[0] ?? "there";
-  const firstName = rawName.trim().split(/\s+/)[0];
+  const displayName = resolveDisplayName(profile?.username, user.email);
+  const firstName = displayName.split(/\s+/)[0];
 
   return <OnboardingFlow firstName={firstName} />;
 }

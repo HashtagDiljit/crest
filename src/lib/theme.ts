@@ -34,6 +34,45 @@ export function applyAccent(hex: string) {
   try { localStorage.setItem("arc-accent", hex); } catch { /* noop */ }
 }
 
+const LIGHT_BG = "#FFFFFF";
+const LIGHT_SURFACE = "#F8F8F5";
+const DARK_BG = "#0D0D12";
+const DARK_SURFACE = "#16161E";
+const AMOLED_BG = "#000000";
+const AMOLED_SURFACE = "#0A0A0A";
+
+let themeObserver: MutationObserver | null = null;
+
+function paintBackgrounds(bg: string, surface: string) {
+  document.documentElement.style.cssText += `background-color: ${bg} !important;`;
+  document.body.style.cssText += `background-color: ${bg} !important;`;
+
+  const containers = document.querySelectorAll(
+    'main, #__next, [data-radix-scroll-area-viewport], .dashboard-main, aside'
+  );
+  containers.forEach((el) => {
+    (el as HTMLElement).style.cssText += `background-color: ${bg} !important;`;
+  });
+
+  const surfaces = document.querySelectorAll('[data-bg-surface], .bg-bg-surface, .bg-bg-elevated');
+  surfaces.forEach((el) => {
+    (el as HTMLElement).style.cssText += `background-color: ${surface} !important;`;
+  });
+}
+
+function startThemeObserver(bg: string, surface: string) {
+  if (themeObserver) {
+    themeObserver.disconnect();
+    themeObserver = null;
+  }
+  if (typeof MutationObserver === "undefined") return;
+
+  themeObserver = new MutationObserver(() => {
+    paintBackgrounds(bg, surface);
+  });
+  themeObserver.observe(document.documentElement, { childList: true, subtree: true });
+}
+
 export function applyTheme(theme: string) {
   const resolved = theme === "system"
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
@@ -52,13 +91,16 @@ export function applyTheme(theme: string) {
     document.body.removeAttribute("data-theme");
   }
 
-  // Inline style fallbacks — highest specificity, Samsung Internet honours these
-  // even when CSS custom property cascade fails.
-  const bg = isLight ? "#FFFFFF" : isAmoled ? "#000000" : "#0D0D12";
+  // Samsung Internet's CSS custom-property cascade is unreliable, so we
+  // inject backgrounds as inline !important styles directly via cssText,
+  // and re-apply them on every DOM mutation (handles React hydration).
+  const bg = isLight ? LIGHT_BG : isAmoled ? AMOLED_BG : DARK_BG;
+  const surface = isLight ? LIGHT_SURFACE : isAmoled ? AMOLED_SURFACE : DARK_SURFACE;
   const fg = isLight ? "#0D0D12" : "#E8E6E0";
-  document.documentElement.style.setProperty("background-color", bg, "important");
-  document.body.style.setProperty("background-color", bg, "important");
+
+  paintBackgrounds(bg, surface);
   document.body.style.color = fg;
+  startThemeObserver(bg, surface);
 
   // Keep theme-color meta in sync with the active theme so iOS status bar
   // and Android browser chrome match the page background.
@@ -75,6 +117,16 @@ export function applyTheme(theme: string) {
 
   try { localStorage.setItem("arc-theme", theme); } catch { /* noop */ }
 }
+
+// Synchronous, pre-paint script — sets the background colour directly via
+// the style attribute before any CSS loads, so Samsung Internet never shows
+// a flash of the wrong (default light) background.
+export const THEME_PREPAINT_SCRIPT = `(function() {
+  var t = localStorage.getItem('arc-theme') || 'dark';
+  var bg = t === 'light' ? '#FFFFFF' : t === 'amoled' ? '#000000' : '#0D0D12';
+  document.documentElement.style.backgroundColor = bg;
+  document.documentElement.setAttribute('data-theme', t);
+})();`;
 
 // Inline script string for root layout — prevents flash on load
 export const THEME_INIT_SCRIPT = `(function(){

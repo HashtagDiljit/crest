@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { resolveDisplayName } from "@/lib/displayName";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
@@ -51,8 +52,9 @@ export default async function DashboardLayout({
     hiddenNavIds.push("mood", "journal");
   }
 
-  const rawName = profile?.username ?? user!.email?.split("@")[0] ?? "You";
-  const username = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  console.log("[dashboard layout] profile.username:", profile?.username, "| user.email:", user!.email);
+  const username = resolveDisplayName(profile?.username, user!.email);
+  console.log("[dashboard layout] resolved username:", username);
   const parts = username.trim().split(/\s+/);
   const initials = parts.length >= 2
     ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()

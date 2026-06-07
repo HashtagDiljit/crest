@@ -16,7 +16,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative z-10 w-full max-w-sm rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4 shadow-2xl"
+        className="relative z-10 w-full rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4 shadow-2xl overflow-hidden box-border [&_*]:box-border"
+        style={{ maxWidth: 400 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -181,7 +182,7 @@ export function WeightModal({ onClose }: { onClose: () => void }) {
             value={display}
             onChange={(e) => setKg(parseFloat(e.target.value) || null)}
             placeholder="75.0"
-            className="flex-1 rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors text-center"
+            className="flex-1 min-w-0 rounded-r3 border border-border bg-bg-base px-3 py-2.5 text-20 font-mono text-text-primary placeholder:text-text-disabled outline-none focus:border-accent transition-colors text-center"
           />
           <button type="button" onClick={() => step(0.1)} className="w-10 h-10 flex items-center justify-center rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-text-muted transition-colors flex-shrink-0">
             <PlusIcon size={14} />

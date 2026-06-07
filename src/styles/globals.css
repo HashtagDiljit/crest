@@ -44,6 +44,8 @@
 
   /* Sidebar width — updated by Sidebar.tsx toggle and init script */
   --sidebar-w: 240px;
+
+  --card-inner-glow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 html, body {
@@ -123,6 +125,7 @@ html, body {
   --shadow-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.8);
   --shadow-2: 0 1px 0 rgba(255,255,255,0.02) inset, 0 4px 14px rgba(0,0,0,0.9);
   --shadow-3: 0 1px 0 rgba(255,255,255,0.02) inset, 0 12px 32px rgba(0,0,0,0.95);
+  --card-inner-glow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Samsung Internet / legacy browser fallback for light mode */
@@ -152,6 +155,7 @@ html[data-theme="light"] body,
   --shadow-1: 0 1px 0 rgba(0,0,0,0.04) inset, 0 1px 2px rgba(0,0,0,0.08);
   --shadow-2: 0 1px 0 rgba(0,0,0,0.04) inset, 0 4px 14px rgba(0,0,0,0.10);
   --shadow-3: 0 1px 0 rgba(0,0,0,0.04) inset, 0 12px 32px rgba(0,0,0,0.14);
+  --card-inner-glow: inset 0 1px 0 rgba(0,0,0,0.04);
 }
 
 /* Samsung Internet — high-specificity overrides for light mode backgrounds */

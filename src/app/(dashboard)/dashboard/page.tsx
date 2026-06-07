@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { resolveDisplayName } from "@/lib/displayName";
 import { DashboardContent } from "./_components/DashboardContent";
 
 function getWeekStart(): Date {
@@ -170,9 +171,10 @@ export default async function DashboardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = profileResult.data as any;
-  const rawUsername: string = profile?.username ?? user.email?.split("@")[0] ?? "there";
-  const firstWord = rawUsername.trim().split(/\s+/)[0];
-  const firstName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+  console.log("[dashboard] profile.username:", profile?.username, "| user.email:", user.email);
+  const displayName = resolveDisplayName(profile?.username, user.email);
+  const firstName = displayName.split(/\s+/)[0];
+  console.log("[dashboard] resolved firstName:", firstName);
 
   const workoutCount = workoutsThisWeek.count ?? 0;
   const habitTotal = habitsResult.count ?? 0;

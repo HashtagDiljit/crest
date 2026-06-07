@@ -166,11 +166,14 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
                     key={item.key}
                     type="button"
                     onClick={() => setOpenModal(item.key)}
-                    className="flex flex-col items-center gap-1 p-2 rounded-r3 bg-bg-surface border border-border hover:bg-bg-elevated text-text-muted text-11 font-medium transition-colors"
+                    className="flex flex-col items-center gap-1 p-2 rounded-r3 bg-bg-surface border border-border hover:bg-bg-elevated text-text-muted text-11 font-medium transition-colors active:scale-95"
                     title={`Log ${item.label.toLowerCase()}`}
                   >
-                    <span className="w-7 h-7 rounded-r2 bg-bg-inset flex items-center justify-center">
-                      <Icon size={14} style={{ color: item.color }} />
+                    <span
+                      className="w-8 h-8 rounded-pill flex items-center justify-center"
+                      style={{ background: `color-mix(in oklab, ${item.color} 15%, transparent)` }}
+                    >
+                      <Icon size={24} style={{ color: item.color }} />
                     </span>
                     {item.label}
                   </button>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
-import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { THEME_INIT_SCRIPT, THEME_PREPAINT_SCRIPT } from "@/lib/theme";
 import { ThemeInit } from "@/components/ThemeInit";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -34,6 +34,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Runs synchronously before paint — sets bg via inline style attribute (Samsung Internet fix) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
         {/* Inline script prevents flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

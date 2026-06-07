@@ -47,6 +47,7 @@ const config: Config = {
         "20": ["20px", { lineHeight: "1.25" }],
         "22": ["22px", { lineHeight: "1.25" }],
         "24": ["24px", { lineHeight: "1.25" }],
+        "28": ["28px", { lineHeight: "1.15" }],
         "32": ["32px", { lineHeight: "1.1" }],
         "48": ["48px", { lineHeight: "1.1" }],
       },
