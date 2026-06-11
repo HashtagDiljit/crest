@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ConsentGate } from "@/components/ConsentGate";
 import { getConsent } from "@/app/(dashboard)/consent/actions";
 import { CONSENT_VERSION } from "@/app/(dashboard)/consent/types";
+import { OfflineSync } from "@/components/OfflineSync";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default async function DashboardLayout({
   children,
@@ -67,6 +69,7 @@ export default async function DashboardLayout({
   return (
     <>
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
+      <OfflineSync />
       <ConsentGate needsConsent={needsConsent}>
         <div className="flex min-h-screen bg-bg-base">
           <Sidebar hiddenNavIds={hiddenNavIds} />
@@ -89,6 +92,7 @@ export default async function DashboardLayout({
           </div>
         </div>
         <BottomTabBar />
+        <InstallPrompt />
       </ConsentGate>
     </>
   );

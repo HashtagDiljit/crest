@@ -8,6 +8,21 @@ import {
   getLastSleepTimes, getLastWeight,
 } from "@/app/(dashboard)/quick-log-actions";
 import { MealLoggerModal } from "@/app/(dashboard)/nutrition/_components/MealLoggerModal";
+import { enqueueAction, type QueuedActionType } from "@/lib/offlineQueue";
+
+// If offline, queue the action in IndexedDB for later sync instead of
+// hitting the (unreachable) server action.
+async function submitOrQueue(
+  type: QueuedActionType,
+  payload: unknown,
+  fn: () => Promise<unknown>
+): Promise<void> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    await enqueueAction(type, payload);
+    return;
+  }
+  await fn();
+}
 
 // ─── shared shell ─────────────────────────────────────────────────────────────
 
@@ -47,7 +62,7 @@ export function WaterModal({ onClose }: { onClose: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await quickLogWater(ml);
+    await submitOrQueue("water", { ml }, () => quickLogWater(ml));
     onClose();
   }
 
@@ -103,7 +118,7 @@ export function MoodModal({ onClose }: { onClose: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await quickLogMood(score, note);
+    await submitOrQueue("mood", { score, note }, () => quickLogMood(score, note));
     onClose();
   }
 
@@ -162,7 +177,7 @@ export function WeightModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     if (kg === null) return;
     setSaving(true);
-    await quickLogWeight(kg);
+    await submitOrQueue("weight", { kg }, () => quickLogWeight(kg));
     onClose();
   }
 
@@ -213,7 +228,7 @@ export function SleepModal({ onClose }: { onClose: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await quickLogSleep(bedtime, wakeTime, quality);
+    await submitOrQueue("sleep", { bedtime, wakeTime, quality }, () => quickLogSleep(bedtime, wakeTime, quality));
     onClose();
   }
 
@@ -308,7 +323,7 @@ export function NoteModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     if (!body.trim()) return;
     setSaving(true);
-    await quickLogNote(body);
+    await submitOrQueue("note", { body }, () => quickLogNote(body));
     onClose();
   }
 
