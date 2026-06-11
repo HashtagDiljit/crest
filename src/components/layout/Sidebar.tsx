@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
+import { ArcMark } from "@/components/icons/ArcMark";
 
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
@@ -166,11 +167,14 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
                     key={item.key}
                     type="button"
                     onClick={() => setOpenModal(item.key)}
-                    className="flex flex-col items-center gap-1 p-2 rounded-r3 bg-bg-surface border border-border hover:bg-bg-elevated text-text-muted text-11 font-medium transition-colors"
+                    className="flex flex-col items-center gap-1 p-2 rounded-r3 bg-bg-surface border border-border hover:bg-bg-elevated text-text-muted text-11 font-medium transition-colors active:scale-95"
                     title={`Log ${item.label.toLowerCase()}`}
                   >
-                    <span className="w-7 h-7 rounded-r2 bg-bg-inset flex items-center justify-center">
-                      <Icon size={14} style={{ color: item.color }} />
+                    <span
+                      className="w-8 h-8 rounded-pill flex items-center justify-center"
+                      style={{ background: `color-mix(in oklab, ${item.color} 15%, transparent)` }}
+                    >
+                      <Icon size={24} style={{ color: item.color }} />
                     </span>
                     {item.label}
                   </button>
@@ -217,12 +221,3 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   );
 }
 
-function ArcLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 64 64" fill="none" className="flex-shrink-0">
-      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
-      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-    </svg>
-  );
-}

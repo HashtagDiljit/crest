@@ -34,39 +34,115 @@ export function applyAccent(hex: string) {
   try { localStorage.setItem("arc-accent", hex); } catch { /* noop */ }
 }
 
+const LIGHT_BG = "#FFFFFF";
+const LIGHT_SURFACE = "#F8F8F5";
+const DARK_BG = "#0D0D12";
+const DARK_SURFACE = "#16161E";
+const AMOLED_BG = "#000000";
+const AMOLED_SURFACE = "#0A0A0A";
+
+let themeObserver: MutationObserver | null = null;
+
+function paintBackgrounds(bg: string, surface: string) {
+  document.documentElement.style.cssText += `background-color: ${bg} !important;`;
+  document.body.style.cssText += `background-color: ${bg} !important;`;
+
+  const containers = document.querySelectorAll(
+    'main, #__next, [data-radix-scroll-area-viewport], .dashboard-main, aside'
+  );
+  containers.forEach((el) => {
+    (el as HTMLElement).style.cssText += `background-color: ${bg} !important;`;
+  });
+
+  const surfaces = document.querySelectorAll('[data-bg-surface], .bg-bg-surface, .bg-bg-elevated');
+  surfaces.forEach((el) => {
+    (el as HTMLElement).style.cssText += `background-color: ${surface} !important;`;
+  });
+}
+
+function startThemeObserver(bg: string, surface: string) {
+  if (themeObserver) {
+    themeObserver.disconnect();
+    themeObserver = null;
+  }
+  if (typeof MutationObserver === "undefined") return;
+
+  themeObserver = new MutationObserver(() => {
+    paintBackgrounds(bg, surface);
+  });
+  themeObserver.observe(document.documentElement, { childList: true, subtree: true });
+}
+
 export function applyTheme(theme: string) {
   const resolved = theme === "system"
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
     : theme;
 
-  if (resolved === "light") {
-    document.documentElement.setAttribute("data-theme", "light");
+  const isLight = resolved === "light";
+  const isAmoled = resolved === "amoled";
+
+  // Set data-theme on both html and body (Samsung Internet misses html-only).
+  const attr = isLight ? "light" : isAmoled ? "amoled" : null;
+  if (attr) {
+    document.documentElement.setAttribute("data-theme", attr);
+    document.body.setAttribute("data-theme", attr);
   } else {
     document.documentElement.removeAttribute("data-theme");
+    document.body.removeAttribute("data-theme");
   }
+
+  // Samsung Internet's CSS custom-property cascade is unreliable, so we
+  // inject backgrounds as inline !important styles directly via cssText,
+  // and re-apply them on every DOM mutation (handles React hydration).
+  const bg = isLight ? LIGHT_BG : isAmoled ? AMOLED_BG : DARK_BG;
+  const surface = isLight ? LIGHT_SURFACE : isAmoled ? AMOLED_SURFACE : DARK_SURFACE;
+  const fg = isLight ? "#0D0D12" : "#E8E6E0";
+
+  paintBackgrounds(bg, surface);
+  document.body.style.color = fg;
+  startThemeObserver(bg, surface);
 
   // Keep theme-color meta in sync with the active theme so iOS status bar
   // and Android browser chrome match the page background.
   const metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])') as HTMLMetaElement | null;
   if (metaThemeColor) {
-    metaThemeColor.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+    metaThemeColor.content = bg;
   } else {
     // Next.js emits media-scoped tags; inject a plain one for runtime overrides.
     const tag = document.createElement("meta");
     tag.name = "theme-color";
-    tag.content = resolved === "light" ? "#FFFFFF" : "#0D0D12";
+    tag.content = bg;
     document.head.appendChild(tag);
   }
 
   try { localStorage.setItem("arc-theme", theme); } catch { /* noop */ }
 }
 
+// Synchronous, pre-paint script — sets the background colour directly via
+// the style attribute before any CSS loads, so Samsung Internet never shows
+// a flash of the wrong (default light) background.
+export const THEME_PREPAINT_SCRIPT = `(function() {
+  var t = localStorage.getItem('arc-theme') || 'dark';
+  var bg = t === 'light' ? '#FFFFFF' : t === 'amoled' ? '#000000' : '#0D0D12';
+  document.documentElement.style.backgroundColor = bg;
+  document.documentElement.setAttribute('data-theme', t);
+})();`;
+
 // Inline script string for root layout — prevents flash on load
 export const THEME_INIT_SCRIPT = `(function(){
   try {
     var t=localStorage.getItem('arc-theme')||'dark';
     if(t==='system')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
-    if(t==='light')document.documentElement.setAttribute('data-theme','light');
+    var light=t==='light';
+    var amoled=t==='amoled';
+    var bg=light?'#FFFFFF':amoled?'#000000':'#0D0D12';
+    if(light||amoled){
+      var attr=light?'light':'amoled';
+      document.documentElement.setAttribute('data-theme',attr);
+      if(document.body){document.body.setAttribute('data-theme',attr);}
+    }
+    document.documentElement.style.setProperty('background-color',bg,'important');
+    if(light){document.documentElement.style.color='#0D0D12';}
     var a=localStorage.getItem('arc-accent');
     if(a){
       var el=document.documentElement;

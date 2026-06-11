@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Settings, Trophy, Dumbbell, BookOpen, Zap, Flame, Target } from "lucide-react";
 import { getProfilePageData } from "./actions";
+import { resolveDisplayName } from "@/lib/displayName";
 
 function xpForLevel(level: number): number { return level * 500; }
 
@@ -32,7 +33,8 @@ export default async function ProfilePage() {
   const { profile, stats, prs, recentAchievements } = data;
   const xpNeeded = xpForLevel(profile.level);
   const xpPct = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
-  const initials = (profile.username ?? profile.email).slice(0, 2).toUpperCase();
+  const displayName = resolveDisplayName(profile.username, profile.email);
+  const initials = displayName.slice(0, 2).toUpperCase();
   const memberSince = new Date(profile.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
   return (
@@ -57,7 +59,7 @@ export default async function ProfilePage() {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-display text-22 font-semibold text-text-primary">{profile.username ?? "Anonymous"}</p>
+            <p className="font-display text-22 font-semibold text-text-primary">{displayName || "Anonymous"}</p>
             <p className="text-13 text-text-muted mt-0.5">{profile.email}</p>
             <p className="text-11 text-text-disabled mt-1">Member since {memberSince}</p>
           </div>

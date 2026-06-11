@@ -3,7 +3,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 
 export async function saveDashboardLayout(layout: {
-  cards: string[];
+  lg: Array<{ i: string; x: number; y: number; w: number; h: number }>;
   hidden: string[];
 }) {
   const supabase = await createServerClient();

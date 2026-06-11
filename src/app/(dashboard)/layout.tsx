@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { resolveDisplayName } from "@/lib/displayName";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
@@ -7,6 +8,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ConsentGate } from "@/components/ConsentGate";
 import { getConsent } from "@/app/(dashboard)/consent/actions";
 import { CONSENT_VERSION } from "@/app/(dashboard)/consent/types";
+import { OfflineSync } from "@/components/OfflineSync";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default async function DashboardLayout({
   children,
@@ -51,7 +54,9 @@ export default async function DashboardLayout({
     hiddenNavIds.push("mood", "journal");
   }
 
-  const username = profile?.username ?? user!.email?.split("@")[0] ?? "You";
+  console.log("[dashboard layout] profile.username:", profile?.username, "| user.email:", user!.email);
+  const username = resolveDisplayName(profile?.username, user!.email);
+  console.log("[dashboard layout] resolved username:", username);
   const parts = username.trim().split(/\s+/);
   const initials = parts.length >= 2
     ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
@@ -64,6 +69,7 @@ export default async function DashboardLayout({
   return (
     <>
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
+      <OfflineSync />
       <ConsentGate needsConsent={needsConsent}>
         <div className="flex min-h-screen bg-bg-base">
           <Sidebar hiddenNavIds={hiddenNavIds} />
@@ -86,6 +92,7 @@ export default async function DashboardLayout({
           </div>
         </div>
         <BottomTabBar />
+        <InstallPrompt />
       </ConsentGate>
     </>
   );

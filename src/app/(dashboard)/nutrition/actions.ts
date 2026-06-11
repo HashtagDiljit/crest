@@ -181,17 +181,90 @@ export interface FoodPreset {
   category: string;
   meal_type: string;
   protein_g: number;
+  calories_kcal: number;
+  carbs_g: number;
+  fat_g: number;
+  serving_g: number;
+  is_global: boolean;
 }
 
 export async function getGlobalFoodPresets(): Promise<FoodPreset[]> {
   const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Get user's hidden presets list
+  let hiddenIds: string[] = [];
+  if (user) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: prof } = await (supabase.from("profiles").select("nutrition_settings").eq("id", user.id).single()) as any;
+    hiddenIds = prof?.nutrition_settings?.hidden_presets ?? [];
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("food_presets") as any)
-    .select("id, name, category, meal_type, protein_g")
-    .is("user_id", null)
+  let query = (supabase.from("food_presets") as any)
+    .select("id, name, category, meal_type, protein_g, calories_kcal, carbs_g, fat_g, serving_g, user_id")
     .order("category")
     .order("name");
-  return (data ?? []) as FoodPreset[];
+
+  if (user) {
+    query = query.or(`user_id.is.null,user_id.eq.${user.id}`);
+  } else {
+    query = query.is("user_id", null);
+  }
+
+  const { data } = await query;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data ?? []) as any[])
+    .filter((f) => !hiddenIds.includes(f.id))
+    .map((f) => ({
+      id: f.id,
+      name: f.name,
+      category: f.category,
+      meal_type: f.meal_type,
+      protein_g: f.protein_g ?? 0,
+      calories_kcal: f.calories_kcal ?? 0,
+      carbs_g: f.carbs_g ?? 0,
+      fat_g: f.fat_g ?? 0,
+      serving_g: f.serving_g ?? 100,
+      is_global: f.user_id === null,
+    }));
+}
+
+export async function hidePreset(presetId: string): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: prof } = await (supabase.from("profiles").select("nutrition_settings").eq("id", user.id).single()) as any;
+  const settings = prof?.nutrition_settings ?? {};
+  const hidden: string[] = settings.hidden_presets ?? [];
+  if (!hidden.includes(presetId)) hidden.push(presetId);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("profiles") as any).update({
+    nutrition_settings: { ...settings, hidden_presets: hidden },
+  }).eq("id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/nutrition");
+  return {};
+}
+
+export async function deleteCustomPreset(presetId: string): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("food_presets") as any)
+    .delete()
+    .eq("id", presetId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/nutrition");
+  return {};
 }
 
 export async function getNutritionSettings(): Promise<NutritionSettings> {
