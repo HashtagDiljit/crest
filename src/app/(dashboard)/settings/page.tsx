@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getProfilePrefs, getTrainingPreferences } from "./actions";
 import { getNutritionSettings } from "@/app/(dashboard)/nutrition/actions";
+import { getTrainingBlock } from "@/app/(dashboard)/workouts/actions";
 import { AccountSection } from "./_components/AccountSection";
 import { AppearanceSection } from "./_components/AppearanceSection";
 import { UnitsSection } from "./_components/UnitsSection";
@@ -9,6 +10,7 @@ import { NotificationsSection } from "./_components/NotificationsSection";
 import { DataPrivacySection } from "./_components/DataPrivacySection";
 import { NutritionSection } from "./_components/NutritionSection";
 import { TrainingSection } from "./_components/TrainingSection";
+import { TrainingBlockSection } from "./_components/TrainingBlockSection";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +19,11 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [prefs, nutritionSettings, trainingPrefs] = await Promise.all([
+  const [prefs, nutritionSettings, trainingPrefs, blockData] = await Promise.all([
     getProfilePrefs(),
     getNutritionSettings(),
     getTrainingPreferences(),
+    getTrainingBlock(),
   ]);
 
   return (
@@ -51,7 +54,10 @@ export default async function SettingsPage() {
       </Section>
 
       <Section id="training" title="Training Preferences">
-        <TrainingSection prefs={trainingPrefs} />
+        <div className="flex flex-col gap-5">
+          <TrainingBlockSection blockData={blockData} />
+          <TrainingSection prefs={trainingPrefs} />
+        </div>
       </Section>
 
       <Section id="data" title="Data & Privacy">

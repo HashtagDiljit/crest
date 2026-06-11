@@ -4,12 +4,11 @@ import Link from "next/link";
 import { Plus, BookOpen, Play } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { getTemplates, getWorkoutHistory, seedDefaultTemplates, getTrainingWeekCount, getActiveSession, getTrainingBlock } from "./actions";
+import { getTemplates, getWorkoutHistory, seedDefaultTemplates, getTrainingWeekCount, getActiveSession } from "./actions";
 import { TemplatesSection } from "./_components/TemplatesSection";
 import { HistorySection } from "./_components/HistorySection";
 import { WeekPanel } from "./_components/WeekPanel";
 import { DeloadBanner } from "./_components/DeloadBanner";
-import { TrainingBlockSection } from "./_components/TrainingBlockSection";
 
 export default async function WorkoutsPage() {
   const supabase = await createServerClient();
@@ -20,31 +19,31 @@ export default async function WorkoutsPage() {
 
   await seedDefaultTemplates();
 
-  const [templates, history, weekCount, activeSession, blockData] = await Promise.all([
-    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(), getActiveSession(), getTrainingBlock(),
+  const [templates, history, weekCount, activeSession] = await Promise.all([
+    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(), getActiveSession(),
   ]);
 
   const showDeloadBanner = weekCount > 0 && weekCount % 4 === 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 overflow-x-hidden">
       {showDeloadBanner && <DeloadBanner weekCount={weekCount} />}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Workouts</h1>
           <p className="text-13 text-text-secondary mt-1">Track your training, build templates, and log sessions.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Link
             href="/workouts/exercises"
-            className="flex items-center gap-2 px-4 py-2 rounded-pill border border-border bg-bg-elevated hover:bg-bg-overlay text-text-secondary text-13 font-medium transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-pill border border-border bg-bg-elevated hover:bg-bg-overlay text-text-secondary text-13 font-medium transition-colors flex-1 sm:flex-none"
           >
             <BookOpen size={14} />
             Exercises
           </Link>
           <Link
             href="/workouts/start"
-            className="flex items-center gap-2 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-pill bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors flex-1 sm:flex-none"
           >
             <Plus size={15} />
             Log workout
@@ -71,8 +70,6 @@ export default async function WorkoutsPage() {
           <span className="text-13 font-medium text-accent">Continue →</span>
         </Link>
       )}
-
-      <TrainingBlockSection blockData={blockData} />
 
       <TemplatesSection templates={templates} />
 

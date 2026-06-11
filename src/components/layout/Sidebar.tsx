@@ -79,7 +79,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       >
         {/* Brand */}
         <div className={`flex items-center gap-2.5 px-3.5 py-5 pb-4 ${c ? "justify-center" : ""}`}>
-          <ArcLogo />
+          <ArcMark size={26} className="rounded-r3 flex-shrink-0" />
           {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Arc</span>}
         </div>
 

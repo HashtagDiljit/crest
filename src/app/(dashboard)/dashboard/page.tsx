@@ -171,10 +171,8 @@ export default async function DashboardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = profileResult.data as any;
-  console.log("[dashboard] profile.username:", profile?.username, "| user.email:", user.email);
   const displayName = resolveDisplayName(profile?.username, user.email);
   const firstName = displayName.split(/\s+/)[0];
-  console.log("[dashboard] resolved firstName:", firstName);
 
   const workoutCount = workoutsThisWeek.count ?? 0;
   const habitTotal = habitsResult.count ?? 0;
