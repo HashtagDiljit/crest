@@ -39,7 +39,7 @@ const CSP = [
   // All external API endpoints the browser talks to directly
   [
     "connect-src 'self'",
-    "*.supabase.co *.supabase.io",
+    "*.supabase.co *.supabase.io wss://*.supabase.co",
     "api.nal.usda.gov",
     "world.openfoodfacts.org",
     "exercisedb.p.rapidapi.com",
