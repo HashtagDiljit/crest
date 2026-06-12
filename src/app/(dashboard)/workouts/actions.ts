@@ -1418,6 +1418,34 @@ export async function deleteWorkoutSession(sessionId: string): Promise<{ error?:
   return {};
 }
 
+export async function deleteTemplate(templateId: string): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: template } = await supabase
+    .from("workout_templates")
+    .select("id")
+    .eq("id", templateId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!template) return { error: "Template not found" };
+
+  await supabase.from("template_exercises").delete().eq("template_id", templateId);
+
+  // workout_sessions.template_id is ON DELETE SET NULL, so completed session history is preserved
+  const { error } = await supabase
+    .from("workout_templates")
+    .delete()
+    .eq("id", templateId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts");
+  return {};
+}
+
 export async function getActiveSession(): Promise<{ id: string; templateName: string | null; startedAt: string } | null> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

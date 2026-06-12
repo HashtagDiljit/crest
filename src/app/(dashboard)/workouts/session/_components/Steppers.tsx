@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 
 type LoggingType = "weight_reps" | "time_distance" | "time_reps" | "time_weight";
@@ -17,6 +17,7 @@ interface Props {
   onDistanceChange: (v: number) => void;
   setNum: number;
   totalSets: number;
+  focusSignal?: number;
 }
 
 export function Steppers({
@@ -31,13 +32,14 @@ export function Steppers({
   onDistanceChange,
   setNum,
   totalSets,
+  focusSignal,
 }: Props) {
   const hint = `set ${setNum} / ${totalSets}`;
 
   if (loggingType === "time_distance") {
     return (
       <div className="flex gap-4">
-        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} />
+        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} focusSignal={focusSignal} />
         <StepperInput label="Distance" value={distanceKm} unit="km" step={0.1} onChange={onDistanceChange} min={0} isInt={false} hint={hint} />
       </div>
     );
@@ -46,7 +48,7 @@ export function Steppers({
   if (loggingType === "time_reps") {
     return (
       <div className="flex gap-4">
-        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} />
+        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} focusSignal={focusSignal} />
       </div>
     );
   }
@@ -54,7 +56,7 @@ export function Steppers({
   if (loggingType === "time_weight") {
     return (
       <div className="flex gap-4">
-        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} />
+        <DurationStepper value={durationSeconds} onChange={onDurationChange} hint={hint} focusSignal={focusSignal} />
         <StepperInput label="Weight" value={weight} unit="kg" step={2.5} onChange={onWeightChange} min={0} isInt={false} hint={hint} />
       </div>
     );
@@ -71,6 +73,7 @@ export function Steppers({
         min={0}
         isInt={false}
         hint={hint}
+        focusSignal={focusSignal}
       />
       <StepperInput
         label="Reps"
@@ -95,6 +98,7 @@ interface StepperProps {
   min: number;
   isInt: boolean;
   hint: string;
+  focusSignal?: number;
 }
 
 function fmt(v: number, isInt: boolean): string {
@@ -102,14 +106,20 @@ function fmt(v: number, isInt: boolean): string {
   return Number.isInteger(v) ? v.toFixed(1) : v.toFixed(1);
 }
 
-function StepperInput({ label, value, unit, step, onChange, min, isInt, hint }: StepperProps) {
+function StepperInput({ label, value, unit, step, onChange, min, isInt, hint, focusSignal }: StepperProps) {
   const [display, setDisplay] = useState(() => fmt(value, isInt));
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync from parent when not editing (e.g. +/- button)
   useEffect(() => {
     if (!focused) setDisplay(fmt(value, isInt));
   }, [value, isInt, focused]);
+
+  // Focus this input when a new set is ready to be logged
+  useEffect(() => {
+    if (focusSignal) inputRef.current?.focus();
+  }, [focusSignal]);
 
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     setFocused(true);
@@ -154,6 +164,7 @@ function StepperInput({ label, value, unit, step, onChange, min, isInt, hint }: 
         </button>
         <div className="flex-1 flex items-baseline justify-center gap-1 min-w-0">
           <input
+            ref={inputRef}
             type="text"
             inputMode={isInt ? "numeric" : "decimal"}
             value={display}
@@ -202,15 +213,22 @@ interface DurationStepperProps {
   onChange: (v: number) => void;
   hint: string;
   step?: number;
+  focusSignal?: number;
 }
 
-function DurationStepper({ value, onChange, hint, step = 15 }: DurationStepperProps) {
+function DurationStepper({ value, onChange, hint, step = 15, focusSignal }: DurationStepperProps) {
   const [display, setDisplay] = useState(() => fmtDuration(value));
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!focused) setDisplay(fmtDuration(value));
   }, [value, focused]);
+
+  // Focus this input when a new set is ready to be logged
+  useEffect(() => {
+    if (focusSignal) inputRef.current?.focus();
+  }, [focusSignal]);
 
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     setFocused(true);
@@ -246,6 +264,7 @@ function DurationStepper({ value, onChange, hint, step = 15 }: DurationStepperPr
         </button>
         <div className="flex-1 flex items-baseline justify-center gap-1 min-w-0">
           <input
+            ref={inputRef}
             type="text"
             inputMode="numeric"
             value={display}
