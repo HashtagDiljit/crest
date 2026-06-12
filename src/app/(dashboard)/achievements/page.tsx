@@ -7,10 +7,16 @@ export const dynamic = "force-dynamic";
 
 export default async function AchievementsPage() {
   const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
+  if (authError || !user) {
+    console.error("Auth error in trophy room:", authError);
+    redirect("/login");
+  }
+
+  console.log("User ID for achievements:", user.id);
   const achievements = await getAchievementsData();
+  console.log("Achievements count:", achievements.length);
   const earned = achievements.filter((a) => a.unlocked_at).length;
 
   return (
