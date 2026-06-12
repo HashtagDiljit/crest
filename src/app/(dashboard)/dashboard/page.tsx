@@ -3,6 +3,8 @@ import { createServerClient } from "@/lib/supabase/server";
 import { resolveDisplayName } from "@/lib/displayName";
 import { DashboardContent } from "./_components/DashboardContent";
 
+export const dynamic = "force-dynamic";
+
 function getWeekStart(): Date {
   const now = new Date();
   const day = now.getDay();

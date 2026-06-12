@@ -11,6 +11,8 @@ import { CONSENT_VERSION } from "@/app/(dashboard)/consent/types";
 import { OfflineSync } from "@/components/OfflineSync";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
