@@ -491,15 +491,13 @@ function evaluate(slug: string, ctx: AchievementContext): Evaluation {
   }
 }
 
-export async function getAchievementsData(): Promise<AchievementRow[]> {
+export async function getAchievementsData(userId: string): Promise<AchievementRow[]> {
   const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
 
   const [allRes, userRes, ctx] = await Promise.all([
     supabase.from("achievements").select("*").order("tier").order("name"),
-    supabase.from("user_achievements").select("achievement_id, unlocked_at").eq("user_id", user.id),
-    buildContext(user.id, supabase),
+    supabase.from("user_achievements").select("achievement_id, unlocked_at").eq("user_id", userId),
+    buildContext(userId, supabase),
   ]);
 
   const unlockedMap = new Map((userRes.data ?? []).map((ua) => [ua.achievement_id as string, ua.unlocked_at as string]));
@@ -535,11 +533,11 @@ export async function getAchievementsData(): Promise<AchievementRow[]> {
   }
 
   if (newlyUnlocked.length > 0) {
-    await supabase.from("user_achievements").insert(newlyUnlocked.map((achievement_id) => ({ user_id: user.id, achievement_id })));
+    await supabase.from("user_achievements").insert(newlyUnlocked.map((achievement_id) => ({ user_id: userId, achievement_id })));
 
-    const { data: profile } = await supabase.from("profiles").select("xp").eq("id", user.id).single();
+    const { data: profile } = await supabase.from("profiles").select("xp").eq("id", userId).single();
     if (profile) {
-      await supabase.from("profiles").update({ xp: ((profile as { xp: number }).xp ?? 0) + xpToAward }).eq("id", user.id);
+      await supabase.from("profiles").update({ xp: ((profile as { xp: number }).xp ?? 0) + xpToAward }).eq("id", userId);
     }
   }
 

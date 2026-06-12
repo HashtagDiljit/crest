@@ -15,7 +15,7 @@ export default async function AchievementsPage() {
   }
 
   console.log("User ID for achievements:", user.id);
-  const achievements = await getAchievementsData();
+  const achievements = await getAchievementsData(user.id);
   console.log("Achievements count:", achievements.length);
   const earned = achievements.filter((a) => a.unlocked_at).length;
 
