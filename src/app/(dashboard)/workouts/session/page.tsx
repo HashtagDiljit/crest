@@ -124,6 +124,8 @@ function SessionPage() {
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
   const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [restManuallySet, setRestManuallySet] = useState(false);
+  const [focusSignal, setFocusSignal] = useState(0);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -279,10 +281,12 @@ function SessionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEx?.exercise_id]);
 
-  // Set a smart rest-timer default when the active exercise changes
+  // Set a smart rest-timer default when the active exercise changes, unless
+  // the user has manually adjusted the rest timer — then keep their value.
   useEffect(() => {
-    if (!currentEx?.exercise) return;
+    if (!currentEx?.exercise || restManuallySet) return;
     setRestTotal(getDefaultRestSeconds(currentEx.exercise));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEx?.exercise]);
 
   function handleAddExercise(ex: ExerciseRow, setsTarget: number, repsTarget: number) {
@@ -298,6 +302,7 @@ function SessionPage() {
     setAdHocExercises((prev) => [...prev, adHoc]);
     setShowPicker(false);
     setCurrentExIdx(allExercises.length);
+    setCurrentSetType("working");
   }
   const setsForCurrentEx = loggedSets.filter((s) => s.exercise_id === currentEx?.exercise_id);
   const isQuickStart = !data?.template;
@@ -438,6 +443,9 @@ function SessionPage() {
         weight: nextWeight,
         reps: nextReps,
       });
+
+      // Focus the next set's input, ready for logging
+      setFocusSignal((f) => f + 1);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, currentEx, setsForCurrentEx, weight, reps, durationSeconds, distanceKm, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides, elapsedSeconds, adHocExercises, removedIds]);
@@ -541,9 +549,15 @@ function SessionPage() {
                   {currentEx.exercise?.name}
                 </h2>
                 <p className="text-12 text-text-muted mt-1">
-                  {currentEx.exercise?.equipment ?? "—"} · target {targetSets}×{currentEx.reps_target ?? 5}
+                  {currentEx.exercise?.equipment ?? "—"}
                   {isDeload && <span className="ml-2 text-warning font-semibold">· Deload week</span>}
                 </p>
+                {targetSets > 0 && (
+                  <p className="text-12 text-text-muted mt-0.5">
+                    Target: {targetSets} set{targetSets === 1 ? "" : "s"}
+                    {currentEx.reps_target ? ` × ${currentEx.reps_target} reps` : ""}
+                  </p>
+                )}
               </div>
               {exerciseHistory.length > 0 && (
                 <OverloadHistory
@@ -573,16 +587,17 @@ function SessionPage() {
                 onDistanceChange={setDistanceKm}
                 setNum={setsForCurrentEx.length + 1}
                 totalSets={targetSets}
+                focusSignal={focusSignal}
               />
               {/* Set type selector */}
               <div className="flex items-center gap-2">
                 <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Type</span>
-                <div className="flex gap-1.5">
-                  {([ ["warmup","W","text-warning"], ["working","S","text-accent"], ["dropset","D","text-success"], ["failure","F","text-danger"] ] as const).map(([t, label, col]) => (
+                <div className="flex gap-1.5 flex-wrap">
+                  {([ ["warmup","Warm-up","text-warning"], ["working","Working","text-accent"], ["dropset","Drop set","text-success"], ["failure","Failure","text-danger"] ] as const).map(([t, label, col]) => (
                     <button
                       key={t}
                       onClick={() => setCurrentSetType(t)}
-                      className={`w-8 h-7 rounded-r2 text-11 font-bold border transition-colors ${
+                      className={`px-2.5 h-7 rounded-pill text-11 font-semibold border transition-colors ${
                         currentSetType === t
                           ? `border-current bg-bg-elevated ${col}`
                           : "border-border text-text-disabled hover:text-text-muted"
@@ -597,7 +612,7 @@ function SessionPage() {
                 onClick={handleCompleteSet}
                 className="w-full h-14 rounded-r4 bg-accent hover:bg-accent-hover text-white font-semibold text-15 transition-colors"
               >
-                Complete set {setsForCurrentEx.length + 1}
+                Complete set
               </button>
               <div className="flex items-center justify-between">
                 <button
@@ -623,9 +638,9 @@ function SessionPage() {
           <RestTimer
             remaining={restRemaining}
             total={restTotal}
-            onAdjust={(delta) => setRestRemaining((r) => Math.max(0, r + delta))}
+            onAdjust={(delta) => { setRestManuallySet(true); setRestRemaining((r) => Math.max(0, r + delta)); }}
             onSkip={() => setRestRemaining(0)}
-            onChangeTotal={setRestTotal}
+            onChangeTotal={(v) => { setRestManuallySet(true); setRestTotal(v); }}
           />
           <ExerciseQueue
             exercises={allExercises}

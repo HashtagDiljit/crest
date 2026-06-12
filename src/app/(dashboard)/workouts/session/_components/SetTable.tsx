@@ -7,10 +7,10 @@ import type { SessionSetRow } from "../../actions";
 type LoggingType = "weight_reps" | "time_distance" | "time_reps" | "time_weight";
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  warmup:  { label: "W", color: "text-warning" },
-  working: { label: "S", color: "text-accent" },
-  dropset: { label: "D", color: "text-success" },
-  failure: { label: "F", color: "text-danger" },
+  warmup:  { label: "Warm-up", color: "text-warning" },
+  working: { label: "Working", color: "text-accent" },
+  dropset: { label: "Drop set", color: "text-success" },
+  failure: { label: "Failure", color: "text-danger" },
 };
 
 export interface SetUpdate {
@@ -107,7 +107,7 @@ export function SetTable({ sets, targetSets, currentSetIdx, loggingType = "weigh
                 <td className="py-2.5 px-3 font-mono text-text-secondary">{i + 1}</td>
                 <td className="py-2.5 px-2 text-center">
                   {typeInfo ? (
-                    <span className={`font-mono text-10 font-bold ${typeInfo.color}`}>{typeInfo.label}</span>
+                    <span className={`inline-block font-mono text-10 font-bold px-1.5 py-0.5 rounded-pill bg-bg-elevated whitespace-nowrap ${typeInfo.color}`}>{typeInfo.label}</span>
                   ) : (
                     <span className="text-text-disabled">—</span>
                   )}
