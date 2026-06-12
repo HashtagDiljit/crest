@@ -122,10 +122,12 @@ export function applyTheme(theme: string) {
 // the style attribute before any CSS loads, so Samsung Internet never shows
 // a flash of the wrong (default light) background.
 export const THEME_PREPAINT_SCRIPT = `(function() {
-  var t = localStorage.getItem('arc-theme') || 'dark';
-  var bg = t === 'light' ? '#FFFFFF' : t === 'amoled' ? '#000000' : '#0D0D12';
-  document.documentElement.style.backgroundColor = bg;
-  document.documentElement.setAttribute('data-theme', t);
+  try {
+    var t = localStorage.getItem('arc-theme') || 'dark';
+    var bg = t === 'light' ? '#FFFFFF' : t === 'amoled' ? '#000000' : '#0D0D12';
+    document.documentElement.style.backgroundColor = bg;
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
 })();`;
 
 // Inline script string for root layout — prevents flash on load
