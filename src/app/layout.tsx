@@ -7,7 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Arc",
-  description: "Your life. Tracked. Understood.",
+  description: "Your life. Tracked. Understood. ",
   manifest: "/manifest.json",
   icons: {
     apple: "/icons/icon-192.png",
