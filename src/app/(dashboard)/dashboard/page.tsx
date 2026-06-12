@@ -173,7 +173,8 @@ export default async function DashboardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = profileResult.data as any;
-  const displayName = resolveDisplayName(profile?.username, user.email);
+  const metadataName = (user.user_metadata?.name ?? user.user_metadata?.full_name) as string | undefined;
+  const displayName = resolveDisplayName(profile?.username, user.email, metadataName);
   const firstName = displayName.split(/\s+/)[0];
 
   const workoutCount = workoutsThisWeek.count ?? 0;

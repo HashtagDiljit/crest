@@ -20,7 +20,8 @@ export default async function OnboardingPage() {
 
   if (profile?.onboarding_completed) redirect("/dashboard");
 
-  const displayName = resolveDisplayName(profile?.username, user.email);
+  const metadataName = (user.user_metadata?.name ?? user.user_metadata?.full_name) as string | undefined;
+  const displayName = resolveDisplayName(profile?.username, user.email, metadataName);
   const firstName = displayName.split(/\s+/)[0];
 
   return <OnboardingFlow firstName={firstName} />;
