@@ -81,6 +81,8 @@ const nextConfig = {
           // camera=(self) allows barcode scanner on same origin only
           { key: "Permissions-Policy",      value: "camera=(self)" },
           { key: "Content-Security-Policy", value: CSP },
+          // Helps Safari handle the auth redirect flow correctly
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
         ],
       },
     ];

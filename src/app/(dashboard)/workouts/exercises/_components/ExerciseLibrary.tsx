@@ -8,14 +8,16 @@ import { ExerciseDetailPanel } from "./ExerciseDetailPanel";
 
 const MUSCLE_FILTERS: Array<{ label: string; values: string[] | null }> = [
   { label: "All", values: null },
-  { label: "Chest", values: ["chest"] },
   { label: "Back", values: ["back"] },
-  { label: "Legs", values: ["quadriceps", "hamstrings", "glutes", "calves"] },
+  { label: "Chest", values: ["chest"] },
   { label: "Shoulders", values: ["shoulders"] },
-  { label: "Arms", values: ["biceps", "triceps"] },
+  { label: "Arms", values: ["biceps", "triceps", "forearms"] },
+  { label: "Legs", values: ["quadriceps", "quads", "hamstrings", "glutes", "calves"] },
   { label: "Core", values: ["core"] },
   { label: "Cardio", values: ["cardio"] },
-  { label: "Mobility", values: ["flexibility", "full_body"] },
+  { label: "Olympic", values: ["olympic"] },
+  { label: "Full Body", values: ["full_body"] },
+  { label: "Neck", values: ["neck"] },
 ];
 
 const EQUIPMENT_FILTERS: Array<{ label: string; value: string | null }> = [
@@ -56,7 +58,11 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
     return exercises.filter((ex) => {
       const q = query.toLowerCase();
       if (q && !ex.name.toLowerCase().includes(q)) return false;
-      if (muscleFilter && !muscleFilter.includes(ex.muscle_primary ?? "")) return false;
+      if (
+        muscleFilter &&
+        !muscleFilter.includes(ex.muscle_primary ?? "") &&
+        !muscleFilter.includes(ex.category ?? "")
+      ) return false;
       if (equipFilter && ex.equipment !== equipFilter) return false;
       return true;
     });

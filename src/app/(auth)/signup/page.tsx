@@ -28,20 +28,21 @@ export default function SignupPage() {
     const email = formData.get("email") as string;
     const name = formData.get("name") as string;
 
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) throw authError;
+
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again or use a different browser.");
       setLoading(false);
-      return;
     }
-
-    router.push("/dashboard");
   }
 
   return (

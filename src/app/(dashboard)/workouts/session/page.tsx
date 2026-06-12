@@ -47,6 +47,8 @@ function SessionPage() {
   const [currentSetIdx, setCurrentSetIdx] = useState(0);
   const [weight, setWeight] = useState(0);
   const [reps, setReps] = useState(5);
+  const [durationSeconds, setDurationSeconds] = useState(60);
+  const [distanceKm, setDistanceKm] = useState(1);
   const [restRemaining, setRestRemaining] = useState(0);
   const [restTotal, setRestTotal] = useState(120);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -97,7 +99,7 @@ function SessionPage() {
       const exerciseIds = texRows.map((te) => te.exercise_id);
 
       const { data: exRaw } = exerciseIds.length > 0
-        ? await supabase.from("exercises").select("id, name, category, muscle_primary, equipment").in("id", exerciseIds)
+        ? await supabase.from("exercises").select("id, name, category, muscle_primary, equipment, logging_type").in("id", exerciseIds)
         : { data: [] };
 
       const exMap = new Map((exRaw ?? []).map((e) => {
@@ -112,7 +114,7 @@ function SessionPage() {
         sets_target: te.sets_target,
         reps_target: te.reps_target,
         order_index: te.order_index,
-        exercise: exMap.get(te.exercise_id) ?? { id: te.exercise_id, name: "Unknown", category: null, muscle_primary: null, equipment: null },
+        exercise: exMap.get(te.exercise_id) ?? { id: te.exercise_id, name: "Unknown", category: null, muscle_primary: null, equipment: null, logging_type: "weight_reps" },
       }));
 
       const { data: setsRaw } = await supabase
@@ -134,6 +136,8 @@ function SessionPage() {
           completed_at: sr.completed_at,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           set_type: ((sr as any).set_type ?? "working") as SessionSetRow["set_type"],
+          duration_seconds: sr.duration_seconds,
+          distance_km: sr.distance_km,
         } satisfies SessionSetRow;
       });
 
@@ -226,13 +230,28 @@ function SessionPage() {
   const handleCompleteSet = useCallback(async () => {
     if (!sessionId || !currentEx) return;
     const setNum = setsForCurrentEx.length + 1;
-    const result = await logSet({ sessionId, exerciseId: currentEx.exercise_id, setNumber: setNum, weightKg: weight, reps, setType: currentSetType });
+    const loggingType = currentEx.exercise?.logging_type ?? "weight_reps";
+    const result = await logSet({
+      sessionId,
+      exerciseId: currentEx.exercise_id,
+      setNumber: setNum,
+      weightKg: loggingType === "time_distance" || loggingType === "time_reps" ? 0 : weight,
+      reps: loggingType === "weight_reps" ? reps : 0,
+      setType: currentSetType,
+      durationSeconds: loggingType !== "weight_reps" ? durationSeconds : undefined,
+      distanceKm: loggingType === "time_distance" ? distanceKm : undefined,
+    });
     if ("id" in result) {
       const newSet: SessionSetRow = {
         id: result.id, session_id: sessionId, exercise_id: currentEx.exercise_id,
-        set_number: setNum, weight_kg: weight, reps, rpe: null,
+        set_number: setNum,
+        weight_kg: loggingType === "time_distance" || loggingType === "time_reps" ? 0 : weight,
+        reps: loggingType === "weight_reps" ? reps : 0,
+        rpe: null,
         set_type: currentSetType,
         completed_at: new Date().toISOString(),
+        duration_seconds: loggingType !== "weight_reps" ? durationSeconds : null,
+        distance_km: loggingType === "time_distance" ? distanceKm : null,
       };
       const newSets = [...loggedSets, newSet];
       setLoggedSets(newSets);
@@ -265,7 +284,7 @@ function SessionPage() {
         setCurrentSetIdx(0);
       }
     }
-  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides]);
+  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, durationSeconds, distanceKm, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides]);
 
   const handleEndSession = useCallback(async () => {
     if (!sessionId || !data) return;
@@ -342,12 +361,22 @@ function SessionPage() {
                   suggestedWeight={suggestedWeight}
                 />
               )}
-              <SetTable sets={setsForCurrentEx} targetSets={targetSets} currentSetIdx={currentSetIdx} />
+              <SetTable
+                sets={setsForCurrentEx}
+                targetSets={targetSets}
+                currentSetIdx={currentSetIdx}
+                loggingType={currentEx.exercise?.logging_type ?? "weight_reps"}
+              />
               <Steppers
+                loggingType={currentEx.exercise?.logging_type ?? "weight_reps"}
                 weight={weight}
                 reps={reps}
+                durationSeconds={durationSeconds}
+                distanceKm={distanceKm}
                 onWeightChange={setWeight}
                 onRepsChange={setReps}
+                onDurationChange={setDurationSeconds}
+                onDistanceChange={setDistanceKm}
                 setNum={setsForCurrentEx.length + 1}
                 totalSets={targetSets}
               />

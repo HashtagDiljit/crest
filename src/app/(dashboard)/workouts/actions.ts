@@ -21,6 +21,7 @@ export interface ExerciseRow {
   demo_gif_url?: string | null;
   is_custom?: boolean;
   user_id?: string | null;
+  logging_type?: "weight_reps" | "time_distance" | "time_reps" | "time_weight";
 }
 
 export interface TemplateExerciseRow {
@@ -52,6 +53,8 @@ export interface SessionSetRow {
   rpe: number | null;
   completed_at: string;
   set_type: "warmup" | "working" | "dropset" | "failure";
+  duration_seconds?: number | null;
+  distance_km?: number | null;
 }
 
 export interface SessionRow {
@@ -243,6 +246,8 @@ export async function logSet(data: {
   reps: number;
   rpe?: number;
   setType?: "warmup" | "working" | "dropset" | "failure";
+  durationSeconds?: number;
+  distanceKm?: number;
 }): Promise<{ error: string } | { id: string }> {
   const supabase = await createServerClient();
   const {
@@ -260,6 +265,8 @@ export async function logSet(data: {
       reps: data.reps,
       rpe: data.rpe ?? null,
       set_type: data.setType ?? "working",
+      duration_seconds: data.durationSeconds ?? null,
+      distance_km: data.distanceKm ?? null,
     })
     .select("id")
     .single();
@@ -438,7 +445,7 @@ export async function getExercises(): Promise<ExerciseRow[]> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase.from("exercises") as any)
-    .select("id, name, category, muscle_primary, equipment, demo_gif_url, is_custom, user_id")
+    .select("id, name, category, muscle_primary, equipment, demo_gif_url, is_custom, user_id, logging_type")
     .order("name");
 
   return (data ?? []) as ExerciseRow[];

@@ -131,6 +131,7 @@ export interface Database {
           equipment: string | null;
           is_custom: boolean;
           user_id: string | null;
+          logging_type: "weight_reps" | "time_distance" | "time_reps" | "time_weight";
         };
         Insert: {
           id?: string;
@@ -141,6 +142,7 @@ export interface Database {
           equipment?: string | null;
           is_custom?: boolean;
           user_id?: string | null;
+          logging_type?: "weight_reps" | "time_distance" | "time_reps" | "time_weight";
         };
         Update: {
           id?: string;
@@ -151,6 +153,7 @@ export interface Database {
           equipment?: string | null;
           is_custom?: boolean;
           user_id?: string | null;
+          logging_type?: "weight_reps" | "time_distance" | "time_reps" | "time_weight";
         };
       };
       template_exercises: {
@@ -193,6 +196,8 @@ export interface Database {
           completed_at: string;
           set_type: "warmup" | "working" | "dropset" | "failure";
           superset_group_id: string | null;
+          duration_seconds: number | null;
+          distance_km: number | null;
         };
         Insert: {
           id?: string;
@@ -205,6 +210,8 @@ export interface Database {
           completed_at?: string;
           set_type?: "warmup" | "working" | "dropset" | "failure";
           superset_group_id?: string | null;
+          duration_seconds?: number | null;
+          distance_km?: number | null;
         };
         Update: {
           id?: string;
@@ -217,6 +224,8 @@ export interface Database {
           completed_at?: string;
           set_type?: "warmup" | "working" | "dropset" | "failure";
           superset_group_id?: string | null;
+          duration_seconds?: number | null;
+          distance_km?: number | null;
         };
       };
       habits: {
