@@ -278,6 +278,39 @@ export async function logSet(data: {
   return { id: (inserted as { id: string }).id };
 }
 
+export async function updateSessionSet(
+  setId: string,
+  updates: { weightKg?: number; reps?: number; durationSeconds?: number; distanceKm?: number }
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const updateData: Database["public"]["Tables"]["session_sets"]["Update"] = {};
+  if (updates.weightKg !== undefined) updateData.weight_kg = updates.weightKg;
+  if (updates.reps !== undefined) updateData.reps = updates.reps;
+  if (updates.durationSeconds !== undefined) updateData.duration_seconds = updates.durationSeconds;
+  if (updates.distanceKm !== undefined) updateData.distance_km = updates.distanceKm;
+
+  const { error } = await supabase.from("session_sets").update(updateData).eq("id", setId);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function deleteSessionSet(setId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("session_sets").delete().eq("id", setId);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 export async function endSession(
   sessionId: string
 ): Promise<{ error: string } | void> {

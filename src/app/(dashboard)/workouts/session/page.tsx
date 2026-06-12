@@ -5,11 +5,11 @@ import { Plus, Minus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
-import { logSet, finalizeSession, getExerciseHistory } from "../actions";
+import { logSet, finalizeSession, getExerciseHistory, updateSessionSet, deleteSessionSet } from "../actions";
 import { track } from "@vercel/analytics";
 import type { TemplateExerciseRow, SessionSetRow, SessionRow, ExerciseSessionHistory, PRResult } from "../actions";
 import { SessionHeader } from "./_components/SessionHeader";
-import { SetTable } from "./_components/SetTable";
+import { SetTable, type SetUpdate } from "./_components/SetTable";
 import { Steppers } from "./_components/Steppers";
 import { RestTimer } from "./_components/RestTimer";
 import { ExerciseQueue } from "./_components/ExerciseQueue";
@@ -25,6 +25,66 @@ export interface SessionData {
   template: WorkoutTemplate | null;
   exercises: TemplateExerciseRow[];
   sets: SessionSetRow[];
+}
+
+const ACTIVE_SESSION_KEY = "arc-active-session";
+const SESSION_MAX_AGE_MS = 4 * 60 * 60 * 1000;
+
+interface ActiveSessionSnapshot {
+  session_id: string;
+  template_id: string | null;
+  started_at: string;
+  elapsed_seconds: number;
+  saved_at: string;
+  loggedSets: SessionSetRow[];
+  currentExIdx: number;
+  currentSetIdx: number;
+  currentSetType: "warmup" | "working" | "dropset" | "failure";
+  weight: number;
+  reps: number;
+  targetOverrides: Record<string, number>;
+  supersetLinks: number[];
+  adHocExercises: TemplateExerciseRow[];
+  removedIds: string[];
+}
+
+function saveActiveSession(snapshot: ActiveSessionSnapshot) {
+  try {
+    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(snapshot));
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
+
+function loadActiveSession(): ActiveSessionSnapshot | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    return raw ? (JSON.parse(raw) as ActiveSessionSnapshot) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearActiveSession() {
+  try {
+    localStorage.removeItem(ACTIVE_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+// Default rest period when an exercise doesn't specify one.
+function getDefaultRestSeconds(exercise: ExerciseRow | undefined): number {
+  if (!exercise) return 120;
+  const name = exercise.name.toLowerCase();
+  const category = (exercise.category ?? "").toLowerCase();
+  if (category === "cardio" || category === "core" || /cardio|running|cycling|bike|plank|crunch|sit-?up/.test(name)) {
+    return 60;
+  }
+  if (/squat|deadlift|bench|row|press/.test(name)) {
+    return 180;
+  }
+  return 90;
 }
 
 export default function SessionPageWrapper() {
@@ -63,6 +123,12 @@ function SessionPage() {
   const [supersetLinks, setSupersetLinks] = useState<Set<number>>(new Set<number>());
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseSessionHistory[]>([]);
   const [summary, setSummary] = useState<{ prs: PRResult[]; sets_count: number; started_at: string } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  }
 
   useEffect(() => {
     if (!sessionId) { router.replace("/workouts"); return; }
@@ -154,8 +220,32 @@ function SessionPage() {
       setData({ session: sessionRow, template: templateData as WorkoutTemplate | null, exercises, sets });
       setLoggedSets(sets);
       setElapsedSeconds(Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000));
+
+      // Restore from localStorage if a cached session is recent enough
+      const cached = loadActiveSession();
+      if (cached && cached.session_id === sessionId) {
+        const age = Date.now() - new Date(cached.saved_at).getTime();
+        if (age < SESSION_MAX_AGE_MS) {
+          setLoggedSets(cached.loggedSets);
+          setElapsedSeconds(cached.elapsed_seconds);
+          setCurrentExIdx(cached.currentExIdx);
+          setCurrentSetIdx(cached.currentSetIdx);
+          setCurrentSetType(cached.currentSetType);
+          setWeight(cached.weight);
+          setReps(cached.reps);
+          setTargetOverrides(cached.targetOverrides);
+          setSupersetLinks(new Set(cached.supersetLinks));
+          setAdHocExercises(cached.adHocExercises);
+          setRemovedIds(new Set(cached.removedIds));
+          showToast("Session restored");
+        } else {
+          clearActiveSession();
+        }
+      }
+
       setLoading(false);
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, router]);
 
   // Elapsed timer — stops when session ends
@@ -188,6 +278,12 @@ function SessionPage() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEx?.exercise_id]);
+
+  // Set a smart rest-timer default when the active exercise changes
+  useEffect(() => {
+    if (!currentEx?.exercise) return;
+    setRestTotal(getDefaultRestSeconds(currentEx.exercise));
+  }, [currentEx?.exercise]);
 
   function handleAddExercise(ex: ExerciseRow, setsTarget: number, repsTarget: number) {
     const adHoc: TemplateExerciseRow = {
@@ -227,16 +323,41 @@ function SessionPage() {
     return allHit ? lastWeight + 2.5 : lastWeight;
   })();
 
+  // Persist the full active-session snapshot to localStorage (Bug 3)
+  function persistNow(sets: SessionSetRow[], overrides: Partial<ActiveSessionSnapshot> = {}) {
+    if (!sessionId || !data) return;
+    saveActiveSession({
+      session_id: sessionId,
+      template_id: data.session.template_id,
+      started_at: data.session.started_at,
+      elapsed_seconds: elapsedSeconds,
+      saved_at: new Date().toISOString(),
+      loggedSets: sets,
+      currentExIdx,
+      currentSetIdx,
+      currentSetType,
+      weight,
+      reps,
+      targetOverrides,
+      supersetLinks: Array.from(supersetLinks),
+      adHocExercises,
+      removedIds: Array.from(removedIds),
+      ...overrides,
+    });
+  }
+
   const handleCompleteSet = useCallback(async () => {
-    if (!sessionId || !currentEx) return;
+    if (!sessionId || !currentEx || !data) return;
     const setNum = setsForCurrentEx.length + 1;
     const loggingType = currentEx.exercise?.logging_type ?? "weight_reps";
+    const loggedWeight = loggingType === "time_distance" || loggingType === "time_reps" ? 0 : weight;
+    const loggedReps = loggingType === "weight_reps" ? reps : 0;
     const result = await logSet({
       sessionId,
       exerciseId: currentEx.exercise_id,
       setNumber: setNum,
-      weightKg: loggingType === "time_distance" || loggingType === "time_reps" ? 0 : weight,
-      reps: loggingType === "weight_reps" ? reps : 0,
+      weightKg: loggedWeight,
+      reps: loggedReps,
       setType: currentSetType,
       durationSeconds: loggingType !== "weight_reps" ? durationSeconds : undefined,
       distanceKm: loggingType === "time_distance" ? distanceKm : undefined,
@@ -245,8 +366,8 @@ function SessionPage() {
       const newSet: SessionSetRow = {
         id: result.id, session_id: sessionId, exercise_id: currentEx.exercise_id,
         set_number: setNum,
-        weight_kg: loggingType === "time_distance" || loggingType === "time_reps" ? 0 : weight,
-        reps: loggingType === "weight_reps" ? reps : 0,
+        weight_kg: loggedWeight,
+        reps: loggedReps,
         rpe: null,
         set_type: currentSetType,
         completed_at: new Date().toISOString(),
@@ -257,34 +378,99 @@ function SessionPage() {
       setLoggedSets(newSets);
       setRestRemaining(restTotal);
       setCurrentSetIdx(setNum);
+      // Always reset to "working" so it doesn't carry over a one-off warmup/dropset/failure tag (Bug 2)
+      setCurrentSetType("working");
 
       const newCount = setsForCurrentEx.length + 1;
       const isFirstOfSuperset = supersetLinks.has(currentExIdx);
       const isSecondOfSuperset = currentExIdx > 0 && supersetLinks.has(currentExIdx - 1);
 
+      let nextExIdx = currentExIdx;
+      let nextSetIdx = setNum;
+
       if (isFirstOfSuperset) {
         // Alternate to partner
-        setCurrentExIdx(currentExIdx + 1);
-        setCurrentSetIdx(0);
+        nextExIdx = currentExIdx + 1;
+        nextSetIdx = 0;
+        setCurrentExIdx(nextExIdx);
+        setCurrentSetIdx(nextSetIdx);
       } else if (isSecondOfSuperset) {
         const firstEx = allExercises[currentExIdx - 1];
         const firstExDone = newSets.filter((s) => s.exercise_id === firstEx?.exercise_id).length;
         const firstExTarget = firstEx ? (targetOverrides[firstEx.id] ?? firstEx.sets_target ?? 3) : 3;
         if (firstExDone >= firstExTarget && newCount >= targetSets) {
           // Both done — advance past superset
-          setCurrentExIdx(currentExIdx + 1);
-          setCurrentSetIdx(0);
+          nextExIdx = currentExIdx + 1;
+          nextSetIdx = 0;
+          setCurrentExIdx(nextExIdx);
+          setCurrentSetIdx(nextSetIdx);
         } else {
           // Back to first exercise in pair
-          setCurrentExIdx(currentExIdx - 1);
-          setCurrentSetIdx(0);
+          nextExIdx = currentExIdx - 1;
+          nextSetIdx = 0;
+          setCurrentExIdx(nextExIdx);
+          setCurrentSetIdx(nextSetIdx);
         }
       } else if (newCount >= targetSets && currentExIdx < allExercises.length - 1) {
-        setCurrentExIdx((i) => i + 1);
-        setCurrentSetIdx(0);
+        nextExIdx = currentExIdx + 1;
+        nextSetIdx = 0;
+        setCurrentExIdx(nextExIdx);
+        setCurrentSetIdx(nextSetIdx);
       }
+
+      // Auto-advance to next set row for the same exercise: pre-fill weight from
+      // the set just logged and reps from the target (Bug 1)
+      let nextWeight = weight;
+      let nextReps = reps;
+      if (nextExIdx === currentExIdx) {
+        nextWeight = loggedWeight;
+        if (loggingType === "weight_reps") {
+          nextReps = currentEx.reps_target ?? reps;
+        }
+        setWeight(nextWeight);
+        if (loggingType === "weight_reps") setReps(nextReps);
+      }
+
+      persistNow(newSets, {
+        currentExIdx: nextExIdx,
+        currentSetIdx: nextSetIdx,
+        currentSetType: "working",
+        weight: nextWeight,
+        reps: nextReps,
+      });
     }
-  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, durationSeconds, distanceKm, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, currentEx, setsForCurrentEx, weight, reps, durationSeconds, distanceKm, restTotal, targetSets, data, currentExIdx, loggedSets, currentSetType, supersetLinks, allExercises, targetOverrides, elapsedSeconds, adHocExercises, removedIds]);
+
+  async function handleUpdateSet(set: SessionSetRow, updates: SetUpdate) {
+    const result = await updateSessionSet(set.id, updates);
+    if ("error" in result) return;
+    const newSets = loggedSets.map((s) =>
+      s.id === set.id
+        ? {
+            ...s,
+            weight_kg: updates.weightKg !== undefined ? updates.weightKg : s.weight_kg,
+            reps: updates.reps !== undefined ? updates.reps : s.reps,
+            duration_seconds: updates.durationSeconds !== undefined ? updates.durationSeconds : s.duration_seconds,
+            distance_km: updates.distanceKm !== undefined ? updates.distanceKm : s.distance_km,
+          }
+        : s
+    );
+    setLoggedSets(newSets);
+    persistNow(newSets);
+  }
+
+  async function handleDeleteSet(set: SessionSetRow) {
+    const result = await deleteSessionSet(set.id);
+    if ("error" in result) return;
+    const newSets = loggedSets.filter((s) => s.id !== set.id);
+    setLoggedSets(newSets);
+    if (set.exercise_id === currentEx?.exercise_id) {
+      const remaining = newSets.filter((s) => s.exercise_id === currentEx?.exercise_id).length;
+      setCurrentSetIdx((idx) => Math.min(idx, remaining));
+    }
+    persistNow(newSets);
+  }
 
   const handleEndSession = useCallback(async () => {
     if (!sessionId || !data) return;
@@ -293,6 +479,7 @@ function SessionPage() {
     setEnding(true);
     const result = await finalizeSession(sessionId);
     setSummary({ ...result, started_at: data.session.started_at });
+    clearActiveSession();
     track("workout_logged", { sets: result.sets_count ?? 0 });
   }, [sessionId, data, elapsedSeconds]);
 
@@ -307,6 +494,11 @@ function SessionPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {toast && (
+        <div className="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-pill bg-bg-surface border border-border shadow-2xl text-13 text-text-primary font-medium max-w-xs text-center whitespace-nowrap">
+          {toast}
+        </div>
+      )}
       {summary && (
         <SessionSummary
           sessionId={sessionId!}
@@ -366,6 +558,8 @@ function SessionPage() {
                 targetSets={targetSets}
                 currentSetIdx={currentSetIdx}
                 loggingType={currentEx.exercise?.logging_type ?? "weight_reps"}
+                onUpdateSet={handleUpdateSet}
+                onDeleteSet={handleDeleteSet}
               />
               <Steppers
                 loggingType={currentEx.exercise?.logging_type ?? "weight_reps"}
