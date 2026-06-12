@@ -171,10 +171,8 @@ export default async function DashboardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = profileResult.data as any;
-  console.log("[dashboard] profile.username:", profile?.username, "| user.email:", user.email);
   const displayName = resolveDisplayName(profile?.username, user.email);
   const firstName = displayName.split(/\s+/)[0];
-  console.log("[dashboard] resolved firstName:", firstName);
 
   const workoutCount = workoutsThisWeek.count ?? 0;
   const habitTotal = habitsResult.count ?? 0;
@@ -257,7 +255,6 @@ export default async function DashboardPage() {
   const lastTemplateName = (lastSessionRow as any)?.workout_templates?.name ?? null;
   const nextWorkoutName = templates.find((t) => t.name !== lastTemplateName)?.name ?? templates[0]?.name ?? null;
   const habitsTodayDone = habitsTodayResult.count ?? 0;
-
   const rawLayout = profile?.dashboard_layout;
   // Support both old format ({cards,hidden}) and new react-grid-layout format ({lg,hidden}).
   // Old format is ignored; new format is used directly.
@@ -302,7 +299,6 @@ export default async function DashboardPage() {
       journalDays30={journalDays30}
       activeGoalCount={activeGoalCount}
       nextWorkoutName={nextWorkoutName}
-      habitsTodayDone={habitsTodayDone}
-    />
+      habitsTodayDone={habitsTodayDone}    />
   );
 }

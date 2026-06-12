@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ArcMark } from "@/components/icons/ArcMark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function LoginPage() {
         style={{ boxShadow: "var(--shadow-3)" }}
       >
         <div className="flex items-center gap-3 mb-8">
-          <ArcLogo />
+          <ArcMark size={28} className="rounded-r3" />
           <span className="font-display text-18 font-semibold text-text-primary tracking-tight">
             Arc
           </span>
@@ -112,25 +113,3 @@ export default function LoginPage() {
   );
 }
 
-function ArcLogo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="14" fill="#16161E" />
-      <path
-        d="M14 42 L32 18 L50 42"
-        stroke="#8B83FF"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M20 48 L32 32 L44 48"
-        stroke="#E8E6E0"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.85"
-      />
-    </svg>
-  );
-}

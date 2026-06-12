@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { setTrainingBlock } from "../actions";
-import type { TrainingBlock, TrainingBlockData } from "../actions";
+import { setTrainingBlock } from "@/app/(dashboard)/workouts/actions";
+import type { TrainingBlock, TrainingBlockData } from "@/app/(dashboard)/workouts/actions";
 
 interface BlockMeta {
   id: TrainingBlock;
@@ -78,16 +78,16 @@ export function TrainingBlockSection({ blockData }: Props) {
   }
 
   return (
-    <div className="rounded-r5 border border-border bg-bg-surface overflow-hidden">
+    <div className="rounded-r5 border border-border bg-bg-elevated overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-bg-elevated transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-bg-overlay transition-colors"
       >
         <div className="flex items-center gap-3">
           <div>
             <span className="font-display text-15 font-semibold text-text-primary">Training block</span>
             {currentMeta ? (
-              <span className="ml-2 text-12 font-medium px-2 py-0.5 rounded-pill" style={{ color: currentMeta.color, background: "var(--color-bg-elevated)" }}>
+              <span className="ml-2 text-12 font-medium px-2 py-0.5 rounded-pill" style={{ color: currentMeta.color, background: "var(--color-bg-overlay)" }}>
                 {currentMeta.label} · day {days}
               </span>
             ) : (
@@ -115,7 +115,7 @@ export function TrainingBlockSection({ blockData }: Props) {
                   type="button"
                   disabled={saving}
                   onClick={() => handleSelect(b.id)}
-                  className={`flex flex-col gap-1 p-3 rounded-r4 border text-left transition-all ${isActive ? "border-[var(--color-accent-ring)] bg-[var(--color-accent-soft)]" : "border-border bg-bg-elevated hover:bg-bg-overlay"}`}
+                  className={`flex flex-col gap-1 p-3 rounded-r4 border text-left transition-all ${isActive ? "border-[var(--color-accent-ring)] bg-[var(--color-accent-soft)]" : "border-border bg-bg-surface hover:bg-bg-overlay"}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.color }} />

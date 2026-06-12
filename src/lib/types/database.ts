@@ -437,6 +437,7 @@ export interface Database {
           name: string;
           description: string | null;
           tier: string | null;
+          category: string | null;
           xp_reward: number;
         };
         Insert: {
@@ -445,6 +446,7 @@ export interface Database {
           name: string;
           description?: string | null;
           tier?: string | null;
+          category?: string | null;
           xp_reward?: number;
         };
         Update: {
@@ -453,6 +455,7 @@ export interface Database {
           name?: string;
           description?: string | null;
           tier?: string | null;
+          category?: string | null;
           xp_reward?: number;
         };
       };

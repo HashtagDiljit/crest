@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
+import { ArcMark } from "@/components/icons/ArcMark";
 
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
@@ -78,7 +79,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       >
         {/* Brand */}
         <div className={`flex items-center gap-2.5 px-3.5 py-5 pb-4 ${c ? "justify-center" : ""}`}>
-          <ArcLogo />
+          <ArcMark size={26} className="rounded-r3 flex-shrink-0" />
           {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Arc</span>}
         </div>
 
@@ -220,12 +221,3 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   );
 }
 
-function ArcLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 64 64" fill="none" className="flex-shrink-0">
-      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
-      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-    </svg>
-  );
-}

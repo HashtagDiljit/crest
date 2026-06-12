@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CalendarButton } from "./CalendarButton";
 import { HistoryPanel } from "./HistoryPanel";
+import { ArcMark } from "@/components/icons/ArcMark";
 
 interface TopBarProps {
   level: number;
@@ -28,8 +29,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
       <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)" }}>
         <div className="flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2">
-            <ArcLogoMini />
-            <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Arc</span>
+            <ArcMark size={32} className="rounded-r3" />
           </Link>
           <MobileStreakChip streak={streak} />
           <Avatar initials={initials} avatarUrl={avatarUrl} />
@@ -72,16 +72,6 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
 
       <HistoryPanel open={showHistory} onClose={() => setShowHistory(false)} />
     </>
-  );
-}
-
-function ArcLogoMini() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
-      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-    </svg>
   );
 }
 

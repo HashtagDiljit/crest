@@ -3,6 +3,7 @@ import {
   Dumbbell, Heart, Target, Smile, PenLine, Trophy,
   Flame, Zap, Star, Lock, ChevronRight,
 } from "lucide-react";
+import { ArcMark } from "@/components/icons/ArcMark";
 
 export default function LandingPage() {
   return (
@@ -10,7 +11,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 md:px-10 py-5 border-b border-border max-w-[1200px] w-full mx-auto">
         <div className="flex items-center gap-2.5">
-          <ArcLogo />
+          <ArcMark size={28} className="rounded-r3" />
           <span className="font-display text-18 font-semibold text-text-primary tracking-tight">Arc</span>
         </div>
         <div className="flex items-center gap-3">
@@ -212,7 +213,7 @@ export default function LandingPage() {
       {/* CTA banner */}
       <section className="px-6 py-16 text-center border-t border-border" style={{ background: "var(--color-bg-inset)" }}>
         <div className="max-w-xl mx-auto flex flex-col items-center gap-5">
-          <ArcLogo size={48} />
+          <ArcMark size={48} className="rounded-r4" />
           <h2 className="font-display text-22 md:text-28 font-semibold text-text-primary tracking-tight">
             Ready to take control?
           </h2>
@@ -235,7 +236,7 @@ export default function LandingPage() {
       <footer className="border-t border-border px-6 py-8">
         <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <ArcLogo size={20} />
+            <ArcMark size={20} className="rounded-r2" />
             <span className="font-display text-14 font-semibold text-text-secondary">Arc</span>
             <span className="text-13 text-text-disabled ml-1">— Your personal life OS</span>
           </div>
@@ -296,12 +297,3 @@ const ACHIEVEMENTS = [
   { name: "Iron will", icon: "🥇", color: "#FFD700", xp: 250 },
 ];
 
-function ArcLogo({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="14" style={{ fill: "var(--color-bg-elevated)" }} />
-      <path d="M14 42 L32 18 L50 42" style={{ stroke: "var(--color-accent)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M20 48 L32 32 L44 48" style={{ stroke: "var(--color-text-primary)" }} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-    </svg>
-  );
-}

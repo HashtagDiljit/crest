@@ -161,16 +161,13 @@ function Card({
 }) {
   return (
     <div
-      className={`relative h-full rounded-r5 border border-border bg-bg-surface overflow-hidden ${className}`}
+      className={`relative h-full rounded-r5 overflow-hidden ${className}`}
       style={{
-        boxShadow: "var(--card-inner-glow, inset 0 1px 0 rgba(255,255,255,0.06))",
+        background: "var(--card-bg)",
+        border: "1px solid var(--card-border)",
+        boxShadow: "var(--card-shadow, none)",
       }}
     >
-      <div
-        className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
-        style={{ background: "color-mix(in oklab, var(--color-accent) 60%, transparent)" }}
-        aria-hidden
-      />
       {children}
     </div>
   );
