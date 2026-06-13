@@ -51,10 +51,19 @@ const CSP = [
   "worker-src 'self'",
 ].join("; ");
 
+// Capacitor (mobile) builds run `next build` with BUILD_TARGET=mobile to
+// produce a static export in `out/`. The regular web build is unaffected —
+// static export is incompatible with this app's middleware, server actions,
+// and dynamic routes, so it must not apply to `next build` / `next start`.
+const isMobileBuild = process.env.BUILD_TARGET === "mobile";
+
 const nextConfig = {
   compress: true,
 
+  ...(isMobileBuild ? { output: "export" } : {}),
+
   images: {
+    unoptimized: isMobileBuild,
     remotePatterns: [
       {
         protocol: "https",
