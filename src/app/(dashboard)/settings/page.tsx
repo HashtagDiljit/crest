@@ -34,11 +34,11 @@ export default async function SettingsPage() {
       </div>
 
       <Section id="account" title="Account">
-        <AccountSection prefs={prefs ?? { username: null, theme: null, accent_colour: null, weight_unit: null, distance_unit: null, time_format: null, week_starts: null, avatar_url: null, notification_preferences: null }} email={user.email ?? ""} />
+        <AccountSection prefs={prefs ?? { username: null, theme: null, accent_colour: null, weight_unit: null, distance_unit: null, time_format: null, week_starts: null, avatar_url: null, notification_preferences: null, hidden_nav_items: null }} email={user.email ?? ""} />
       </Section>
 
       <Section id="appearance" title="Appearance">
-        <AppearanceSection theme={prefs?.theme ?? null} accentColour={prefs?.accent_colour ?? null} />
+        <AppearanceSection theme={prefs?.theme ?? null} accentColour={prefs?.accent_colour ?? null} hiddenNavItems={prefs?.hidden_nav_items ?? null} />
       </Section>
 
       <Section id="units" title="Units & Preferences">

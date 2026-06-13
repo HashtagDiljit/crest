@@ -30,6 +30,7 @@ export default async function HealthPage() {
   const todaySleep = data.sleepLogs.find((l) => l.logged_date === today) ?? null;
   const todayReadiness = data.readinessLogs.find((l) => l.logged_date === today) ?? null;
   const todayMeasurement = data.measurements.find((m) => m.logged_date === today) ?? null;
+  const latestHr = data.hrMetrics[0] ?? null;
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
@@ -42,6 +43,7 @@ export default async function HealthPage() {
         todaySleep={todaySleep}
         todayReadiness={todayReadiness}
         todayMeasurement={todayMeasurement}
+        latestHr={latestHr}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

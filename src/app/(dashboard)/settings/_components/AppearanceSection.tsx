@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { updateAppearance } from "../actions";
+import { updateAppearance, updateHiddenNavItems } from "../actions";
 import { applyTheme, applyAccent } from "@/lib/theme";
 
 const ACCENT_SWATCHES = [
@@ -27,16 +27,32 @@ const THEMES = [
   { value: "system", label: "System" },
 ];
 
+const NAV_TOGGLES = [
+  { id: "workouts",     label: "Workouts" },
+  { id: "health",       label: "Health" },
+  { id: "nutrition",    label: "Nutrition" },
+  { id: "habits",       label: "Habits" },
+  { id: "mood",         label: "Mood" },
+  { id: "journal",      label: "Journal" },
+  { id: "goals",        label: "Goals" },
+  { id: "achievements", label: "Trophy room" },
+  { id: "insights",     label: "AI insights" },
+];
+
 interface Props {
   theme: string | null;
   accentColour: string | null;
+  hiddenNavItems: string[] | null;
 }
 
-export function AppearanceSection({ theme: initTheme, accentColour: initAccent }: Props) {
+export function AppearanceSection({ theme: initTheme, accentColour: initAccent, hiddenNavItems }: Props) {
   const [theme, setTheme] = useState(initTheme ?? "dark");
   const [accent, setAccent] = useState(initAccent ?? "#2DD4BF");
+  const [hiddenNav, setHiddenNav] = useState<string[]>(hiddenNavItems ?? []);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const [navSaving, setNavSaving] = useState(false);
+  const [navMsg, setNavMsg] = useState<{ ok?: boolean; text: string } | null>(null);
 
   function handleThemeChange(value: string) {
     setTheme(value);
@@ -54,6 +70,18 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
     const res = await updateAppearance(theme, accent);
     setSaving(false);
     setMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
+  }
+
+  function toggleNavItem(id: string) {
+    setHiddenNav((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  }
+
+  async function handleSaveNav() {
+    setNavSaving(true);
+    setNavMsg(null);
+    const res = await updateHiddenNavItems(hiddenNav);
+    setNavSaving(false);
+    setNavMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
   }
 
   return (
@@ -106,6 +134,48 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent }
           Save appearance
         </button>
         {msg && <p className={`text-12 ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
+      </div>
+
+      <div className="border-t border-border pt-6 flex flex-col gap-4">
+        <div>
+          <p className="text-14 font-semibold text-text-primary">Navigation</p>
+          <p className="text-12 text-text-secondary mt-0.5">Choose which sections appear in your sidebar and bottom navigation. Dashboard is always visible.</p>
+        </div>
+        <div className="flex flex-col gap-1">
+          {NAV_TOGGLES.map((item) => {
+            const visible = !hiddenNav.includes(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => toggleNavItem(item.id)}
+                className="flex items-center justify-between gap-3 py-2 px-1 text-left"
+              >
+                <span className="text-13 text-text-primary">{item.label}</span>
+                <span
+                  className="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-pill transition-colors"
+                  style={{ background: visible ? "var(--color-accent)" : "var(--color-bg-elevated)" }}
+                >
+                  <span
+                    className="inline-block h-4 w-4 transform rounded-pill bg-white transition-transform"
+                    style={{ transform: visible ? "translateX(18px)" : "translateX(2px)" }}
+                  />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSaveNav}
+            disabled={navSaving}
+            className="px-5 py-2 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {navSaving ? <Loader2 size={13} className="animate-spin" /> : null}
+            Save navigation
+          </button>
+          {navMsg && <p className={`text-12 ${navMsg.ok ? "text-success" : "text-danger"}`}>{navMsg.text}</p>}
+        </div>
       </div>
     </div>
   );

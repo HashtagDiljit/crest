@@ -48,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* Runs synchronously before paint — sets bg via inline style attribute (Samsung Internet fix) */}
         <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
         {/* Inline script prevents flash of wrong theme on load */}

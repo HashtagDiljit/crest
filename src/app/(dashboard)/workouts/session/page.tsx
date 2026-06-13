@@ -552,10 +552,9 @@ function SessionPage() {
                   {currentEx.exercise?.equipment ?? "—"}
                   {isDeload && <span className="ml-2 text-warning font-semibold">· Deload week</span>}
                 </p>
-                {targetSets > 0 && (
+                {!!currentEx.sets_target && !!currentEx.reps_target && (
                   <p className="text-12 text-text-muted mt-0.5">
-                    Target: {targetSets} set{targetSets === 1 ? "" : "s"}
-                    {currentEx.reps_target ? ` × ${currentEx.reps_target} reps` : ""}
+                    Target: {currentEx.sets_target} set{currentEx.sets_target === 1 ? "" : "s"} × {currentEx.reps_target} reps
                   </p>
                 )}
               </div>

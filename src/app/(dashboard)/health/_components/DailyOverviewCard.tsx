@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Moon, Footprints, Heart, Activity } from "lucide-react";
-import type { SleepLogRow, ReadinessRow, BodyMeasurementRow } from "../actions";
+import type { SleepLogRow, ReadinessRow, BodyMeasurementRow, MetricRow } from "../actions";
 import { LogSleepModal } from "./LogSleepModal";
 
 interface Props {
   todaySleep: SleepLogRow | null;
   todayReadiness: ReadinessRow | null;
   todayMeasurement: BodyMeasurementRow | null;
+  latestHr: MetricRow | null;
 }
 
 function computeWellbeing(sleep: SleepLogRow | null, readiness: ReadinessRow | null): number {
@@ -36,7 +37,7 @@ function aiSummary(sleep: SleepLogRow | null, readiness: ReadinessRow | null): s
   return "Log more data to get personalised insights.";
 }
 
-export function DailyOverviewCard({ todaySleep, todayReadiness, todayMeasurement }: Props) {
+export function DailyOverviewCard({ todaySleep, todayReadiness, todayMeasurement, latestHr }: Props) {
   const router = useRouter();
   const [showSleep, setShowSleep] = useState(false);
   const wellbeing = computeWellbeing(todaySleep, todayReadiness);
@@ -83,8 +84,8 @@ export function DailyOverviewCard({ todaySleep, todayReadiness, todayMeasurement
             <StatChip
               icon={<Heart size={14} className="text-danger" />}
               label="Resting HR"
-              value="—"
-              sub="Log via metrics"
+              value={latestHr ? `${latestHr.value} bpm` : "—"}
+              sub={latestHr ? "Latest reading" : "Log in Recovery"}
             />
             <StatChip
               icon={<Activity size={14} className="text-accent" />}

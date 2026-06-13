@@ -2,7 +2,7 @@
 
 import { useState, useOptimistic, useTransition } from "react";
 import { Flame, Plus, Check, Copy } from "lucide-react";
-import { toggleHabit, copyYesterdayHabits } from "../actions";
+import { toggleHabit, copyYesterdayHabits, createHabit } from "../actions";
 import { track } from "@vercel/analytics";
 import { HabitModal } from "./HabitModal";
 import type { HabitRow } from "../actions";
@@ -19,6 +19,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const STREAK_MILESTONES = [7, 14, 30, 60, 90];
 
+const SUGGESTED_HABITS: { name: string; category: string; frequency: string }[] = [
+  { name: "Drink water", category: "health", frequency: "anytime" },
+  { name: "Read 10 minutes", category: "mindset", frequency: "evening" },
+  { name: "Meditate", category: "mindset", frequency: "morning" },
+  { name: "Stretch", category: "fitness", frequency: "morning" },
+  { name: "Walk 20 minutes", category: "fitness", frequency: "daytime" },
+  { name: "Sleep by 11pm", category: "sleep", frequency: "evening" },
+];
+
 function milestoneMessage(habitName: string, streak: number): string | null {
   if (!STREAK_MILESTONES.includes(streak)) return null;
   return `You're becoming someone who ${habitName.toLowerCase()} consistently.`;
@@ -34,6 +43,7 @@ export function HabitList({ habits, username }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
+  const [addingSuggestion, setAddingSuggestion] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const [optimistic, setOptimistic] = useOptimistic(
@@ -67,6 +77,22 @@ export function HabitList({ habits, username }: Props) {
         }
       }
     });
+  }
+
+  async function handleAddSuggestion(suggestion: { name: string; category: string; frequency: string }) {
+    setAddingSuggestion(suggestion.name);
+    const formData = new FormData();
+    formData.set("name", suggestion.name);
+    formData.set("category", suggestion.category);
+    formData.set("frequency", suggestion.frequency);
+    const result = await createHabit(formData);
+    setAddingSuggestion(null);
+    if (result.error) {
+      showToast(result.error);
+    } else {
+      router.refresh();
+      showToast(`Added "${suggestion.name}" to your practices.`);
+    }
   }
 
   async function handleCopyYesterday() {
@@ -121,17 +147,34 @@ export function HabitList({ habits, username }: Props) {
         </div>
 
         {optimistic.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-center px-8">
+          <div className="flex flex-col items-center gap-4 py-10 text-center px-8">
             <div className="w-12 h-12 rounded-r5 bg-bg-elevated flex items-center justify-center">
               <Flame size={20} className="text-text-disabled" />
             </div>
-            <p className="text-14 font-semibold text-text-primary">What kind of person do you want to become?</p>
-            <p className="text-13 text-text-secondary">Start with one practice.</p>
+            <div>
+              <p className="text-15 font-semibold text-text-primary">Start with one habit</p>
+              <p className="text-13 text-text-secondary mt-1">Pick something small below, or build your own.</p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-md">
+              {SUGGESTED_HABITS.map((s) => (
+                <button
+                  key={s.name}
+                  onClick={() => handleAddSuggestion(s)}
+                  disabled={addingSuggestion !== null}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill border border-border bg-bg-elevated hover:bg-bg-overlay text-12 font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                >
+                  <Plus size={12} />
+                  {addingSuggestion === s.name ? "Adding…" : s.name}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => setShowModal(true)}
               className="text-13 text-accent hover:text-accent-hover transition-colors"
             >
-              Build your first practice →
+              Build your own practice →
             </button>
           </div>
         ) : (
