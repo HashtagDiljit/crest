@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:mobile": "BUILD_TARGET=mobile next build && npx cap sync",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android"
   },
