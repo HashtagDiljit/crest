@@ -945,6 +945,14 @@ export async function seedDefaultTemplates(): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
+  // Don't re-seed if the user deliberately cleared their templates
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("has_dismissed_default_templates")
+    .eq("id", user.id)
+    .single();
+  if ((profile as { has_dismissed_default_templates?: boolean } | null)?.has_dismissed_default_templates) return;
+
   // Only seed if user has no templates
   const { count } = await supabase
     .from("workout_templates")
@@ -1442,6 +1450,20 @@ export async function deleteTemplate(templateId: string): Promise<{ error?: stri
     .eq("user_id", user.id);
 
   if (error) return { error: error.message };
+
+  // If the user has now deleted all their templates, remember that so
+  // seedDefaultTemplates() doesn't re-insert the defaults on next visit.
+  const { count } = await supabase
+    .from("workout_templates")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if ((count ?? 0) === 0) {
+    await supabase
+      .from("profiles")
+      .update({ has_dismissed_default_templates: true })
+      .eq("id", user.id);
+  }
+
   revalidatePath("/workouts");
   return {};
 }
