@@ -30,6 +30,7 @@ export interface Database {
           time_format: string | null;
           week_starts: string | null;
           avatar_url: string | null;
+          has_dismissed_default_templates: boolean;
         };
         Insert: {
           id: string;
@@ -47,6 +48,7 @@ export interface Database {
           time_format?: string | null;
           week_starts?: string | null;
           avatar_url?: string | null;
+          has_dismissed_default_templates?: boolean;
         };
         Update: {
           id?: string;
@@ -64,6 +66,7 @@ export interface Database {
           time_format?: string | null;
           week_starts?: string | null;
           avatar_url?: string | null;
+          has_dismissed_default_templates?: boolean;
         };
       };
       workout_sessions: {
