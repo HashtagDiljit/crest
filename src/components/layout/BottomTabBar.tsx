@@ -1,35 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 import {
-  LayoutDashboard, Dumbbell, Heart, Target, Smile,
+  LayoutDashboard, Dumbbell, Heart, Target, CheckCircle2, Smile,
   MoreHorizontal, PenLine, Trophy, Sparkles, Settings, X, Plus,
   Droplets, Utensils, Weight, Moon,
   type LucideIcon,
 } from "lucide-react";
 import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
+import { updateBottomNavItems } from "@/app/(dashboard)/settings/actions";
 
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
-const TAB_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
-  { id: "dashboard", label: "Home",      icon: LayoutDashboard, href: "/dashboard" },
-  { id: "workouts",  label: "Workouts",  icon: Dumbbell,        href: "/workouts" },
-  { id: "health",    label: "Health",    icon: Heart,           href: "/health" },
-  { id: "habits",    label: "Habits",    icon: Target,          href: "/habits" },
-  { id: "mood",      label: "Mood",      icon: Smile,           href: "/mood" },
+const HOME_ITEM = { id: "dashboard", label: "Home", icon: LayoutDashboard, href: "/dashboard" };
+
+// All sections that can occupy one of the 4 customisable slots, or appear in the "More" drawer.
+const SECTION_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
+  { id: "workouts",     label: "Workouts",    icon: Dumbbell,     href: "/workouts" },
+  { id: "health",       label: "Health",      icon: Heart,        href: "/health" },
+  { id: "habits",       label: "Habits",      icon: CheckCircle2, href: "/habits" },
+  { id: "mood",         label: "Mood",        icon: Smile,        href: "/mood" },
+  { id: "nutrition",    label: "Nutrition",   icon: Utensils,     href: "/nutrition" },
+  { id: "journal",      label: "Journal",     icon: PenLine,      href: "/journal" },
+  { id: "goals",        label: "Goals",       icon: Target,       href: "/goals" },
+  { id: "achievements", label: "Trophy room", icon: Trophy,       href: "/achievements" },
+  { id: "insights",     label: "AI insights", icon: Sparkles,     href: "/ai-insights" },
+  { id: "settings",     label: "Settings",    icon: Settings,     href: "/settings" },
 ];
 
-const MORE_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
-  { id: "nutrition",    label: "Nutrition",   icon: Utensils, href: "/nutrition" },
-  { id: "journal",      label: "Journal",     icon: PenLine,  href: "/journal" },
-  { id: "goals",        label: "Goals",       icon: Target,   href: "/goals" },
-  { id: "achievements", label: "Trophy room", icon: Trophy,   href: "/achievements" },
-  { id: "insights",     label: "AI insights", icon: Sparkles, href: "/ai-insights" },
-  { id: "settings",     label: "Settings",    icon: Settings, href: "/settings" },
-];
+const MORE_ITEM: { id: string; label: string; icon: LucideIcon; href?: string } = { id: "more", label: "More", icon: MoreHorizontal };
+
+const DEFAULT_SLOTS = ["workouts", "health", "habits", "more"];
 
 const QUICK_LOG_ITEMS = [
   { key: "water"  as const, label: "Water",  icon: Droplets, color: "var(--color-info)" },
@@ -45,18 +49,98 @@ function isActive(href: string, pathname: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function BottomTabBar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
+function findSection(id: string): { id: string; label: string; icon: LucideIcon; href?: string } {
+  if (id === "more") return MORE_ITEM;
+  return SECTION_ITEMS.find((item) => item.id === id) ?? MORE_ITEM;
+}
+
+const LONG_PRESS_MS = 500;
+
+export function BottomTabBar({
+  hiddenNavIds = [],
+  bottomNavItems = DEFAULT_SLOTS,
+}: {
+  hiddenNavIds?: string[];
+  bottomNavItems?: string[];
+}) {
   const pathname = usePathname();
-  const visibleTabItems = TAB_ITEMS.filter((item) => item.id === "dashboard" || !hiddenNavIds.includes(item.id));
-  const visibleMoreItems = MORE_ITEMS.filter((item) => item.id === "settings" || !hiddenNavIds.includes(item.id));
+  const router = useRouter();
+
+  // Filter out hidden sections, and ensure exactly 4 slots (falling back to defaults if needed).
+  const availableSections = SECTION_ITEMS.filter((item) => !hiddenNavIds.includes(item.id));
+  const availableIds = new Set(availableSections.map((s) => s.id));
+  availableIds.add("more");
+
+  const rawSlots = (bottomNavItems.length === 4 ? bottomNavItems : DEFAULT_SLOTS)
+    .map((id) => (availableIds.has(id) ? id : "more"));
+  const slots: string[] = rawSlots.length === 4 ? rawSlots : DEFAULT_SLOTS;
+
   const [showMore, setShowMore] = useState(false);
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [openModal, setOpenModal] = useState<ModalKey>(null);
+  const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
 
   function openLog(key: ModalKey) {
     setOpenModal(key);
     setShowQuickLog(false);
   }
+
+  function startPress(slotIndex: number) {
+    longPressFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setPickerSlot(slotIndex);
+    }, LONG_PRESS_MS);
+  }
+
+  function cancelPress() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }
+
+  function handleSlotClick(e: React.MouseEvent, item: { id: string; href?: string }) {
+    if (longPressFired.current) {
+      e.preventDefault();
+      longPressFired.current = false;
+      return;
+    }
+    if (item.id === "more") {
+      e.preventDefault();
+      setShowMore(true);
+    }
+  }
+
+  async function chooseSection(sectionId: string) {
+    if (pickerSlot === null) return;
+    const newSlots = [...slots];
+    newSlots[pickerSlot] = sectionId;
+    setPickerSlot(null);
+    setPending(true);
+    try {
+      await updateBottomNavItems(newSlots);
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  // Sections currently occupying a visible slot
+  const slotSectionIds = new Set(slots.filter((id) => id !== "more"));
+
+  // "More" drawer contents: every available section not currently in a visible slot, plus settings always.
+  const moreItems = availableSections.filter((item) => !slotSectionIds.has(item.id));
+
+  // Picker options: all available sections (so user can re-pick) plus "More"
+  const pickerOptions: Array<{ id: string; label: string; icon: LucideIcon }> = [
+    ...availableSections,
+    MORE_ITEM,
+  ];
 
   return (
     <>
@@ -143,7 +227,7 @@ export function BottomTabBar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] })
               </button>
             </div>
             <nav className="flex flex-col gap-0.5">
-              {visibleMoreItems.map((item) => {
+              {moreItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href, pathname);
                 return (
@@ -167,35 +251,158 @@ export function BottomTabBar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] })
         </>
       )}
 
+      {/* Slot picker — long-press customisation */}
+      {pickerSlot !== null && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-black/50"
+            onClick={() => setPickerSlot(null)}
+          />
+          <div
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
+            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-display text-15 font-semibold text-text-primary">Choose icon</span>
+              <button
+                onClick={() => setPickerSlot(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-pill text-text-muted hover:text-text-primary transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {pickerOptions.map((item) => {
+                const Icon = item.icon;
+                const selected = slots[pickerSlot] === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => chooseSection(item.id)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-r3 transition-colors ${
+                      selected ? "bg-[var(--color-accent-soft)] text-accent" : "bg-bg-elevated text-text-muted"
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="text-11 font-medium text-center">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Bottom tab bar */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-stretch border-t border-border bg-bg-surface"
         style={{ height: "calc(56px + env(safe-area-inset-bottom))", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {visibleTabItems.map((item) => {
+        {/* Left two slots */}
+        {slots.slice(0, 2).map((slotId, i) => {
+          const item = findSection(slotId);
           const Icon = item.icon;
-          const active = isActive(item.href, pathname);
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-                active ? "text-accent" : "text-text-muted"
-              }`}
-            >
+          const href = item.href;
+          const active = href ? isActive(href, pathname) : false;
+          const content = (
+            <>
               <Icon size={20} />
               <span className="text-10 font-medium">{item.label}</span>
+            </>
+          );
+          const className = `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
+            active ? "text-accent" : "text-text-muted"
+          }`;
+          return href ? (
+            <Link
+              key={`slot-${i}`}
+              href={href}
+              className={className}
+              onClick={(e) => handleSlotClick(e, item)}
+              onPointerDown={() => startPress(i)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerCancel={cancelPress}
+            >
+              {content}
             </Link>
+          ) : (
+            <button
+              key={`slot-${i}`}
+              type="button"
+              className={className}
+              onClick={(e) => handleSlotClick(e, item)}
+              onPointerDown={() => startPress(i)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerCancel={cancelPress}
+            >
+              {content}
+            </button>
           );
         })}
-        <button
-          type="button"
-          onClick={() => setShowMore(true)}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-text-muted"
-        >
-          <MoreHorizontal size={20} />
-          <span className="text-10 font-medium">More</span>
-        </button>
+
+        {/* Centre — fixed Home FAB */}
+        <div className="flex-1 flex items-stretch justify-center relative">
+          <Link
+            href={HOME_ITEM.href}
+            className="absolute -translate-y-4 flex flex-col items-center justify-center w-14 h-14 rounded-pill text-white transition-transform active:scale-95"
+            style={{
+              background: "var(--color-accent)",
+              boxShadow: "0 0 0 1px var(--color-accent-ring), 0 8px 20px rgba(108,99,255,0.40)",
+            }}
+            aria-label="Home"
+          >
+            <LayoutDashboard size={24} />
+          </Link>
+        </div>
+
+        {/* Right two slots */}
+        {slots.slice(2, 4).map((slotId, idx) => {
+          const i = idx + 2;
+          const item = findSection(slotId);
+          const Icon = item.icon;
+          const href = item.href;
+          const active = href ? isActive(href, pathname) : false;
+          const content = (
+            <>
+              <Icon size={20} />
+              <span className="text-10 font-medium">{item.label}</span>
+            </>
+          );
+          const className = `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
+            active ? "text-accent" : "text-text-muted"
+          }`;
+          return href ? (
+            <Link
+              key={`slot-${i}`}
+              href={href}
+              className={className}
+              onClick={(e) => handleSlotClick(e, item)}
+              onPointerDown={() => startPress(i)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerCancel={cancelPress}
+            >
+              {content}
+            </Link>
+          ) : (
+            <button
+              key={`slot-${i}`}
+              type="button"
+              className={className}
+              onClick={(e) => handleSlotClick(e, item)}
+              onPointerDown={() => startPress(i)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerCancel={cancelPress}
+            >
+              {content}
+            </button>
+          );
+        })}
       </nav>
 
       {/* Quick log modals */}

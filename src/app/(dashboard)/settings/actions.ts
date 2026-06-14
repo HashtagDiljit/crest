@@ -14,6 +14,7 @@ export interface ProfilePrefs {
   avatar_url: string | null;
   notification_preferences: Record<string, boolean> | null;
   hidden_nav_items: string[] | null;
+  reduce_motion: boolean;
 }
 
 export async function getProfilePrefs(): Promise<ProfilePrefs | null> {
@@ -23,7 +24,7 @@ export async function getProfilePrefs(): Promise<ProfilePrefs | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("username, theme, accent_colour, weight_unit, distance_unit, time_format, week_starts, avatar_url, notification_preferences, hidden_nav_items")
+    .select("username, theme, accent_colour, weight_unit, distance_unit, time_format, week_starts, avatar_url, notification_preferences, hidden_nav_items, reduce_motion")
     .eq("id", user.id)
     .single();
 
@@ -76,6 +77,29 @@ export async function updateHiddenNavItems(hiddenNavItems: string[]): Promise<{ 
   if (!user) return { error: "Not authenticated" };
 
   const { error } = await supabase.from("profiles").update({ hidden_nav_items: hiddenNavItems }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function updateBottomNavItems(items: string[]): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ bottom_nav_items: items }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function updateReduceMotion(reduceMotion: boolean): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ reduce_motion: reduceMotion }).eq("id", user.id);
   if (error) return { error: error.message };
   revalidatePath("/settings");
   revalidatePath("/", "layout");

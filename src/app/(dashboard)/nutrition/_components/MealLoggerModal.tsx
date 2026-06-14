@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { X, Check, ChevronRight, Search, Barcode, ArrowLeft, Loader2, EyeOff, Trash2 } from "lucide-react";
+import { X, Check, ChevronRight, ChevronDown, Search, Barcode, ArrowLeft, Loader2, EyeOff, Trash2 } from "lucide-react";
 import { logMeal, getRecentMeals, getGlobalFoodPresets, hidePreset, deleteCustomPreset } from "../actions";
 import { track } from "@vercel/analytics";
 import type { FoodPreset } from "../actions";
@@ -165,6 +165,57 @@ async function lookupBarcode(barcode: string): Promise<PortionFood | null> {
     fat100g:      n.fat_100g ?? 0,
     barcode,
   };
+}
+
+// ─── collapsible preset section ──────────────────────────────────────────────
+
+function CollapsibleSection({
+  title,
+  storageKey,
+  children,
+}: {
+  title: string;
+  storageKey: string;
+  children: React.ReactNode;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored !== null) setCollapsed(stored === "1");
+    } catch { /* noop */ }
+    setHydrated(true);
+  }, [storageKey]);
+
+  function toggle() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(storageKey, next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        onClick={toggle}
+        className="flex items-center justify-between gap-2 px-0.5 py-0.5 -mx-0.5 rounded-r2 text-left transition-colors hover:text-text-secondary"
+      >
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">
+          {title}
+        </span>
+        <ChevronDown
+          size={14}
+          className={`text-text-muted transition-transform ${collapsed ? "-rotate-90" : ""}`}
+        />
+      </button>
+      {hydrated && !collapsed && children}
+      {!hydrated && children}
+    </div>
+  );
 }
 
 // ─── portion / confirmation screen ───────────────────────────────────────────
@@ -667,31 +718,33 @@ export function MealLoggerModal({
                   )}
 
                   {/* Preset list */}
-                  <div className="flex flex-col gap-1">
-                    <span className="text-11 font-semibold uppercase tracking-widest text-text-muted mb-0.5">
-                      {mealType === "Lunch" || mealType === "Dinner" ? "South Asian + protein sources" : mealType}
-                    </span>
-                    {presets.map((p) => (
+                  <CollapsibleSection
+                    title={mealType === "Lunch" || mealType === "Dinner" ? "South Asian + protein sources" : mealType}
+                    storageKey={`arc-collapse-nutrition-presets-${mealType.toLowerCase()}`}
+                  >
+                    <div className="flex flex-col gap-1 mt-1">
+                      {presets.map((p) => (
+                        <button
+                          key={p.key}
+                          onClick={() => openPortionForPreset(p)}
+                          className="flex items-center justify-between px-3 py-2.5 rounded-r3 border border-border bg-bg-elevated hover:border-border-strong text-left transition-colors"
+                        >
+                          <span className="text-13 text-text-secondary">{p.label}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <span className="font-mono text-12 text-accent">{p.proteinG}g</span>
+                            <span className="text-11 text-text-muted">{p.caloriesKcal} kcal</span>
+                          </div>
+                        </button>
+                      ))}
                       <button
-                        key={p.key}
-                        onClick={() => openPortionForPreset(p)}
-                        className="flex items-center justify-between px-3 py-2.5 rounded-r3 border border-border bg-bg-elevated hover:border-border-strong text-left transition-colors"
+                        onClick={() => setShowCustom(true)}
+                        className="flex items-center justify-between px-3 py-2.5 rounded-r3 border border-dashed border-border bg-bg-elevated hover:border-border-strong text-left transition-colors"
                       >
-                        <span className="text-13 text-text-secondary">{p.label}</span>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          <span className="font-mono text-12 text-accent">{p.proteinG}g</span>
-                          <span className="text-11 text-text-muted">{p.caloriesKcal} kcal</span>
-                        </div>
+                        <span className="text-13 text-text-muted">Custom entry…</span>
+                        <ChevronRight size={14} className="text-text-muted" />
                       </button>
-                    ))}
-                    <button
-                      onClick={() => setShowCustom(true)}
-                      className="flex items-center justify-between px-3 py-2.5 rounded-r3 border border-dashed border-border bg-bg-elevated hover:border-border-strong text-left transition-colors"
-                    >
-                      <span className="text-13 text-text-muted">Custom entry…</span>
-                      <ChevronRight size={14} className="text-text-muted" />
-                    </button>
-                  </div>
+                    </div>
+                  </CollapsibleSection>
                 </>
               )}
 

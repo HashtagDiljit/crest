@@ -32,6 +32,11 @@ export interface Database {
           avatar_url: string | null;
           has_dismissed_default_templates: boolean;
           hidden_nav_items: string[] | null;
+          reduce_motion: boolean;
+          bottom_nav_items: string[] | null;
+          health_layout: Json | null;
+          habits_layout: Json | null;
+          nutrition_layout: Json | null;
         };
         Insert: {
           id: string;
@@ -51,6 +56,11 @@ export interface Database {
           avatar_url?: string | null;
           has_dismissed_default_templates?: boolean;
           hidden_nav_items?: string[] | null;
+          reduce_motion?: boolean;
+          bottom_nav_items?: string[] | null;
+          health_layout?: Json | null;
+          habits_layout?: Json | null;
+          nutrition_layout?: Json | null;
         };
         Update: {
           id?: string;
@@ -70,6 +80,11 @@ export interface Database {
           avatar_url?: string | null;
           has_dismissed_default_templates?: boolean;
           hidden_nav_items?: string[] | null;
+          reduce_motion?: boolean;
+          bottom_nav_items?: string[] | null;
+          health_layout?: Json | null;
+          habits_layout?: Json | null;
+          nutrition_layout?: Json | null;
         };
       };
       workout_sessions: {

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { THEME_INIT_SCRIPT, THEME_PREPAINT_SCRIPT } from "@/lib/theme";
 import { ThemeInit } from "@/components/ThemeInit";
+import { MotionProvider } from "@/components/MotionProvider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -56,7 +57,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeInit />
-        {children}
+        <MotionProvider>{children}</MotionProvider>
         <Analytics />
         <SpeedInsights />
       </body>

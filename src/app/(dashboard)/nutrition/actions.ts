@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from "./types";
 export async function getNutritionData() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { todayMeals: [] as MealLogRow[], weeklyTotals: [] as Array<{date:string;protein_g:number}>, supplementLogs: [] as SupplementLogRow[], settings: DEFAULT_SETTINGS };
+  if (!user) return { todayMeals: [] as MealLogRow[], weeklyTotals: [] as Array<{date:string;protein_g:number}>, supplementLogs: [] as SupplementLogRow[], settings: DEFAULT_SETTINGS, nutritionLayout: null };
 
   const today = new Date().toISOString().split("T")[0];
   const since7 = new Date(Date.now() - 6 * 86400000).toISOString().split("T")[0];
@@ -20,7 +20,7 @@ export async function getNutritionData() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase.from("supplement_logs") as any).select("supplement_name, logged_date").eq("user_id", user.id).gte("logged_date", since30).order("logged_date"),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("profiles").select("nutrition_settings").eq("id", user.id).single()) as any,
+    (supabase.from("profiles").select("nutrition_settings, nutrition_layout").eq("id", user.id).single()) as any,
   ]);
 
   const rawSettings = profileRes.data?.nutrition_settings;
@@ -31,6 +31,12 @@ export async function getNutritionData() {
       ? { ...DEFAULT_SETTINGS.supplements, ...rawSettings.supplements }
       : { ...DEFAULT_SETTINGS.supplements },
   };
+
+  const rawLayout = profileRes.data?.nutrition_layout;
+  const nutritionLayout =
+    rawLayout && typeof rawLayout === "object" && Array.isArray((rawLayout as { lg?: unknown }).lg)
+      ? (rawLayout as { lg: Array<{ i: string; x: number; y: number; w: number; h: number }>; hidden: string[] })
+      : null;
 
   const totalsByDate: Record<string, number> = {};
   for (const row of (weekRes.data ?? [])) {
@@ -55,7 +61,7 @@ export async function getNutritionData() {
 
   const supplementLogs: SupplementLogRow[] = suppRes.data ?? [];
 
-  return { todayMeals, weeklyTotals, supplementLogs, settings };
+  return { todayMeals, weeklyTotals, supplementLogs, settings, nutritionLayout };
 }
 
 export async function logMeal(
@@ -265,6 +271,21 @@ export async function deleteCustomPreset(presetId: string): Promise<{ error?: st
   if (error) return { error: error.message };
   revalidatePath("/nutrition");
   return {};
+}
+
+export async function saveNutritionLayout(layout: {
+  lg: Array<{ i: string; x: number; y: number; w: number; h: number }>;
+  hidden: string[];
+}) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload = { nutrition_layout: layout } as any;
+  await supabase.from("profiles").update(payload).eq("id", user.id);
 }
 
 export async function getNutritionSettings(): Promise<NutritionSettings> {

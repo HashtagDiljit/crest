@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { updateAppearance, updateHiddenNavItems } from "../actions";
+import { updateAppearance, updateHiddenNavItems, updateReduceMotion } from "../actions";
 import { applyTheme, applyAccent } from "@/lib/theme";
+import { Toggle } from "@/components/ui/Toggle";
 
 const ACCENT_SWATCHES = [
   { label: "Teal",    value: "#2DD4BF" },
@@ -43,9 +44,10 @@ interface Props {
   theme: string | null;
   accentColour: string | null;
   hiddenNavItems: string[] | null;
+  reduceMotion: boolean;
 }
 
-export function AppearanceSection({ theme: initTheme, accentColour: initAccent, hiddenNavItems }: Props) {
+export function AppearanceSection({ theme: initTheme, accentColour: initAccent, hiddenNavItems, reduceMotion: initReduceMotion }: Props) {
   const [theme, setTheme] = useState(initTheme ?? "dark");
   const [accent, setAccent] = useState(initAccent ?? "#2DD4BF");
   const [hiddenNav, setHiddenNav] = useState<string[]>(hiddenNavItems ?? []);
@@ -53,6 +55,8 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [navSaving, setNavSaving] = useState(false);
   const [navMsg, setNavMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(initReduceMotion);
+  const [motionMsg, setMotionMsg] = useState<{ ok?: boolean; text: string } | null>(null);
 
   function handleThemeChange(value: string) {
     setTheme(value);
@@ -82,6 +86,14 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
     const res = await updateHiddenNavItems(hiddenNav);
     setNavSaving(false);
     setNavMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
+  }
+
+  async function handleToggleReduceMotion() {
+    const next = !reduceMotion;
+    setReduceMotion(next);
+    setMotionMsg(null);
+    const res = await updateReduceMotion(next);
+    setMotionMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
   }
 
   return (
@@ -145,23 +157,10 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
           {NAV_TOGGLES.map((item) => {
             const visible = !hiddenNav.includes(item.id);
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => toggleNavItem(item.id)}
-                className="flex items-center justify-between gap-3 py-2 px-1 text-left"
-              >
+              <div key={item.id} className="flex items-center justify-between gap-3 py-2 px-1">
                 <span className="text-13 text-text-primary">{item.label}</span>
-                <span
-                  className="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-pill transition-colors"
-                  style={{ background: visible ? "var(--color-accent)" : "var(--color-bg-elevated)" }}
-                >
-                  <span
-                    className="inline-block h-4 w-4 transform rounded-pill bg-white transition-transform"
-                    style={{ transform: visible ? "translateX(18px)" : "translateX(2px)" }}
-                  />
-                </span>
-              </button>
+                <Toggle checked={visible} onChange={() => toggleNavItem(item.id)} label={item.label} />
+              </div>
             );
           })}
         </div>
@@ -176,6 +175,17 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
           </button>
           {navMsg && <p className={`text-12 ${navMsg.ok ? "text-success" : "text-danger"}`}>{navMsg.text}</p>}
         </div>
+      </div>
+
+      <div className="border-t border-border pt-6 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-14 font-semibold text-text-primary">Reduce motion</p>
+            <p className="text-12 text-text-secondary mt-0.5">Turn off animations and transitions throughout the app.</p>
+          </div>
+          <Toggle checked={reduceMotion} onChange={handleToggleReduceMotion} label="Reduce motion" />
+        </div>
+        {motionMsg && <p className={`text-12 ${motionMsg.ok ? "text-success" : "text-danger"}`}>{motionMsg.text}</p>}
       </div>
     </div>
   );

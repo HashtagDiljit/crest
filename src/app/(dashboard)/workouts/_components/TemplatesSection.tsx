@@ -4,11 +4,22 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Plus, X, Search } from "lucide-react";
 import { TemplateCard } from "./TemplateCard";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import type { TemplateRow } from "../actions";
 
 interface Props {
   templates: TemplateRow[];
 }
+
+// Names of templates that are auto-seeded for new users (see
+// DEFAULT_TEMPLATES in ../actions.ts). Used purely for display grouping —
+// once a user edits/renames one it'll naturally fall under "My templates".
+const DEFAULT_TEMPLATE_NAMES = new Set([
+  "Upper A — Push",
+  "Lower A — Quad",
+  "Upper B — Pull",
+  "Lower B — Posterior",
+]);
 
 function NewTemplateCard() {
   return (
@@ -38,6 +49,15 @@ export function TemplatesSection({ templates }: Props) {
         t.exercises.some((te) => te.exercise.name.toLowerCase().includes(q))
     );
   }, [templates, query]);
+
+  const myTemplates = useMemo(
+    () => filtered.filter((t) => !DEFAULT_TEMPLATE_NAMES.has(t.name)),
+    [filtered]
+  );
+  const defaultTemplates = useMemo(
+    () => filtered.filter((t) => DEFAULT_TEMPLATE_NAMES.has(t.name)),
+    [filtered]
+  );
 
   return (
     <div className="rounded-r5 border border-border bg-bg-surface">
@@ -101,11 +121,54 @@ export function TemplatesSection({ templates }: Props) {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-            {filtered.map((t) => (
-              <TemplateCard key={t.id} template={t} />
-            ))}
-            {!query && <NewTemplateCard />}
+          <div className="flex flex-col gap-5">
+            {(myTemplates.length > 0 || defaultTemplates.length === 0) && (
+              <CollapsibleSection
+                title={
+                  <span className="font-display text-13 font-semibold text-text-primary">
+                    My Templates
+                  </span>
+                }
+                headerExtra={
+                  <span className="font-mono text-11 text-text-muted bg-bg-elevated px-2 py-0.5 rounded-pill">
+                    {myTemplates.length}
+                  </span>
+                }
+                storageKey="arc-collapse-templates-my"
+                headerClassName="py-1.5"
+              >
+                <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))] pt-3">
+                  {myTemplates.map((t) => (
+                    <TemplateCard key={t.id} template={t} />
+                  ))}
+                  {!query && <NewTemplateCard />}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {defaultTemplates.length > 0 && (
+              <CollapsibleSection
+                title={
+                  <span className="font-display text-13 font-semibold text-text-primary">
+                    Default Templates
+                  </span>
+                }
+                headerExtra={
+                  <span className="font-mono text-11 text-text-muted bg-bg-elevated px-2 py-0.5 rounded-pill">
+                    {defaultTemplates.length}
+                  </span>
+                }
+                storageKey="arc-collapse-templates-default"
+                headerClassName="py-1.5"
+              >
+                <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))] pt-3">
+                  {defaultTemplates.map((t) => (
+                    <TemplateCard key={t.id} template={t} />
+                  ))}
+                  {!query && myTemplates.length > 0 && <NewTemplateCard />}
+                </div>
+              </CollapsibleSection>
+            )}
           </div>
         )}
       </div>
