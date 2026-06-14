@@ -277,6 +277,21 @@ export async function logSteps(steps: number): Promise<{ error?: string }> {
   return {};
 }
 
+export async function saveHealthLayout(layout: {
+  lg: Array<{ i: string; x: number; y: number; w: number; h: number }>;
+  hidden: string[];
+}) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload = { health_layout: layout } as any;
+  await supabase.from("profiles").update(payload).eq("id", user.id);
+}
+
 export async function logSoreness(muscleGroup: string, severity: string): Promise<{ error?: string }> {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -209,3 +209,17 @@ export async function archiveHabit(habitId: string): Promise<void> {
 
   revalidatePath("/habits");
 }
+
+export async function saveHabitsLayout(layout: {
+  lg: Array<{ i: string; x: number; y: number; w: number; h: number }>;
+}): Promise<void> {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload = { habits_layout: layout } as any;
+  await supabase.from("profiles").update(payload).eq("id", user.id);
+}

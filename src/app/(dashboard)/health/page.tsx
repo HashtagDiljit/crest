@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getHealthData } from "./actions";
-import { DailyOverviewCard } from "./_components/DailyOverviewCard";
-import { RecoveryPanel } from "./_components/RecoveryPanel";
-import { SleepPanel } from "./_components/SleepPanel";
-import { BodyMetricsPanel } from "./_components/BodyMetricsPanel";
-import { VitalMetricsPanel } from "./_components/VitalMetricsPanel";
-import { CircadianCard } from "./_components/CircadianCard";
+import { HealthContent, type LayoutItem } from "./_components/HealthContent";
 
 export default async function HealthPage() {
   const supabase = await createServerClient();
@@ -16,14 +11,19 @@ export default async function HealthPage() {
   const [data, profileRes] = await Promise.all([
     getHealthData(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.from("profiles").select("height_cm, date_of_birth, gender").eq("id", user.id).single() as any,
+    supabase.from("profiles").select("height_cm, date_of_birth, gender, health_layout").eq("id", user.id).single() as any,
   ]);
 
-  const profileStats = profileRes.data as {
+  const profile = profileRes.data as {
     height_cm: number | null;
     date_of_birth: string | null;
     gender: string | null;
+    health_layout: unknown;
   } | null;
+
+  const profileStats = profile
+    ? { height_cm: profile.height_cm, date_of_birth: profile.date_of_birth, gender: profile.gender }
+    : null;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -32,41 +32,31 @@ export default async function HealthPage() {
   const todayMeasurement = data.measurements.find((m) => m.logged_date === today) ?? null;
   const latestHr = data.hrMetrics[0] ?? null;
 
+  const rawLayout = profile?.health_layout;
+  const healthLayout =
+    rawLayout && typeof rawLayout === "object" && Array.isArray((rawLayout as { lg?: unknown }).lg)
+      ? (rawLayout as { lg: LayoutItem[]; hidden: string[] })
+      : null;
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      <div>
-        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Health</h1>
-        <p className="text-13 text-text-secondary mt-0.5">Sleep, recovery, and body composition all in one place.</p>
-      </div>
-
-      <DailyOverviewCard
-        todaySleep={todaySleep}
-        todayReadiness={todayReadiness}
-        todayMeasurement={todayMeasurement}
-        latestHr={latestHr}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecoveryPanel
-          readinessLogs={data.readinessLogs}
-          hrvMetrics={data.hrvMetrics}
-          hrMetrics={data.hrMetrics}
-          todaySoreness={data.todaySoreness}
-        />
-        <SleepPanel sleepLogs={data.sleepLogs} />
-      </div>
-
-      <BodyMetricsPanel measurements={data.measurements} profile={profileStats} />
-
-      <CircadianCard sleepLogs={data.sleepLogs} />
-
-      <VitalMetricsPanel
-        bpMetrics={data.bpMetrics}
-        gripMetrics={data.gripMetrics}
-        tempMetrics={data.tempMetrics}
-        respMetrics={data.respMetrics}
-        gutMetrics={data.gutMetrics}
-      />
-    </div>
+    <HealthContent
+      healthLayout={healthLayout}
+      todaySleep={todaySleep}
+      todayReadiness={todayReadiness}
+      todayMeasurement={todayMeasurement}
+      latestHr={latestHr}
+      sleepLogs={data.sleepLogs}
+      readinessLogs={data.readinessLogs}
+      hrvMetrics={data.hrvMetrics}
+      hrMetrics={data.hrMetrics}
+      todaySoreness={data.todaySoreness}
+      measurements={data.measurements}
+      profileStats={profileStats}
+      bpMetrics={data.bpMetrics}
+      gripMetrics={data.gripMetrics}
+      tempMetrics={data.tempMetrics}
+      respMetrics={data.respMetrics}
+      gutMetrics={data.gutMetrics}
+    />
   );
 }

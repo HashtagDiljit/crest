@@ -26,8 +26,8 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   return (
     <>
       {/* ── Mobile top bar ── */}
-      <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 12px)" }}>
-        <div className="flex items-center justify-between px-4 h-14">
+      <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 4px)" }}>
+        <div className="flex items-center justify-between px-4 h-12">
           <Link href="/" className="flex items-center gap-2">
             <ArcMark size={32} className="rounded-r3" />
           </Link>

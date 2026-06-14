@@ -5,6 +5,7 @@ import { Search, Plus, X, Dumbbell, Loader2, Pencil } from "lucide-react";
 import { createCustomExercise, updateCustomExercise } from "../../actions";
 import type { ExerciseRow } from "../../actions";
 import { ExerciseDetailPanel } from "./ExerciseDetailPanel";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 const MUSCLE_FILTERS: Array<{ label: string; values: string[] | null }> = [
   { label: "All", values: null },
@@ -18,6 +19,21 @@ const MUSCLE_FILTERS: Array<{ label: string; values: string[] | null }> = [
   { label: "Olympic", values: ["olympic"] },
   { label: "Full Body", values: ["full_body"] },
   { label: "Neck", values: ["neck"] },
+];
+
+// Groups used to bucket exercises in the library by muscle group. "Other"
+// is a catch-all for anything that doesn't match a known muscle/category.
+const MUSCLE_GROUPS: Array<{ label: string; slug: string; values: string[] }> = [
+  { label: "Back", slug: "back", values: ["back"] },
+  { label: "Chest", slug: "chest", values: ["chest"] },
+  { label: "Shoulders", slug: "shoulders", values: ["shoulders"] },
+  { label: "Arms", slug: "arms", values: ["biceps", "triceps", "forearms"] },
+  { label: "Legs", slug: "legs", values: ["quadriceps", "quads", "hamstrings", "glutes", "calves"] },
+  { label: "Core", slug: "core", values: ["core"] },
+  { label: "Cardio", slug: "cardio", values: ["cardio"] },
+  { label: "Olympic", slug: "olympic", values: ["olympic"] },
+  { label: "Full Body", slug: "full-body", values: ["full_body"] },
+  { label: "Neck", slug: "neck", values: ["neck"] },
 ];
 
 const EQUIPMENT_FILTERS: Array<{ label: string; value: string | null }> = [
@@ -68,6 +84,25 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
     });
   }, [exercises, query, muscleFilter, equipFilter]);
 
+  const groupedByMuscle = useMemo(() => {
+    const groups = MUSCLE_GROUPS.map((g) => ({ ...g, exercises: [] as ExerciseRow[] }));
+    const other: ExerciseRow[] = [];
+
+    for (const ex of filtered) {
+      const group = groups.find((g) =>
+        g.values.includes(ex.muscle_primary ?? "") || g.values.includes(ex.category ?? "")
+      );
+      if (group) group.exercises.push(ex);
+      else other.push(ex);
+    }
+
+    const result = groups.filter((g) => g.exercises.length > 0);
+    if (other.length > 0) {
+      result.push({ label: "Other", slug: "other", values: [], exercises: other });
+    }
+    return result;
+  }, [filtered]);
+
   function handleAdded(exercise: ExerciseRow) {
     setLocalExercises((prev) => [...prev, exercise]);
     setShowModal(false);
@@ -114,22 +149,43 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((ex) => (
-          <ExerciseCard
-            key={ex.id}
-            exercise={ex}
-            onSelect={() => setSelectedExercise(ex)}
-            onEdit={ex.is_custom ? () => setEditExercise(ex) : undefined}
-          />
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-3 flex flex-col items-center gap-2 py-12 text-center">
-            <Dumbbell size={24} className="text-text-disabled" />
-            <p className="text-13 text-text-muted">No exercises match your filters.</p>
-          </div>
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-12 text-center">
+          <Dumbbell size={24} className="text-text-disabled" />
+          <p className="text-13 text-text-muted">No exercises match your filters.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-5">
+          {groupedByMuscle.map((group) => (
+            <CollapsibleSection
+              key={group.slug}
+              title={
+                <span className="font-display text-13 font-semibold text-text-primary">
+                  {group.label}
+                </span>
+              }
+              headerExtra={
+                <span className="font-mono text-11 text-text-muted bg-bg-elevated px-2 py-0.5 rounded-pill">
+                  {group.exercises.length}
+                </span>
+              }
+              storageKey={`arc-collapse-exercises-${group.slug}`}
+              headerClassName="py-1.5"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3">
+                {group.exercises.map((ex) => (
+                  <ExerciseCard
+                    key={ex.id}
+                    exercise={ex}
+                    onSelect={() => setSelectedExercise(ex)}
+                    onEdit={ex.is_custom ? () => setEditExercise(ex) : undefined}
+                  />
+                ))}
+              </div>
+            </CollapsibleSection>
+          ))}
+        </div>
+      )}
 
       {showModal && (
         <ExerciseModal onClose={() => setShowModal(false)} onSaved={handleAdded} />

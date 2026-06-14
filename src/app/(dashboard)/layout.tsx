@@ -10,6 +10,8 @@ import { getConsent } from "@/app/(dashboard)/consent/actions";
 import { CONSENT_VERSION } from "@/app/(dashboard)/consent/types";
 import { OfflineSync } from "@/components/OfflineSync";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { MotionProvider } from "@/components/MotionProvider";
+import { PageTransition } from "@/components/PageTransition";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export default async function DashboardLayout({
 
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url, onboarding_completed, hidden_nav_items")
+    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url, onboarding_completed, hidden_nav_items, reduce_motion, bottom_nav_items")
     .eq("id", user!.id)
     .single();
 
@@ -42,6 +44,8 @@ export default async function DashboardLayout({
     avatar_url: string | null;
     onboarding_completed: boolean | null;
     hidden_nav_items: string[] | null;
+    reduce_motion: boolean | null;
+    bottom_nav_items: string[] | null;
   } | null;
 
   if (profile && profile.onboarding_completed === false) {
@@ -72,30 +76,35 @@ export default async function DashboardLayout({
     <>
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
       <OfflineSync />
-      <ConsentGate needsConsent={needsConsent}>
-        <div className="flex min-h-screen bg-bg-base">
-          <Sidebar hiddenNavIds={hiddenNavIds} />
-          {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
-          <div className="dashboard-main">
-            <TopBar
-              level={level}
-              xp={xp}
-              xpNeeded={xpNeeded}
-              streak={streak}
-              username={username}
-              initials={initials}
-              avatarUrl={profile?.avatar_url ?? null}
-            />
-            <main className="flex-1 overflow-y-auto">
-              <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
-                {children}
-              </div>
-            </main>
+      <MotionProvider forceReduced={profile?.reduce_motion ?? false}>
+        <ConsentGate needsConsent={needsConsent}>
+          <div className="flex min-h-screen bg-bg-base">
+            <Sidebar hiddenNavIds={hiddenNavIds} />
+            {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
+            <div className="dashboard-main">
+              <TopBar
+                level={level}
+                xp={xp}
+                xpNeeded={xpNeeded}
+                streak={streak}
+                username={username}
+                initials={initials}
+                avatarUrl={profile?.avatar_url ?? null}
+              />
+              <main className="flex-1 overflow-y-auto">
+                <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
+                  <PageTransition>{children}</PageTransition>
+                </div>
+              </main>
+            </div>
           </div>
-        </div>
-        <BottomTabBar hiddenNavIds={hiddenNavIds} />
-        <InstallPrompt />
-      </ConsentGate>
+          <BottomTabBar
+            hiddenNavIds={hiddenNavIds}
+            bottomNavItems={profile?.bottom_nav_items ?? ["workouts", "health", "habits", "more"]}
+          />
+          <InstallPrompt />
+        </ConsentGate>
+      </MotionProvider>
     </>
   );
 }
