@@ -109,7 +109,7 @@ const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
 };
 
 const DEFAULT_LAYOUT_LG: LayoutItem[] = [
-  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 3 },
+  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 4 },
   { i: "streak",            x: 6,  y: 0,  w: 3,  h: 2 },
   { i: "sleep",             x: 9,  y: 0,  w: 3,  h: 2 },
   { i: "resting-hr",        x: 6,  y: 2,  w: 3,  h: 2 },

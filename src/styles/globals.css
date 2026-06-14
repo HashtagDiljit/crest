@@ -61,6 +61,11 @@ html, body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Prevent pull-to-refresh overscroll from dragging the whole page (incl.
+     fixed header/bottom nav) down with it — only the scroll container itself
+     may rubber-band. */
+  overscroll-behavior-y: contain;
+  height: 100%;
 }
 
 * {
@@ -195,4 +200,12 @@ html[data-theme="light"] main { background-color: #FFFFFF !important; }
 }
 .react-resizable-handle::after {
   border-color: var(--color-accent) !important;
+}
+
+/* Ensure each widget's drag-handle wrapper (and its card) fills the grid
+   cell exactly, so the edit-mode highlight matches the rendered content. */
+.react-grid-item > .rgl-drag-handle {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }

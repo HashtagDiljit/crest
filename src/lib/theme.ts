@@ -1,3 +1,14 @@
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
+
+// Keep the native status bar in sync with the active theme: light icons on
+// dark backgrounds, dark icons on light backgrounds. No-op on web.
+function syncStatusBar(isLight: boolean, bg: string) {
+  if (!Capacitor.isNativePlatform()) return;
+  StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark }).catch(() => {});
+  StatusBar.setBackgroundColor({ color: bg }).catch(() => {});
+}
+
 // Accent colour variants: hover (10% darker), pressed (20% darker)
 const ACCENT_VARIANTS: Record<string, { hover: string; pressed: string }> = {
   "#2DD4BF": { hover: "#28BFAC", pressed: "#1E9A8B" },
@@ -101,6 +112,7 @@ export function applyTheme(theme: string) {
   paintBackgrounds(bg, surface);
   document.body.style.color = fg;
   startThemeObserver(bg, surface);
+  syncStatusBar(isLight, bg);
 
   // Keep theme-color meta in sync with the active theme so iOS status bar
   // and Android browser chrome match the page background.

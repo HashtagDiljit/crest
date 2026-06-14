@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Dumbbell, Heart, Target, CheckCircle2, Smile,
   MoreHorizontal, PenLine, Trophy, Sparkles, Settings, X, Plus,
@@ -164,136 +165,162 @@ export function BottomTabBar({
       </button>
 
       {/* Quick log popup */}
-      {showQuickLog && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-30"
-            onClick={() => setShowQuickLog(false)}
-          />
-          <div
-            className="lg:hidden fixed z-40 rounded-r5 border border-border bg-bg-surface p-3"
-            style={{
-              bottom: "calc(128px + env(safe-area-inset-bottom))",
-              right: "8px",
-              boxShadow: "var(--shadow-3)",
-            }}
-          >
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              {QUICK_LOG_ITEMS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => openLog(item.key)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-r3 bg-bg-elevated min-w-[68px]"
-                  >
-                    <Icon size={18} style={{ color: item.color }} />
-                    <span className="text-11 font-medium text-text-muted">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <form action={async () => { await startBlankSession(); setShowQuickLog(false); }}>
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
-              >
-                Log workout
-              </button>
-            </form>
-          </div>
-        </>
-      )}
+      <AnimatePresence>
+        {showQuickLog && (
+          <>
+            <div
+              className="lg:hidden fixed inset-0 z-30"
+              onClick={() => setShowQuickLog(false)}
+            />
+            <motion.div
+              className="lg:hidden fixed z-40 rounded-r5 border border-border bg-bg-surface p-3 origin-bottom-right"
+              style={{
+                bottom: "calc(128px + env(safe-area-inset-bottom))",
+                right: "8px",
+                boxShadow: "var(--shadow-3)",
+              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {QUICK_LOG_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => openLog(item.key)}
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-r3 bg-bg-elevated min-w-[68px]"
+                    >
+                      <Icon size={18} style={{ color: item.color }} />
+                      <span className="text-11 font-medium text-text-muted">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <form action={async () => { await startBlankSession(); setShowQuickLog(false); }}>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors"
+                >
+                  Log workout
+                </button>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* More drawer */}
-      {showMore && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50"
-            onClick={() => setShowMore(false)}
-          />
-          <div
-            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
-            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-display text-15 font-semibold text-text-primary">More</span>
-              <button
-                onClick={() => setShowMore(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-pill text-text-muted hover:text-text-primary transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <nav className="flex flex-col gap-0.5">
-              {moreItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href, pathname);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setShowMore(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-r3 text-15 font-medium transition-colors ${
-                      active
-                        ? "bg-[var(--color-accent-soft)] text-text-primary"
-                        : "text-text-secondary hover:bg-bg-elevated"
-                    }`}
-                  >
-                    <Icon size={18} className={active ? "text-accent" : "text-text-muted"} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </>
-      )}
+      <AnimatePresence>
+        {showMore && (
+          <>
+            <motion.div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setShowMore(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div
+              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
+              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-display text-15 font-semibold text-text-primary">More</span>
+                <button
+                  onClick={() => setShowMore(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-pill text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <nav className="flex flex-col gap-0.5">
+                {moreItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href, pathname);
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => setShowMore(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-r3 text-15 font-medium transition-colors ${
+                        active
+                          ? "bg-[var(--color-accent-soft)] text-text-primary"
+                          : "text-text-secondary hover:bg-bg-elevated"
+                      }`}
+                    >
+                      <Icon size={18} className={active ? "text-accent" : "text-text-muted"} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Slot picker — long-press customisation */}
-      {pickerSlot !== null && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50"
-            onClick={() => setPickerSlot(null)}
-          />
-          <div
-            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
-            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-display text-15 font-semibold text-text-primary">Choose icon</span>
-              <button
-                onClick={() => setPickerSlot(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-pill text-text-muted hover:text-text-primary transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {pickerOptions.map((item) => {
-                const Icon = item.icon;
-                const selected = slots[pickerSlot] === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => chooseSection(item.id)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-r3 transition-colors ${
-                      selected ? "bg-[var(--color-accent-soft)] text-accent" : "bg-bg-elevated text-text-muted"
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span className="text-11 font-medium text-center">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
+      <AnimatePresence>
+        {pickerSlot !== null && (
+          <>
+            <motion.div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setPickerSlot(null)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div
+              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
+              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-display text-15 font-semibold text-text-primary">Choose icon</span>
+                <button
+                  onClick={() => setPickerSlot(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-pill text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {pickerOptions.map((item) => {
+                  const Icon = item.icon;
+                  const selected = slots[pickerSlot] === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={pending}
+                      onClick={() => chooseSection(item.id)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-r3 transition-colors ${
+                        selected ? "bg-[var(--color-accent-soft)] text-accent" : "bg-bg-elevated text-text-muted"
+                      }`}
+                    >
+                      <Icon size={20} />
+                      <span className="text-11 font-medium text-center">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Bottom tab bar */}
       <nav
@@ -308,11 +335,18 @@ export function BottomTabBar({
           const active = href ? isActive(href, pathname) : false;
           const content = (
             <>
-              <Icon size={20} />
-              <span className="text-10 font-medium">{item.label}</span>
+              {active && (
+                <motion.span
+                  layoutId="bottom-nav-active-pill"
+                  className="absolute inset-x-2 inset-y-1 rounded-r3 bg-[var(--color-accent-soft)]"
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                />
+              )}
+              <Icon size={20} className="relative" />
+              <span className="text-10 font-medium relative">{item.label}</span>
             </>
           );
-          const className = `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
+          const className = `relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
             active ? "text-accent" : "text-text-muted"
           }`;
           return href ? (
@@ -368,11 +402,18 @@ export function BottomTabBar({
           const active = href ? isActive(href, pathname) : false;
           const content = (
             <>
-              <Icon size={20} />
-              <span className="text-10 font-medium">{item.label}</span>
+              {active && (
+                <motion.span
+                  layoutId="bottom-nav-active-pill"
+                  className="absolute inset-x-2 inset-y-1 rounded-r3 bg-[var(--color-accent-soft)]"
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                />
+              )}
+              <Icon size={20} className="relative" />
+              <span className="text-10 font-medium relative">{item.label}</span>
             </>
           );
-          const className = `flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
+          const className = `relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors select-none ${
             active ? "text-accent" : "text-text-muted"
           }`;
           return href ? (
