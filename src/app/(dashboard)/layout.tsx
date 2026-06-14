@@ -91,7 +91,7 @@ export default async function DashboardLayout({
                 initials={initials}
                 avatarUrl={profile?.avatar_url ?? null}
               />
-              <main className="flex-1 overflow-y-auto">
+              <main className="flex-1 overflow-y-auto overscroll-y-contain">
                 <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
                   <PageTransition>{children}</PageTransition>
                 </div>
