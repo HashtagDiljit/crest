@@ -60,10 +60,10 @@ export function NutritionContent({
   );
 
   const totalProtein = optimisticMeals.reduce((s, m) => s + (m.protein_g ?? 0), 0);
-  const target = settings.protein_target;
-  const pct = Math.min(100, (totalProtein / target) * 100);
+  const target = settings.protein_target || 150;
+  const pct = target > 0 ? Math.min(100, Math.max(0, (totalProtein / target) * 100)) : 0;
   const mealCount = optimisticMeals.length;
-  const targetMeals = settings.meals_per_day;
+  const targetMeals = settings.meals_per_day || 4;
   const proteinAnchored = optimisticMeals.filter((m) => (m.protein_g ?? 0) >= 20).length;
 
   const activeSupplements = Object.entries(settings.supplements)

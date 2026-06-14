@@ -17,6 +17,8 @@ interface Props {
 }
 
 export function RestTimer({ remaining, total, onAdjust, onSkip, onChangeTotal }: Props) {
+  if (total <= 0 && remaining <= 0) return null;
+
   const isResting = remaining > 0;
   const progress = total > 0 ? remaining / total : 0;
 

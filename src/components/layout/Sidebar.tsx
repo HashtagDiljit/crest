@@ -113,7 +113,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
           {!c && <div className="text-11 font-semibold uppercase tracking-[0.1em] text-text-muted px-2.5 py-3">Progress</div>}
           {c && <div className="h-px bg-border mx-1 my-3" />}
           <nav className="flex flex-col gap-0.5">
-            {NAV_PROGRESS.map((item) => {
+            {NAV_PROGRESS.filter((item) => !hiddenNavIds.includes(item.id)).map((item) => {
               const active = isActive(item.href, pathname);
               const Icon = item.icon;
               return (

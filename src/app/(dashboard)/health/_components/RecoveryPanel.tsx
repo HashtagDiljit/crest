@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle } from "lucide-react";
-import { logReadiness, logSoreness } from "../actions";
+import { AlertTriangle, Plus, Heart, Activity } from "lucide-react";
+import { logReadiness, logSoreness, logHealthMetric } from "../actions";
 import type { ReadinessRow, MetricRow } from "../actions";
 import { InfoTooltip } from "@/components/InfoTooltip";
 
@@ -31,6 +31,10 @@ export function RecoveryPanel({ readinessLogs, hrvMetrics, hrMetrics, todaySoren
   const [sorenessMap, setSorenessMap] = useState<Record<string, string>>(
     Object.fromEntries(todaySoreness.map((s) => [s.muscle_group, s.severity]))
   );
+  const [logMetric, setLogMetric] = useState<"hrv" | "resting_hr" | null>(null);
+  const [hrvValue, setHrvValue] = useState("");
+  const [hrValue, setHrValue] = useState("");
+  const [savingMetric, setSavingMetric] = useState(false);
 
   const todayReadiness = readinessLogs[0];
   const low2Days = readinessLogs.length >= 2 && readinessLogs[0].score < 6 && readinessLogs[1].score < 6;
@@ -47,6 +51,21 @@ export function RecoveryPanel({ readinessLogs, hrvMetrics, hrMetrics, todaySoren
     setSorenessMap((prev) => ({ ...prev, [muscle]: severity }));
     await logSoreness(muscle, severity);
     router.refresh();
+  }
+
+  async function saveMetric(type: "hrv" | "resting_hr") {
+    const raw = type === "hrv" ? hrvValue : hrValue;
+    const v = parseFloat(raw);
+    if (isNaN(v)) return;
+    setSavingMetric(true);
+    try {
+      await logHealthMetric(type, v, type === "hrv" ? "ms" : "bpm");
+      if (type === "hrv") setHrvValue(""); else setHrValue("");
+      setLogMetric(null);
+      router.refresh();
+    } finally {
+      setSavingMetric(false);
+    }
   }
 
   return (
@@ -111,11 +130,108 @@ export function RecoveryPanel({ readinessLogs, hrvMetrics, hrMetrics, todaySoren
       </div>
 
       {/* HRV & HR mini charts */}
-      {(hrvMetrics.length > 0 || hrMetrics.length > 0) && (
-        <div className="grid grid-cols-2 gap-3">
-          {hrvMetrics.length > 0 && <MiniLineChart label="HRV (7d)" data={hrvMetrics} unit="ms" />}
-          {hrMetrics.length > 0 && <MiniLineChart label="Resting HR (7d)" data={hrMetrics} unit="bpm" />}
+      <div className="grid grid-cols-2 gap-3">
+        {hrvMetrics.length > 0 ? (
+          <MiniLineChart label="HRV (7d)" data={hrvMetrics} unit="ms" />
+        ) : (
+          <EmptyMetricCard
+            icon={<Activity size={13} className="text-text-muted" />}
+            label="HRV (7d)"
+            promptLabel="Log your first HRV reading"
+            open={logMetric === "hrv"}
+            onToggle={() => setLogMetric(logMetric === "hrv" ? null : "hrv")}
+            value={hrvValue}
+            onChange={setHrvValue}
+            onSave={() => saveMetric("hrv")}
+            saving={savingMetric}
+            unit="ms"
+            placeholder="55"
+          />
+        )}
+        {hrMetrics.length > 0 ? (
+          <MiniLineChart label="Resting HR (7d)" data={hrMetrics} unit="bpm" />
+        ) : (
+          <EmptyMetricCard
+            icon={<Heart size={13} className="text-text-muted" />}
+            label="Resting HR (7d)"
+            promptLabel="Log your first heart rate reading"
+            open={logMetric === "resting_hr"}
+            onToggle={() => setLogMetric(logMetric === "resting_hr" ? null : "resting_hr")}
+            value={hrValue}
+            onChange={setHrValue}
+            onSave={() => saveMetric("resting_hr")}
+            saving={savingMetric}
+            unit="bpm"
+            placeholder="60"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmptyMetricCard({
+  icon,
+  label,
+  promptLabel,
+  open,
+  onToggle,
+  value,
+  onChange,
+  onSave,
+  saving,
+  unit,
+  placeholder,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  promptLabel: string;
+  open: boolean;
+  onToggle: () => void;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  saving: boolean;
+  unit: string;
+  placeholder: string;
+}) {
+  return (
+    <div className="rounded-r4 border border-border bg-bg-elevated p-3 flex flex-col gap-2">
+      <span className="text-11 font-mono text-text-muted flex items-center gap-1.5">
+        {icon}
+        {label}
+      </span>
+      {open ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              autoFocus
+              className="flex-1 w-0 rounded-r3 border border-border bg-bg-base px-2.5 py-1.5 text-13 text-text-primary outline-none focus:border-accent"
+            />
+            <span className="flex items-center text-12 text-text-muted">{unit}</span>
+          </div>
+          <button
+            onClick={onSave}
+            disabled={saving || !value}
+            className="w-full py-1.5 rounded-r3 bg-accent text-white text-12 font-semibold transition-colors disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
         </div>
+      ) : (
+        <button
+          onClick={onToggle}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 text-center group"
+        >
+          <span className="w-6 h-6 rounded-full bg-bg-overlay flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent border border-border transition-colors">
+            <Plus size={13} />
+          </span>
+          <span className="text-11 text-text-muted group-hover:text-text-secondary transition-colors">{promptLabel}</span>
+        </button>
       )}
     </div>
   );

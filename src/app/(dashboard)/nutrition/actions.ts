@@ -25,8 +25,8 @@ export async function getNutritionData() {
 
   const rawSettings = profileRes.data?.nutrition_settings;
   const settings: NutritionSettings = {
-    protein_target: rawSettings?.protein_target ?? DEFAULT_SETTINGS.protein_target,
-    meals_per_day: rawSettings?.meals_per_day ?? DEFAULT_SETTINGS.meals_per_day,
+    protein_target: rawSettings?.protein_target || DEFAULT_SETTINGS.protein_target,
+    meals_per_day: rawSettings?.meals_per_day || DEFAULT_SETTINGS.meals_per_day,
     supplements: rawSettings?.supplements
       ? { ...DEFAULT_SETTINGS.supplements, ...rawSettings.supplements }
       : { ...DEFAULT_SETTINGS.supplements },
@@ -276,8 +276,8 @@ export async function getNutritionSettings(): Promise<NutritionSettings> {
   const raw = data?.nutrition_settings;
   if (!raw) return DEFAULT_SETTINGS;
   return {
-    protein_target: raw.protein_target ?? DEFAULT_SETTINGS.protein_target,
-    meals_per_day: raw.meals_per_day ?? DEFAULT_SETTINGS.meals_per_day,
+    protein_target: raw.protein_target || DEFAULT_SETTINGS.protein_target,
+    meals_per_day: raw.meals_per_day || DEFAULT_SETTINGS.meals_per_day,
     supplements: { ...DEFAULT_SETTINGS.supplements, ...(raw.supplements ?? {}) },
   };
 }

@@ -283,6 +283,20 @@ function StreakCard({ streak }: { streak: number }) {
 
 function SleepCard({ duration, quality, sparkline }: { duration: number | null; quality: number | null; sparkline: number[] }) {
   const qualityLabel = quality === null ? null : quality >= 4 ? "Great" : quality >= 3 ? "Good" : quality >= 2 ? "Fair" : "Poor";
+  if (duration === null) {
+    return (
+      <Card className="p-4 md:p-5 flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Sleep</span>
+          <IconBadge icon={Moon} color="#38BDF8" />
+        </div>
+        <a href="/health" className="flex-1 flex flex-col items-center justify-center gap-1.5 py-2 text-center group">
+          <Moon size={20} className="text-text-disabled group-hover:text-accent transition-colors" />
+          <span className="text-12 text-text-muted group-hover:text-accent transition-colors">Tap to log sleep</span>
+        </a>
+      </Card>
+    );
+  }
   return (
     <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
@@ -291,14 +305,8 @@ function SleepCard({ duration, quality, sparkline }: { duration: number | null; 
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
-          {duration !== null ? (
-            <>
-              <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{duration.toFixed(1)}</span>
-              <span className="text-13 text-text-muted mb-0.5">hrs</span>
-            </>
-          ) : (
-            <div className="shimmer w-16 h-8 rounded-r2" aria-hidden />
-          )}
+          <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{duration.toFixed(1)}</span>
+          <span className="text-13 text-text-muted mb-0.5">hrs</span>
         </div>
         {sparkline.length >= 2 && <Sparkline data={sparkline} color="var(--color-warning)" />}
       </div>
@@ -319,6 +327,23 @@ const STAT_TOOLTIPS: Record<string, string> = {
 };
 
 function StatCard({ label, value, unit, Icon }: { label: string; value: number | null; unit: string; Icon: React.ElementType }) {
+  if (value === null) {
+    return (
+      <Card className="p-4 md:p-5 flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="text-11 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1">
+            {label}
+            {STAT_TOOLTIPS[label] && <InfoTooltip text={STAT_TOOLTIPS[label]} size={10} />}
+          </span>
+          <IconBadge icon={Icon} color="var(--color-danger)" />
+        </div>
+        <a href="/health" className="flex-1 flex flex-col items-center justify-center gap-1.5 py-2 text-center group">
+          <Icon size={20} className="text-text-disabled group-hover:text-accent transition-colors" />
+          <span className="text-12 text-text-muted group-hover:text-accent transition-colors">Tap to log {label.toLowerCase()}</span>
+        </a>
+      </Card>
+    );
+  }
   return (
     <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
@@ -329,17 +354,8 @@ function StatCard({ label, value, unit, Icon }: { label: string; value: number |
         <IconBadge icon={Icon} color="var(--color-danger)" />
       </div>
       <div className="flex items-end gap-1.5">
-        {value !== null ? (
-          <>
-            <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{Math.round(value)}</span>
-            <span className="text-13 text-text-muted mb-0.5">{unit}</span>
-          </>
-        ) : (
-          <>
-            <div className="shimmer w-12 h-8 rounded-r2" aria-hidden />
-            <span className="text-13 text-text-muted mb-0.5">{unit}</span>
-          </>
-        )}
+        <span className="font-mono text-28 md:text-32 font-medium text-text-primary leading-none">{Math.round(value)}</span>
+        <span className="text-13 text-text-muted mb-0.5">{unit}</span>
       </div>
       <div className="h-1.5 rounded-pill bg-bg-elevated" />
     </Card>
@@ -885,12 +901,12 @@ export function DashboardContent(props: DashboardData) {
   const hour = new Date().getHours();
   const greeting =
     hour >= 5 && hour < 12 ? "Good morning"
-    : hour < 17           ? "Good afternoon"
-    : hour < 21           ? "Good evening"
-    :                       "Late night";
+    : hour < 19           ? "Good afternoon"
+    :                       "Good evening";
 
   // ─── contextual subtitle (priority order) ──────────────────────────────────
-  function getSubtitle(): string {
+  // Returns null when there's nothing meaningful to say, so no generic filler is shown.
+  function getSubtitle(): string | null {
     if (editMode) return "Drag to reorder, resize, or hide widgets.";
     if (props.workoutCount === 0) return "You haven't trained yet this week.";
     if (props.streak > 0) return `Day ${props.streak} streak. Keep it going.`;
@@ -900,8 +916,10 @@ export function DashboardContent(props: DashboardData) {
     if (props.habitTotal > 0 && remaining === 0) return "All habits done today. Strong work.";
     if (props.lastSleepDuration !== null && props.lastSleepDuration < 7)
       return `You got ${props.lastSleepDuration.toFixed(1)}hrs last night. Aim for 7+ tonight.`;
-    return "Here's your day at a glance.";
+    return null;
   }
+
+  const subtitle = getSubtitle();
 
   // ─── layout handlers ────────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1033,7 +1051,7 @@ export function DashboardContent(props: DashboardData) {
           <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">
             {greeting}, {props.username}.
           </h1>
-          <p className="text-13 text-text-secondary">{getSubtitle()}</p>
+          {subtitle && <p className="text-13 text-text-secondary">{subtitle}</p>}
         </div>
 
         <div className="flex items-center gap-2 mt-1 flex-shrink-0">

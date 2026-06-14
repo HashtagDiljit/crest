@@ -13,6 +13,7 @@ export interface ProfilePrefs {
   week_starts: string | null;
   avatar_url: string | null;
   notification_preferences: Record<string, boolean> | null;
+  hidden_nav_items: string[] | null;
 }
 
 export async function getProfilePrefs(): Promise<ProfilePrefs | null> {
@@ -22,7 +23,7 @@ export async function getProfilePrefs(): Promise<ProfilePrefs | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("username, theme, accent_colour, weight_unit, distance_unit, time_format, week_starts, avatar_url, notification_preferences")
+    .select("username, theme, accent_colour, weight_unit, distance_unit, time_format, week_starts, avatar_url, notification_preferences, hidden_nav_items")
     .eq("id", user.id)
     .single();
 
@@ -66,6 +67,18 @@ export async function updateAppearance(theme: string, accentColour: string): Pro
   const { error } = await supabase.from("profiles").update({ theme, accent_colour: accentColour }).eq("id", user.id);
   if (error) return { error: error.message };
   revalidatePath("/settings");
+  return {};
+}
+
+export async function updateHiddenNavItems(hiddenNavItems: string[]): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ hidden_nav_items: hiddenNavItems }).eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
   return {};
 }
 

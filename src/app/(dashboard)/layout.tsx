@@ -27,7 +27,7 @@ export default async function DashboardLayout({
 
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url, onboarding_completed")
+    .select("username, level, xp, streak_current, theme, accent_colour, avatar_url, onboarding_completed, hidden_nav_items")
     .eq("id", user!.id)
     .single();
 
@@ -41,6 +41,7 @@ export default async function DashboardLayout({
     accent_colour: string | null;
     avatar_url: string | null;
     onboarding_completed: boolean | null;
+    hidden_nav_items: string[] | null;
   } | null;
 
   if (profile && profile.onboarding_completed === false) {
@@ -50,8 +51,8 @@ export default async function DashboardLayout({
   const consent = await getConsent();
   const needsConsent = !consent || consent.consent_version !== CONSENT_VERSION;
 
-  // Nav items hidden based on consent choices
-  const hiddenNavIds: string[] = [];
+  // Nav items hidden based on consent choices and user preference
+  const hiddenNavIds: string[] = [...(profile?.hidden_nav_items ?? [])];
   if (!consent?.mental_emotional) {
     hiddenNavIds.push("mood", "journal");
   }
@@ -92,7 +93,7 @@ export default async function DashboardLayout({
             </main>
           </div>
         </div>
-        <BottomTabBar />
+        <BottomTabBar hiddenNavIds={hiddenNavIds} />
         <InstallPrompt />
       </ConsentGate>
     </>

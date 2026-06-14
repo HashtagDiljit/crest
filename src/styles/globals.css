@@ -6,6 +6,8 @@
 
 :root {
   color-scheme: dark;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --color-bg-base: #0D0D12;
   --color-bg-inset: #111118;
   --color-bg-surface: #16161E;

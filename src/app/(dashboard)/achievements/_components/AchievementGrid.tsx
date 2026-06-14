@@ -176,7 +176,7 @@ function BadgeCard({ achievement: a }: { achievement: AchievementRow }) {
         <p className="text-10 font-mono text-text-disabled mt-auto">
           {new Date(a.unlocked_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
         </p>
-      ) : progressPct !== null ? (
+      ) : progressPct !== null && (a.current ?? 0) > 0 ? (
         <div className="mt-auto flex flex-col gap-1">
           <div className="h-1.5 rounded-pill bg-bg-overlay overflow-hidden">
             <div

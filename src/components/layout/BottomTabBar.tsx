@@ -45,8 +45,10 @@ function isActive(href: string, pathname: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function BottomTabBar() {
+export function BottomTabBar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   const pathname = usePathname();
+  const visibleTabItems = TAB_ITEMS.filter((item) => item.id === "dashboard" || !hiddenNavIds.includes(item.id));
+  const visibleMoreItems = MORE_ITEMS.filter((item) => item.id === "settings" || !hiddenNavIds.includes(item.id));
   const [showMore, setShowMore] = useState(false);
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [openModal, setOpenModal] = useState<ModalKey>(null);
@@ -141,7 +143,7 @@ export function BottomTabBar() {
               </button>
             </div>
             <nav className="flex flex-col gap-0.5">
-              {MORE_ITEMS.map((item) => {
+              {visibleMoreItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href, pathname);
                 return (
@@ -170,7 +172,7 @@ export function BottomTabBar() {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-stretch border-t border-border bg-bg-surface"
         style={{ height: "calc(56px + env(safe-area-inset-bottom))", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {TAB_ITEMS.map((item) => {
+        {visibleTabItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href, pathname);
           return (
