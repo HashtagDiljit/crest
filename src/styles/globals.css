@@ -105,6 +105,7 @@ html, body {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 0;
 }
 
 @media (min-width: 768px) {
@@ -207,10 +208,11 @@ html[data-theme="light"] main { background-color: #FFFFFF !important; }
   border-color: var(--color-accent) !important;
 }
 
-/* Ensure each widget's drag-handle wrapper (and its card) fills the grid
-   cell exactly, so the edit-mode highlight matches the rendered content. */
+/* Each widget fills its RGL cell; pointer-events: auto so cards stay
+   clickable even when the parent container has pointer-events: none in view mode. */
 .react-grid-item > .rgl-drag-handle {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  pointer-events: auto;
 }

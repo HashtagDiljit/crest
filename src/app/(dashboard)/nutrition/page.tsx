@@ -21,7 +21,6 @@ export default async function NutritionPage() {
         supplementLogs={data.supplementLogs}
         settings={data.settings}
         today={today}
-        nutritionLayout={data.nutritionLayout}
       />
     </div>
   );
