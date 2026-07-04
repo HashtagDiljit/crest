@@ -65,7 +65,6 @@ html, body {
      fixed header/bottom nav) down with it — only the scroll container itself
      may rubber-band. */
   overscroll-behavior-y: contain;
-  height: 100%;
 }
 
 * {
@@ -184,7 +183,13 @@ html[data-theme="light"] main { background-color: #FFFFFF !important; }
   background-size: 32px 32px;
   border-radius: 12px;
 }
+/* Placeholder only visible when actively editing (inside .rgl-edit-container).
+   Hides the accent-coloured ghost that otherwise leaks into view mode. */
 .react-grid-item.react-grid-placeholder {
+  display: none !important;
+}
+.rgl-edit-container .react-grid-item.react-grid-placeholder {
+  display: block !important;
   background: var(--color-accent-soft) !important;
   border: 1px dashed var(--color-accent-ring) !important;
   border-radius: 12px;

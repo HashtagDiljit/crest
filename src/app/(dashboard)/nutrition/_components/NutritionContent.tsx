@@ -217,7 +217,7 @@ export function NutritionContent({
     switch (id) {
       case "daily-summary":
         return (
-          <div className="h-full overflow-y-auto rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-5">
+          <div className={`h-full rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-5 ${editMode ? "overflow-y-auto" : "overflow-hidden"}`}>
             {/* Date + header */}
             <div className="flex items-center justify-between">
               <div>
@@ -303,7 +303,7 @@ export function NutritionContent({
 
       case "todays-meals":
         return (
-          <div className="h-full overflow-y-auto rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4">
+          <div className={`h-full rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4 ${editMode ? "overflow-y-auto" : "overflow-hidden"}`}>
             <div className="flex items-center justify-between">
               <h2 className="font-display text-16 font-semibold text-text-primary">Today&apos;s meals</h2>
               <button
@@ -388,7 +388,7 @@ export function NutritionContent({
 
       case "weekly-overview":
         return (
-          <div className="h-full overflow-y-auto">
+          <div className={`h-full ${editMode ? "overflow-y-auto" : "overflow-hidden"}`}>
             <WeeklyOverviewCard
               weeklyTotals={weeklyTotals}
               supplementLogs={initialSupplLogs}
@@ -399,7 +399,7 @@ export function NutritionContent({
 
       case "supplement-log":
         return (
-          <div className="h-full overflow-y-auto">
+          <div className={`h-full ${editMode ? "overflow-y-auto" : "overflow-hidden"}`}>
             <SupplementLogSection supplementLogs={initialSupplLogs} settings={settings} />
           </div>
         );

@@ -48,7 +48,7 @@ export function DailyOverviewCard({ todaySleep, todayReadiness, todayMeasurement
     <>
       <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4">
         <h2 className="font-display text-15 font-semibold text-text-primary">Daily overview</h2>
-        <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-6 overflow-x-auto overscroll-x-contain" style={{ touchAction: "pan-x" }}>
           {/* Wellbeing ring */}
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
             <svg width="104" height="104" viewBox="0 0 104 104">
@@ -66,8 +66,8 @@ export function DailyOverviewCard({ todaySleep, todayReadiness, todayMeasurement
             </svg>
           </div>
 
-          {/* Quick stats */}
-          <div className="flex-1 grid grid-cols-2 gap-3 min-w-[240px]">
+          {/* Quick stats — horizontal-scrollable row on narrow screens */}
+          <div className="flex gap-3 flex-shrink-0">
             <StatChip
               icon={<Moon size={14} className="text-info" />}
               label="Sleep"

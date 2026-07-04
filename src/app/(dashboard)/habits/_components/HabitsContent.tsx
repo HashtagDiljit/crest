@@ -149,7 +149,7 @@ export function HabitsContent(props: HabitsContentProps) {
       >
         {SECTION_IDS.map((id) => (
           <div key={id} className="rgl-drag-handle">
-            <div className="relative h-full group overflow-auto">
+            <div className={`relative h-full group ${editMode ? "overflow-auto" : "overflow-hidden"}`}>
               {renderSection(id, props)}
               {editMode && (
                 <div className="absolute inset-0 rounded-r5 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />

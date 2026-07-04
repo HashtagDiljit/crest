@@ -262,7 +262,7 @@ export function HealthContent(props: HealthContentProps) {
         {visibleIds.map((id) => (
           <div key={id} className="rgl-drag-handle">
             <div className="relative h-full group">
-              <div className="h-full overflow-auto">{renderCard(id, props)}</div>
+              <div className={`h-full ${editMode ? "overflow-auto" : "overflow-hidden"}`}>{renderCard(id, props)}</div>
               {editMode && (
                 <div className="absolute inset-0 rounded-r5 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
               )}
