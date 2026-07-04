@@ -78,10 +78,10 @@ export default async function DashboardLayout({
       <OfflineSync />
       <MotionProvider forceReduced={profile?.reduce_motion ?? false}>
         <ConsentGate needsConsent={needsConsent}>
-          <div className="flex min-h-screen bg-bg-base">
+          <div className="flex h-screen overflow-hidden bg-bg-base">
             <Sidebar hiddenNavIds={hiddenNavIds} />
             {/* dashboard-main class in globals.css applies margin-left: var(--sidebar-w) at lg+ */}
-            <div className="dashboard-main">
+            <div className="dashboard-main min-h-0">
               <TopBar
                 level={level}
                 xp={xp}
@@ -91,7 +91,7 @@ export default async function DashboardLayout({
                 initials={initials}
                 avatarUrl={profile?.avatar_url ?? null}
               />
-              <main className="flex-1 overflow-y-auto overscroll-y-contain">
+              <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
                 <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-7 pb-[80px] lg:pb-14">
                   <PageTransition>{children}</PageTransition>
                 </div>

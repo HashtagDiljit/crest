@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getHealthData } from "./actions";
-import { HealthContent, type LayoutItem } from "./_components/HealthContent";
+import { HealthContent } from "./_components/HealthContent";
 
 export default async function HealthPage() {
   const supabase = await createServerClient();
@@ -11,14 +11,13 @@ export default async function HealthPage() {
   const [data, profileRes] = await Promise.all([
     getHealthData(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.from("profiles").select("height_cm, date_of_birth, gender, health_layout").eq("id", user.id).single() as any,
+    supabase.from("profiles").select("height_cm, date_of_birth, gender").eq("id", user.id).single() as any,
   ]);
 
   const profile = profileRes.data as {
     height_cm: number | null;
     date_of_birth: string | null;
     gender: string | null;
-    health_layout: unknown;
   } | null;
 
   const profileStats = profile
@@ -32,15 +31,8 @@ export default async function HealthPage() {
   const todayMeasurement = data.measurements.find((m) => m.logged_date === today) ?? null;
   const latestHr = data.hrMetrics[0] ?? null;
 
-  const rawLayout = profile?.health_layout;
-  const healthLayout =
-    rawLayout && typeof rawLayout === "object" && Array.isArray((rawLayout as { lg?: unknown }).lg)
-      ? (rawLayout as { lg: LayoutItem[]; hidden: string[] })
-      : null;
-
   return (
     <HealthContent
-      healthLayout={healthLayout}
       todaySleep={todaySleep}
       todayReadiness={todayReadiness}
       todayMeasurement={todayMeasurement}
