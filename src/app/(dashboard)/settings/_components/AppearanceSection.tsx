@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { updateAppearance, updateHiddenNavItems, updateReduceMotion } from "../actions";
 import { applyTheme, applyAccent } from "@/lib/theme";
@@ -51,8 +51,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
   const [theme, setTheme] = useState(initTheme ?? "dark");
   const [accent, setAccent] = useState(initAccent ?? "#2DD4BF");
   const [hiddenNav, setHiddenNav] = useState<string[]>(hiddenNavItems ?? []);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const [, startAppearanceTransition] = useTransition();
   const [navSaving, setNavSaving] = useState(false);
   const [navMsg, setNavMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [reduceMotion, setReduceMotion] = useState(initReduceMotion);
@@ -61,19 +60,13 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
   function handleThemeChange(value: string) {
     setTheme(value);
     applyTheme(value);
+    startAppearanceTransition(() => { updateAppearance(value, accent); });
   }
 
   function handleAccentChange(value: string) {
     setAccent(value);
     applyAccent(value);
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setMsg(null);
-    const res = await updateAppearance(theme, accent);
-    setSaving(false);
-    setMsg(res.error ? { text: res.error } : { ok: true, text: "Saved" });
+    startAppearanceTransition(() => { updateAppearance(theme, value); });
   }
 
   function toggleNavItem(id: string) {
@@ -114,7 +107,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
             </button>
           ))}
         </div>
-        <p className="text-11 text-text-disabled mt-1">Changes apply instantly. Save to persist across sessions.</p>
+        <p className="text-11 text-text-disabled mt-1">Changes apply instantly.</p>
       </Field>
 
       <Field label="Accent colour">
@@ -135,18 +128,6 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
           ))}
         </div>
       </Field>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 rounded-r3 bg-accent hover:bg-accent-hover text-white text-13 font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5"
-        >
-          {saving ? <Loader2 size={13} className="animate-spin" /> : null}
-          Save appearance
-        </button>
-        {msg && <p className={`text-12 ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
-      </div>
 
       <div className="border-t border-border pt-6 flex flex-col gap-4">
         <div>

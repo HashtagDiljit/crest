@@ -59,6 +59,11 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       setCollapsed(true);
       document.documentElement.style.setProperty("--sidebar-w", `${COLLAPSED_W}px`);
     }
+    // Enable the margin-left transition AFTER the initial state is applied so
+    // the sidebar doesn't animate on every page navigation/mount.
+    requestAnimationFrame(() => {
+      document.documentElement.classList.add("sidebar-ready");
+    });
   }, []);
 
   function toggleCollapse() {

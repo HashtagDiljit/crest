@@ -153,7 +153,6 @@ export function BottomTabBar({
         style={{
           bottom: "calc(72px + env(safe-area-inset-bottom))",
           right: "16px",
-          boxShadow: "0 0 0 1px var(--color-accent-ring), 0 8px 22px rgba(108,99,255,0.30)",
         }}
         aria-label="Quick log"
       >
@@ -385,7 +384,6 @@ export function BottomTabBar({
             className="absolute -translate-y-4 flex flex-col items-center justify-center w-14 h-14 rounded-pill text-white transition-transform active:scale-95"
             style={{
               background: "var(--color-accent)",
-              boxShadow: "0 0 0 1px var(--color-accent-ring), 0 8px 20px rgba(108,99,255,0.40)",
             }}
             aria-label="Home"
           >

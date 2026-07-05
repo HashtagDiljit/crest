@@ -51,6 +51,9 @@
   /* Mobile: safe-area-inset-top + h-12 (48px) + xp-strip (4px) = safe-area + 52px */
   --topbar-h: calc(max(env(safe-area-inset-top, 0px), 4px) + 52px);
 
+  /* Page content top padding = topbar clearance + px-4 horizontal padding for visual breathing room */
+  --page-top-pad: calc(max(env(safe-area-inset-top, 0px), 4px) + 52px + 16px);
+
   /* Card surfaces — depth via a slightly lighter shade than bg-surface */
   --card-bg: #1C1C24;
   --card-border: color-mix(in srgb, var(--color-border) 40%, transparent);
@@ -104,9 +107,16 @@ html, body {
 }
 
 /* Desktop topbar: fixed top-4, pill ~50px tall → 16+50+14 gap = 80px */
+@media (min-width: 768px) {
+  :root {
+    --page-top-pad: calc(max(env(safe-area-inset-top, 0px), 4px) + 52px + 24px);
+  }
+}
+
 @media (min-width: 1024px) {
   :root {
     --topbar-h: 80px;
+    --page-top-pad: 104px; /* 80px topbar + 24px page horizontal padding */
   }
 }
 
@@ -122,6 +132,10 @@ html, body {
   .dashboard-main {
     margin-left: var(--sidebar-w, 240px);
     width: calc(100% - var(--sidebar-w, 240px));
+  }
+  /* Only transition after sidebar state is initialized — prevents content
+     from sliding on every page navigation as localStorage is read on mount */
+  html.sidebar-ready .dashboard-main {
     transition: margin-left 0.2s ease, width 0.2s ease;
   }
 }
