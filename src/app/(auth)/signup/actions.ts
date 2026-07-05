@@ -10,13 +10,11 @@ export async function signupAction(formData: FormData) {
 
   const supabase = await createServerClient();
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { name } },
   });
-
-  console.log("Supabase signUp response:", { data, error });
 
   if (error) {
     return { error: error.message };
