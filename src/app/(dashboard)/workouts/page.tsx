@@ -9,6 +9,8 @@ import { TemplatesSection } from "./_components/TemplatesSection";
 import { HistorySection } from "./_components/HistorySection";
 import { WeekPanel } from "./_components/WeekPanel";
 import { DeloadBanner } from "./_components/DeloadBanner";
+import { WorkoutSuggestion } from "./_components/WorkoutSuggestion";
+import { computeReadiness } from "@/lib/readiness";
 
 export default async function WorkoutsPage() {
   const supabase = await createServerClient();
@@ -19,11 +21,35 @@ export default async function WorkoutsPage() {
 
   await seedDefaultTemplates();
 
-  const [templates, history, weekCount, activeSession] = await Promise.all([
-    getTemplates(), getWorkoutHistory(), getTrainingWeekCount(), getActiveSession(),
+  const today = new Date().toISOString().split("T")[0];
+  const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString();
+
+  const [templates, history, weekCount, activeSession, sleepResult, hrvResult, rhrResult, sessionsLast3Result] = await Promise.all([
+    getTemplates(),
+    getWorkoutHistory(),
+    getTrainingWeekCount(),
+    getActiveSession(),
+    supabase.from("sleep_logs").select("duration_hrs").eq("user_id", user.id).order("logged_date", { ascending: false }).limit(1),
+    supabase.from("health_metrics").select("value").eq("user_id", user.id).eq("metric_type", "hrv").order("logged_date", { ascending: false }).limit(1),
+    supabase.from("health_metrics").select("value").eq("user_id", user.id).eq("metric_type", "resting_hr").order("logged_date", { ascending: false }).limit(1),
+    supabase.from("workout_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("started_at", threeDaysAgo),
   ]);
 
+  const lastSleepHrs = (sleepResult.data ?? [])[0]?.duration_hrs ?? null;
+  const hrv = (hrvResult.data ?? [])[0]?.value ?? null;
+  const rhr = (rhrResult.data ?? [])[0]?.value ?? null;
+  const sessionsLast3 = sessionsLast3Result.count ?? 0;
+
+  const readiness = computeReadiness({
+    lastSleepHrs,
+    hrv: hrv !== null ? Number(hrv) : null,
+    restingHR: rhr !== null ? Number(rhr) : null,
+    sessionsLast3Days: sessionsLast3,
+  });
+  const hasReadinessData = lastSleepHrs !== null || hrv !== null || rhr !== null;
+
   const showDeloadBanner = weekCount > 0 && weekCount % 4 === 0;
+  void today;
 
   return (
     <div className="flex flex-col gap-6 overflow-x-hidden">
@@ -70,6 +96,14 @@ export default async function WorkoutsPage() {
           <span className="text-13 font-medium text-accent">Continue →</span>
         </Link>
       )}
+
+      <WorkoutSuggestion
+        readinessScore={readiness.score}
+        readinessLabel={readiness.label}
+        lastSleepHrs={lastSleepHrs}
+        hrv={hrv !== null ? Number(hrv) : null}
+        hasEnoughData={hasReadinessData}
+      />
 
       <TemplatesSection templates={templates} />
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { resolveDisplayName } from "@/lib/displayName";
 import { DashboardContent } from "./_components/DashboardContent";
+import { computeReadiness } from "@/lib/readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,9 @@ export default async function DashboardPage() {
     activeGoalsResult,
     nextWorkoutResult,
     habitsTodayResult,
+    sessionsLast3Result,
+    workoutTodayResult,
+    moodTodayResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -169,6 +173,12 @@ export default async function DashboardPage() {
     supabase.from("workout_templates").select("id, name").eq("user_id", user.id).limit(10),
     // Habits completed today
     supabase.from("habit_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("logged_date", today).eq("completed", true),
+    // Sessions in last 3 days (for readiness training load)
+    supabase.from("workout_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("started_at", new Date(Date.now() - 3 * 86400000).toISOString()),
+    // Workout today (for momentum)
+    supabase.from("workout_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("started_at", today + "T00:00:00"),
+    // Mood today (for momentum)
+    supabase.from("mood_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("logged_date", today),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,6 +268,25 @@ export default async function DashboardPage() {
   const lastTemplateName = (lastSessionRow as any)?.workout_templates?.name ?? null;
   const nextWorkoutName = templates.find((t) => t.name !== lastTemplateName)?.name ?? templates[0]?.name ?? null;
   const habitsTodayDone = habitsTodayResult.count ?? 0;
+
+  // Readiness score
+  const sessionsLast3 = sessionsLast3Result.count ?? 0;
+  const readiness = computeReadiness({
+    lastSleepHrs: lastSleep?.duration_hrs ?? null,
+    hrv: hrvVal !== null ? Number(hrvVal) : null,
+    restingHR: restingHRVal !== null ? Number(restingHRVal) : null,
+    sessionsLast3Days: sessionsLast3,
+  });
+
+  // Momentum domains (5 areas tracked today)
+  const workoutToday = (workoutTodayResult.count ?? 0) > 0;
+  const sleepLogged = lastSleep !== null;
+  const moodToday = (moodTodayResult.count ?? 0) > 0;
+  const nutritionToday = proteinToday > 0 || waterToday > 0;
+  const habitsToday = habitsTodayDone > 0 && habitTotal > 0;
+  const momentumDomains = { workout: workoutToday, sleep: sleepLogged, mood: moodToday, nutrition: nutritionToday, habits: habitsToday };
+  const momentumScore = Object.values(momentumDomains).filter(Boolean).length;
+
   const rawLayout = profile?.dashboard_layout;
   // Support both old format ({cards,hidden}) and new react-grid-layout format ({lg,hidden}).
   // Old format is ignored; new format is used directly.
@@ -302,6 +331,16 @@ export default async function DashboardPage() {
       journalDays30={journalDays30}
       activeGoalCount={activeGoalCount}
       nextWorkoutName={nextWorkoutName}
-      habitsTodayDone={habitsTodayDone}    />
+      habitsTodayDone={habitsTodayDone}
+      readinessScore={readiness.score}
+      readinessLabel={readiness.label}
+      readinessColor={readiness.color}
+      readinessSleepPts={readiness.sleepPts}
+      readinessHrvPts={readiness.hrvPts}
+      readinessRhrPts={readiness.rhrPts}
+      readinessTrainingPts={readiness.trainingPts}
+      momentumScore={momentumScore}
+      momentumDomains={momentumDomains}
+    />
   );
 }
