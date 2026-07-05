@@ -47,6 +47,10 @@
   /* Sidebar width — updated by Sidebar.tsx toggle and init script */
   --sidebar-w: 240px;
 
+  /* TopBar height used for content padding-top (body-scroll model, topbar is position:fixed) */
+  /* Mobile: safe-area-inset-top + h-12 (48px) + xp-strip (4px) = safe-area + 52px */
+  --topbar-h: calc(max(env(safe-area-inset-top, 0px), 4px) + 52px);
+
   /* Card surfaces — depth via a slightly lighter shade than bg-surface */
   --card-bg: #1C1C24;
   --card-border: color-mix(in srgb, var(--color-border) 40%, transparent);
@@ -99,13 +103,19 @@ html, body {
   --topbar-bg: rgba(22, 22, 30, 0.82);
 }
 
+/* Desktop topbar: fixed top-4, pill ~50px tall → 16+50+14 gap = 80px */
+@media (min-width: 1024px) {
+  :root {
+    --topbar-h: 80px;
+  }
+}
+
 /* Dashboard main area — correct sidebar offset on desktop */
 .dashboard-main {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  min-height: 0;
 }
 
 @media (min-width: 768px) {
