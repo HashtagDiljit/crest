@@ -11,7 +11,7 @@ function syncStatusBar(isLight: boolean, bg: string) {
 
 // Accent colour variants: hover (10% darker), pressed (20% darker)
 const ACCENT_VARIANTS: Record<string, { hover: string; pressed: string }> = {
-  "#2DD4BF": { hover: "#28BFAC", pressed: "#1E9A8B" },
+  "#64b4a0": { hover: "#5aa290", pressed: "#509080" },
   "#6366F1": { hover: "#595CD9", pressed: "#4338CA" },
   "#A855F7": { hover: "#974DDE", pressed: "#7E22CE" },
   "#F43F5E": { hover: "#DC3955", pressed: "#BE123C" },
@@ -42,7 +42,7 @@ export function applyAccent(hex: string) {
   root.style.setProperty("--color-accent-ring", `rgba(${r},${g},${b},0.45)`);
   root.style.setProperty("--color-border-focus", hex);
 
-  try { localStorage.setItem("arc-accent", hex); } catch { /* noop */ }
+  try { localStorage.setItem("kairos-accent", hex); } catch { /* noop */ }
 }
 
 const LIGHT_BG = "#FFFFFF";
@@ -127,7 +127,7 @@ export function applyTheme(theme: string) {
     document.head.appendChild(tag);
   }
 
-  try { localStorage.setItem("arc-theme", theme); } catch { /* noop */ }
+  try { localStorage.setItem("kairos-theme", theme); } catch { /* noop */ }
 }
 
 // Synchronous, pre-paint script — sets the background colour directly via
@@ -135,7 +135,7 @@ export function applyTheme(theme: string) {
 // a flash of the wrong (default light) background.
 export const THEME_PREPAINT_SCRIPT = `(function() {
   try {
-    var t = localStorage.getItem('arc-theme') || 'dark';
+    var t = localStorage.getItem('kairos-theme') || 'dark';
     var bg = t === 'light' ? '#FFFFFF' : t === 'amoled' ? '#000000' : '#0D0D12';
     document.documentElement.style.backgroundColor = bg;
     document.documentElement.setAttribute('data-theme', t);
@@ -145,7 +145,7 @@ export const THEME_PREPAINT_SCRIPT = `(function() {
 // Inline script string for root layout — prevents flash on load
 export const THEME_INIT_SCRIPT = `(function(){
   try {
-    var t=localStorage.getItem('arc-theme')||'dark';
+    var t=localStorage.getItem('kairos-theme')||'dark';
     if(t==='system')t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
     var light=t==='light';
     var amoled=t==='amoled';
@@ -157,7 +157,7 @@ export const THEME_INIT_SCRIPT = `(function(){
     }
     document.documentElement.style.setProperty('background-color',bg,'important');
     if(light){document.documentElement.style.color='#0D0D12';}
-    var a=localStorage.getItem('arc-accent');
+    var a=localStorage.getItem('kairos-accent');
     if(a){
       var el=document.documentElement;
       el.style.setProperty('--color-accent',a);
@@ -166,7 +166,7 @@ export const THEME_INIT_SCRIPT = `(function(){
       el.style.setProperty('--color-accent-soft','rgba('+r+','+g+','+b+',0.15)');
       el.style.setProperty('--color-accent-ring','rgba('+r+','+g+','+b+',0.45)');
     }
-    if(localStorage.getItem('arc-sidebar-collapsed')==='true'){
+    if(localStorage.getItem('kairos-sidebar-collapsed')==='true'){
       document.documentElement.style.setProperty('--sidebar-w','64px');
     }
   }catch(e){}

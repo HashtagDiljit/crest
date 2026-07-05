@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { X, Share, Download } from "lucide-react";
 
-const DISMISS_KEY = "arc-install-dismissed-at";
-const VISIT_KEY = "arc-visit-count";
+const DISMISS_KEY = "kairos-install-dismissed-at";
+const VISIT_KEY = "kairos-visit-count";
 const DISMISS_DAYS = 7;
 
 interface BeforeInstallPromptEvent extends Event {
@@ -102,7 +102,7 @@ export function InstallPrompt() {
           </p>
         ) : (
           <p className="text-12 text-text-secondary leading-snug">
-            Add Arc to your home screen for the full experience.
+            Add Kairos to your home screen for the full experience.
           </p>
         )}
       </div>

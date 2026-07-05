@@ -4,9 +4,12 @@ import { useEffect } from "react";
 import { applyAccent } from "@/lib/theme";
 
 const MIGRATIONS: Array<[string, string]> = [
-  ["crest-theme",             "arc-theme"],
-  ["crest-accent",            "arc-accent"],
-  ["crest-sidebar-collapsed", "arc-sidebar-collapsed"],
+  ["crest-theme",             "kairos-theme"],
+  ["crest-accent",            "kairos-accent"],
+  ["crest-sidebar-collapsed", "kairos-sidebar-collapsed"],
+  ["arc-theme",               "kairos-theme"],
+  ["arc-accent",              "kairos-accent"],
+  ["arc-sidebar-collapsed",   "kairos-sidebar-collapsed"],
 ];
 
 function migrateKeys() {
@@ -25,7 +28,7 @@ export function ThemeInit() {
   useEffect(() => {
     try {
       migrateKeys();
-      const accent = localStorage.getItem("arc-accent");
+      const accent = localStorage.getItem("kairos-accent");
       if (accent) applyAccent(accent);
     } catch {}
   }, []);

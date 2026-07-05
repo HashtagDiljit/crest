@@ -397,7 +397,7 @@ function WorkoutsCard({ count, target, lastSession, weeklyVolume }: { count: num
     <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Workouts</span>
-        <IconBadge icon={Dumbbell} color="#2DD4BF" />
+        <IconBadge icon={Dumbbell} color="#64b4a0" />
       </div>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
@@ -602,7 +602,7 @@ function NextWorkoutCard({ name }: { name: string | null | undefined }) {
     <Card className="p-4 md:p-5 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Next workout</span>
-        <IconBadge icon={Dumbbell} color="#2DD4BF" />
+        <IconBadge icon={Dumbbell} color="#64b4a0" />
       </div>
       <div className="flex-1 flex items-center">
         {name ? (
@@ -771,7 +771,7 @@ function SetupCard({ pct }: { pct: number }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-13 font-semibold text-text-primary">Your setup is {pct}% complete</p>
-          <p className="text-12 text-text-muted mt-0.5">Finish setting up Arc to unlock all features.</p>
+          <p className="text-12 text-text-muted mt-0.5">Finish setting up Kairos to unlock all features.</p>
         </div>
         <span className="font-mono text-22 font-bold" style={{ color: pct >= 75 ? "var(--color-success)" : "var(--color-accent)" }}>{pct}%</span>
       </div>
@@ -835,11 +835,11 @@ function WeeklyDigestCard({
 
   return (
     <div className="rounded-r5 border border-border bg-bg-surface flex overflow-hidden">
-      <div className="w-1 flex-shrink-0" style={{ background: "#2DD4BF" }} />
+      <div className="w-1 flex-shrink-0" style={{ background: "#64b4a0" }} />
       <div className="flex-1 p-5 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-11 font-semibold uppercase tracking-widest" style={{ color: "#2DD4BF" }}>Last week</p>
+            <p className="text-11 font-semibold uppercase tracking-widest" style={{ color: "#64b4a0" }}>Last week</p>
             <h3 className="font-display text-15 font-semibold text-text-primary mt-0.5">Weekly recap</h3>
           </div>
           <button

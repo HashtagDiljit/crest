@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.arc.lifetracker',
-  appName: 'Arc',
+  appId: 'com.kairos.lifetracker',
+  appName: 'Kairos',
   webDir: 'out',
   server: {
-    url: 'https://crest-weld.vercel.app',
+    url: 'https://withkairos.app',
     cleartext: false,
     androidScheme: 'https'
   },
@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#0D0D12',
       showSpinner: false,
       androidSpinnerStyle: 'small',
-      spinnerColor: '#2DD4BF',
+      spinnerColor: '#64b4a0',
       splashFullScreen: true,
       splashImmersive: true
     },

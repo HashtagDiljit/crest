@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { ArcMark } from "@/components/icons/ArcMark";
+import { KairosMark } from "@/components/icons/KairosMark";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -52,9 +52,9 @@ export default function SignupPage() {
         style={{ boxShadow: "var(--shadow-3)" }}
       >
         <div className="flex items-center gap-3 mb-8">
-          <ArcMark size={28} className="rounded-r3" />
-          <span className="font-display text-18 font-semibold text-text-primary tracking-tight">
-            Arc
+          <KairosMark size={28} className="rounded-r3" />
+          <span className="font-display text-18 font-medium tracking-tight" style={{ color: "#f0f0ee" }}>
+            Kairos
           </span>
         </div>
 
