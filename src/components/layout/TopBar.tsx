@@ -26,7 +26,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   return (
     <>
       {/* ── Mobile top bar ── */}
-      <div className="lg:hidden flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 4px)" }}>
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 4px)" }}>
         <div className="flex items-center justify-between px-4 h-12">
           <Link href="/" className="flex items-center gap-2">
             <ArcMark size={32} className="rounded-r3" />
@@ -48,8 +48,13 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
 
       {/* ── Desktop top bar ── */}
       <div
-        className="hidden lg:flex sticky top-4 z-10 mx-6 mt-4 items-center gap-3.5 rounded-pill border border-border px-4 py-2 backdrop-blur-[14px]"
-        style={{ background: "var(--topbar-bg)", boxShadow: "var(--shadow-2)" }}
+        className="hidden lg:flex fixed top-4 z-50 items-center gap-3.5 rounded-pill border border-border px-4 py-2 backdrop-blur-[14px]"
+        style={{
+          background: "var(--topbar-bg)",
+          boxShadow: "var(--shadow-2)",
+          left: "calc(var(--sidebar-w, 240px) + 24px)",
+          right: "24px",
+        }}
       >
         <LevelPill level={level} username={username} />
         <XpBar xp={xp} xpRemaining={xpRemaining} xpPct={xpPct} nextLevel={level + 1} />
