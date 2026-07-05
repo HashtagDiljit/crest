@@ -7,7 +7,7 @@ import { applyTheme, applyAccent } from "@/lib/theme";
 import { Toggle } from "@/components/ui/Toggle";
 
 const ACCENT_SWATCHES = [
-  { label: "Teal",    value: "#2DD4BF" },
+  { label: "Kairos",  value: "#64b4a0" },
   { label: "Indigo",  value: "#6366F1" },
   { label: "Violet",  value: "#A855F7" },
   { label: "Rose",    value: "#F43F5E" },
@@ -49,7 +49,7 @@ interface Props {
 
 export function AppearanceSection({ theme: initTheme, accentColour: initAccent, hiddenNavItems, reduceMotion: initReduceMotion }: Props) {
   const [theme, setTheme] = useState(initTheme ?? "dark");
-  const [accent, setAccent] = useState(initAccent ?? "#2DD4BF");
+  const [accent, setAccent] = useState(initAccent ?? "#64b4a0");
   const [hiddenNav, setHiddenNav] = useState<string[]>(hiddenNavItems ?? []);
   const [, startAppearanceTransition] = useTransition();
   const [navSaving, setNavSaving] = useState(false);

@@ -61,7 +61,7 @@ export function ShareableWeekCard({
     ctx.font = "600 52px -apple-system, system-ui, sans-serif";
     ctx.fillStyle = accentColor;
     ctx.textAlign = "left";
-    ctx.fillText("Arc", 80, 130);
+    ctx.fillText("Kairos", 80, 130);
 
     // Divider
     ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -155,7 +155,7 @@ export function ShareableWeekCard({
     ctx.font = "400 34px -apple-system, system-ui, sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.2)";
     ctx.textAlign = "center";
-    ctx.fillText("Tracked with Arc", W / 2, H - 70);
+    ctx.fillText("Tracked with Kairos", W / 2, H - 70);
   }, [username, weekLabel, workouts, sleepAvg, habitPct, moodAvg, readinessScore, accentColor]);
 
   function handleOpen() {
@@ -175,7 +175,7 @@ export function ShareableWeekCard({
       const file = new File([blob], "arc-week.png", { type: "image/png" });
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title: "My weekly summary on Arc", files: [file] });
+        await navigator.share({ title: "My weekly summary on Kairos", files: [file] });
       } else {
         downloadBlob(blob);
       }

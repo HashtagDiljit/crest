@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
-import { ArcMark } from "@/components/icons/ArcMark";
+import { KairosMark } from "@/components/icons/KairosMark";
 
 type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
 
@@ -54,7 +54,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("arc-sidebar-collapsed");
+    const stored = localStorage.getItem("kairos-sidebar-collapsed");
     if (stored === "true") {
       setCollapsed(true);
       document.documentElement.style.setProperty("--sidebar-w", `${COLLAPSED_W}px`);
@@ -71,7 +71,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
     setCollapsed(next);
     const w = next ? COLLAPSED_W : EXPANDED_W;
     document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
-    try { localStorage.setItem("arc-sidebar-collapsed", String(next)); } catch { /* noop */ }
+    try { localStorage.setItem("kairos-sidebar-collapsed", String(next)); } catch { /* noop */ }
   }
 
   const c = collapsed;
@@ -84,8 +84,8 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       >
         {/* Brand */}
         <div className={`flex items-center gap-2.5 px-3.5 py-5 pb-4 ${c ? "justify-center" : ""}`}>
-          <ArcMark size={26} className="rounded-r3 flex-shrink-0" />
-          {!c && <span className="font-display text-18 font-semibold text-text-primary tracking-tight whitespace-nowrap">Arc</span>}
+          <KairosMark size={26} className="rounded-r3 flex-shrink-0" />
+          {!c && <span className="font-display text-18 font-medium text-text-primary tracking-tight whitespace-nowrap" style={{ color: "#f0f0ee" }}>Kairos</span>}
         </div>
 
         {/* Primary nav */}

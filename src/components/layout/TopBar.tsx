@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CalendarButton } from "./CalendarButton";
 import { HistoryPanel } from "./HistoryPanel";
-import { ArcMark } from "@/components/icons/ArcMark";
+import { KairosMark } from "@/components/icons/KairosMark";
 
 interface TopBarProps {
   level: number;
@@ -29,7 +29,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 4px)" }}>
         <div className="flex items-center justify-between px-4 h-12">
           <Link href="/" className="flex items-center gap-2">
-            <ArcMark size={32} className="rounded-r3" />
+            <KairosMark size={32} className="rounded-r3" />
           </Link>
           <MobileStreakChip streak={streak} />
           <Avatar initials={initials} avatarUrl={avatarUrl} />

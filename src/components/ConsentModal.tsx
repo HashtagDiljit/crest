@@ -47,7 +47,7 @@ const CONSENT_ITEMS: ConsentItem[] = [
     key: "product_improvement",
     label: "Anonymous product improvement",
     description: "Aggregate, never identifiable usage analytics.",
-    detail: "If enabled, we collect anonymous, aggregated data (e.g. 'X% of users log sleep daily') to understand how Arc is used. No individual tracking, no identifiers.",
+    detail: "If enabled, we collect anonymous, aggregated data (e.g. 'X% of users log sleep daily') to understand how Kairos is used. No individual tracking, no identifiers.",
     required: false,
   },
 ];
@@ -96,7 +96,7 @@ export function ConsentModal({ onConsented }: Props) {
             <h2 className="font-display text-18 font-semibold text-text-primary">Before we start — your health data</h2>
           </div>
           <p className="text-13 text-text-secondary leading-relaxed">
-            Arc stores health and fitness data about you. UK law requires your explicit consent for each type. Please choose what you&apos;re comfortable with.
+            Kairos stores health and fitness data about you. UK law requires your explicit consent for each type. Please choose what you&apos;re comfortable with.
           </p>
         </div>
 

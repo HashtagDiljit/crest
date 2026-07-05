@@ -1,6 +1,6 @@
 {
-  "name": "Arc — Life Tracker",
-  "short_name": "Arc",
+  "name": "Kairos — Life Tracker",
+  "short_name": "Kairos",
   "description": "Track workouts, habits, sleep, mood, nutrition and goals in one place.",
   "start_url": "/dashboard",
   "scope": "/",

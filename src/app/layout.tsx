@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Arc",
+  title: "Kairos",
   description: "Your life. Tracked. Understood. ",
   manifest: "/manifest.json",
   icons: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "Arc",
+    title: "Kairos",
     statusBarStyle: "black-translucent",
     startupImage: [
       { url: "/splash/splash-2048x2732.png", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },

@@ -7,32 +7,29 @@ const OUT_DIR = path.join(__dirname, "..", "public", "icons");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-// Builds an SVG: dark rounded-square background with a white upward arc
-// stroke centred in the icon. `padding` shrinks the safe area (used for
-// the maskable 512px icon so the arc isn't clipped by the OS mask).
+// Builds an SVG: dark rounded-square background with the Kairos K mark.
+// The K mark is built from 5 lines forming a stylised K.
+// `padding` shrinks the safe area (used for the maskable 512px icon).
 function buildSvg(size, padding = 0) {
+  const scale = size / 44;
   const inset = size * padding;
-  const inner = size - inset * 2;
-  const radius = size * 0.22;
-  const strokeWidth = Math.max(2, inner * 0.085);
+  const innerSize = size - inset * 2;
+  const innerScale = innerSize / 44;
 
-  // Upward arc: starts low-left, curves up to a peak, down to low-right.
-  const x0 = inset + inner * 0.16;
-  const x1 = inset + inner * 0.5;
-  const x2 = inset + inner * 0.84;
-  const yBase = inset + inner * 0.72;
-  const yPeak = inset + inner * 0.22;
+  const radius = 12 * scale;
+  const sw = Math.max(1, 1.8 * innerScale);
+
+  // K mark coordinates scaled from 44x44 reference, offset by inset
+  const p = (v) => inset + v * innerScale;
 
   return `
 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${size}" height="${size}" rx="${radius}" fill="#0D0D12" />
-  <path
-    d="M ${x0} ${yBase} Q ${x1} ${yPeak} ${x2} ${yBase}"
-    fill="none"
-    stroke="#FFFFFF"
-    stroke-width="${strokeWidth}"
-    stroke-linecap="round"
-  />
+  <rect width="${size}" height="${size}" rx="${radius}" fill="#1a1a24" />
+  <line x1="${p(16)}" y1="${p(12)}" x2="${p(16)}" y2="${p(32)}" stroke="#64b4a0" stroke-width="${sw}" stroke-linecap="round"/>
+  <line x1="${p(16)}" y1="${p(22)}" x2="${p(28)}" y2="${p(12)}" stroke="#64b4a0" stroke-width="${sw}" stroke-linecap="round"/>
+  <line x1="${p(16)}" y1="${p(22)}" x2="${p(28)}" y2="${p(32)}" stroke="#64b4a0" stroke-width="${sw}" stroke-linecap="round"/>
+  <line x1="${p(23)}" y1="${p(17)}" x2="${p(32)}" y2="${p(12)}" stroke="#64b4a0" stroke-width="${sw}" stroke-linecap="round"/>
+  <line x1="${p(23)}" y1="${p(27)}" x2="${p(32)}" y2="${p(32)}" stroke="#64b4a0" stroke-width="${sw}" stroke-linecap="round"/>
 </svg>`;
 }
 

@@ -1,13 +1,13 @@
 import Link from "next/link";
 
-export const metadata = { title: "Privacy Policy — Arc" };
+export const metadata = { title: "Privacy Policy — Kairos" };
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-bg-base">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <div className="mb-10">
-          <Link href="/" className="text-13 text-text-muted hover:text-text-secondary transition-colors">← Back to Arc</Link>
+          <Link href="/" className="text-13 text-text-muted hover:text-text-secondary transition-colors">← Back to Kairos</Link>
         </div>
 
         <h1 className="font-display text-32 font-semibold text-text-primary tracking-tight mb-2">Privacy Policy</h1>
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-display text-20 font-semibold text-text-primary mb-4">Who we are</h2>
-            <p>Arc is a personal health and fitness tracking application. We are committed to protecting your personal data and complying with UK GDPR and the Data Protection Act 2018. For data-related enquiries, contact us at <span className="text-text-primary">privacy@crest-weld.vercel.app</span>.</p>
+            <p>Kairos is a personal health and fitness tracking application. We are committed to protecting your personal data and complying with UK GDPR and the Data Protection Act 2018. For data-related enquiries, contact us at <span className="text-text-primary">privacy@withkairos.app</span>.</p>
           </section>
 
           <section>
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-display text-20 font-semibold text-text-primary mb-4">Why we collect it</h2>
             <ul className="flex flex-col gap-2 list-disc list-inside marker:text-text-muted">
-              <li>To provide the core tracking features you use Arc for</li>
+              <li>To provide the core tracking features you use Kairos for</li>
               <li>To calculate trends, streaks, and personal bests</li>
               <li>To surface correlations and insights across your data (with your consent)</li>
               <li>To maintain your account and send essential service communications</li>
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-13">To exercise any of these rights, use Settings → Data &amp; Privacy or email <span className="text-text-primary">privacy@crest-weld.vercel.app</span>. We will respond within 30 days.</p>
+            <p className="mt-4 text-13">To exercise any of these rights, use Settings → Data &amp; Privacy or email <span className="text-text-primary">privacy@withkairos.app</span>. We will respond within 30 days.</p>
           </section>
 
           <section>
@@ -93,13 +93,13 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-display text-20 font-semibold text-text-primary mb-4">Contact</h2>
-            <p>For any data protection questions or to exercise your rights: <span className="text-text-primary">privacy@crest-weld.vercel.app</span></p>
+            <p>For any data protection questions or to exercise your rights: <span className="text-text-primary">privacy@withkairos.app</span></p>
             <p className="mt-2">If you are unsatisfied with our response, you have the right to complain to the Information Commissioner&apos;s Office (ICO): <span className="text-text-primary">ico.org.uk</span></p>
           </section>
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex items-center justify-between text-13 text-text-muted">
-          <Link href="/" className="hover:text-text-secondary transition-colors">← Arc home</Link>
+          <Link href="/" className="hover:text-text-secondary transition-colors">← Kairos home</Link>
           <Link href="/terms" className="hover:text-text-secondary transition-colors">Terms of service →</Link>
         </div>
       </div>

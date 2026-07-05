@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.arc.lifetracker"
+    namespace = "com.kairos.lifetracker"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.arc.lifetracker"
+        applicationId "com.kairos.lifetracker"
         minSdkVersion 26
         targetSdkVersion 34
         versionCode 1
