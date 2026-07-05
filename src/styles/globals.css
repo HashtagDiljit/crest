@@ -68,10 +68,10 @@ html, body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* Prevent pull-to-refresh overscroll from dragging the whole page (incl.
-     fixed header/bottom nav) down with it — only the scroll container itself
-     may rubber-band. */
-  overscroll-behavior-y: contain;
+  /* Prevent rubber-band overscroll from displacing fixed elements (top bar,
+     bottom nav). Using 'none' rather than 'contain' because 'contain' still
+     allows the native bounce that shifts fixed-position elements on iOS/Android. */
+  overscroll-behavior-y: none;
 }
 
 * {
