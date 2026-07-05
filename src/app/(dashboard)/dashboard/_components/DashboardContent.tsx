@@ -23,10 +23,13 @@ import {
   BookOpen,
   Weight,
   Plus,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { FocusBanner } from "@/components/FocusBanner";
 import { saveDashboardLayout } from "../actions";
+import { ShareableWeekCard } from "./ShareableWeekCard";
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -73,6 +76,21 @@ export interface DashboardData {
   journalDays30?: number;
   activeGoalCount?: number;
   nextWorkoutName?: string | null;
+  readinessScore?: number | null;
+  readinessLabel?: string | null;
+  readinessColor?: string | null;
+  readinessSleepPts?: number;
+  readinessHrvPts?: number;
+  readinessRhrPts?: number;
+  readinessTrainingPts?: number;
+  momentumScore?: number;
+  momentumDomains?: {
+    workout: boolean;
+    sleep: boolean;
+    mood: boolean;
+    nutrition: boolean;
+    habits: boolean;
+  };
 }
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -85,7 +103,7 @@ const DEFAULT_CARDS = [
   "weekly-ring", "streak", "sleep", "resting-hr", "workouts",
   "heatmap", "ai-insight", "hrv", "water-today", "nutrition-summary",
   "next-workout", "focus-widget", "weight-trend", "goals-progress",
-  "journal-streak", "weekly-volume",
+  "journal-streak", "weekly-volume", "readiness", "momentum",
 ];
 
 const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
@@ -105,6 +123,8 @@ const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
   "goals-progress":    { label: "Goals progress",     Icon: Target     },
   "journal-streak":    { label: "Journal streak",     Icon: BookOpen   },
   "weekly-volume":     { label: "Training volume",    Icon: TrendingUp },
+  readiness:           { label: "Daily readiness",    Icon: Activity   },
+  momentum:            { label: "Today's momentum",   Icon: Zap        },
 };
 
 // rowHeight=60 (desktop/tablet), rowHeight=52 (mobile sm breakpoint), margin=[12,12]
@@ -126,6 +146,8 @@ const DEFAULT_LAYOUT_LG: LayoutItem[] = [
   { i: "goals-progress",    x: 9,  y: 15, w: 3,  h: 4 },  // matches focus-widget
   { i: "journal-streak",    x: 0,  y: 19, w: 4,  h: 3 },
   { i: "weekly-volume",     x: 4,  y: 19, w: 4,  h: 3 },
+  { i: "readiness",         x: 0,  y: 22, w: 6,  h: 4 },
+  { i: "momentum",          x: 6,  y: 22, w: 6,  h: 4 },
 ];
 
 const DEFAULT_LAYOUT_MD: LayoutItem[] = [
@@ -145,6 +167,8 @@ const DEFAULT_LAYOUT_MD: LayoutItem[] = [
   { i: "goals-progress",    x: 2, y: 25, w: 2, h: 3 },
   { i: "journal-streak",    x: 0, y: 28, w: 4, h: 3 },
   { i: "weekly-volume",     x: 0, y: 31, w: 4, h: 3 },
+  { i: "readiness",         x: 0, y: 34, w: 4, h: 4 },
+  { i: "momentum",          x: 0, y: 38, w: 4, h: 4 },
 ];
 
 // sm: rowHeight=52; h=3 per card (3×52+2×12=180px) stacked tightly
@@ -768,23 +792,46 @@ function SetupCard({ pct }: { pct: number }) {
   );
 }
 
-function WeeklyDigestCard({ digest, onDismiss }: { digest: DashboardData["lastWeekDigest"]; onDismiss: () => void }) {
+function WeeklyDigestCard({
+  digest,
+  onDismiss,
+  username,
+  readinessScore,
+}: {
+  digest: DashboardData["lastWeekDigest"];
+  onDismiss: () => void;
+  username: string;
+  readinessScore?: number | null;
+}) {
   const items: Array<{ label: string; value: string | null }> = [
-    { label: "Workouts",          value: `${digest.workouts} sessions` },
+    { label: "Workouts",          value: `${digest.workouts}` },
     { label: "Sleep avg",         value: digest.sleepAvg !== null ? `${digest.sleepAvg}h` : null },
     { label: "Habit completion",  value: digest.habitPct !== null ? `${digest.habitPct}%` : null },
     { label: "Avg mood",          value: digest.moodAvg !== null ? `${digest.moodAvg}/5` : null },
-  ].filter((i) => i.value !== null);
+  ];
 
-  const focusSuggestion = digest.habitPct !== null && digest.habitPct < 50
-    ? "Your habit completion was below 50% — pick one habit and protect it this week."
-    : digest.sleepAvg !== null && digest.sleepAvg < 6.5
-    ? "Sleep was under 6.5h last week. Prioritise an earlier bedtime tonight."
-    : digest.workouts === 0
-    ? "No workouts logged last week. Even one session this week builds momentum."
-    : digest.moodAvg !== null && digest.moodAvg < 3
-    ? "Low mood week — be intentional about recovery and connection this week."
-    : null;
+  const insight =
+    digest.habitPct !== null && digest.habitPct < 50
+      ? "Habit completion was below 50% — pick one habit and protect it this week."
+      : digest.sleepAvg !== null && digest.sleepAvg < 6.5
+      ? `Sleep averaged ${digest.sleepAvg}h — that's under the 7hr minimum. An earlier bedtime tonight would help.`
+      : digest.workouts === 0
+      ? "No workouts logged last week. Even a single session this week rebuilds the habit."
+      : digest.moodAvg !== null && digest.moodAvg < 3
+      ? "Low mood last week — schedule one recovery activity intentionally today."
+      : digest.workouts >= 4 && (digest.habitPct ?? 0) >= 80
+      ? "Strong week — 4+ workouts and great habit consistency. Carry that into this week."
+      : null;
+
+  // ISO week label for share card
+  const now = new Date();
+  const weekStart = new Date(now);
+  const day = weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1) - 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const weekLabel = `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 
   return (
     <div className="rounded-r5 border border-border bg-bg-surface flex overflow-hidden">
@@ -795,25 +842,212 @@ function WeeklyDigestCard({ digest, onDismiss }: { digest: DashboardData["lastWe
             <p className="text-11 font-semibold uppercase tracking-widest" style={{ color: "#2DD4BF" }}>Last week</p>
             <h3 className="font-display text-15 font-semibold text-text-primary mt-0.5">Weekly recap</h3>
           </div>
-          <button onClick={onDismiss} className="w-7 h-7 flex items-center justify-center rounded-pill hover:bg-bg-elevated text-text-disabled hover:text-text-muted transition-colors flex-shrink-0" aria-label="Dismiss">
+          <button
+            onClick={onDismiss}
+            className="w-7 h-7 flex items-center justify-center rounded-pill hover:bg-bg-elevated text-text-disabled hover:text-text-muted transition-colors flex-shrink-0"
+            aria-label="Dismiss"
+          >
             <X size={13} />
           </button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {items.map((item) => (
             <div key={item.label} className="rounded-r3 bg-bg-elevated border border-border px-3 py-2">
-              <p className="font-mono text-15 font-semibold text-text-primary">{item.value}</p>
+              {item.value !== null
+                ? <p className="font-mono text-15 font-semibold text-text-primary">{item.value}</p>
+                : <p className="font-mono text-15 text-text-disabled">—</p>
+              }
               <p className="text-10 text-text-muted mt-0.5">{item.label}</p>
             </div>
           ))}
         </div>
-        {focusSuggestion && (
+        {insight && (
           <p className="text-12 text-text-secondary leading-relaxed">
-            <span className="font-semibold text-text-primary">This week: </span>{focusSuggestion}
+            <span className="font-semibold text-text-primary">Insight: </span>{insight}
           </p>
         )}
+        <div className="flex items-center gap-2 pt-1">
+          <ShareableWeekCard
+            username={username}
+            weekLabel={weekLabel}
+            workouts={digest.workouts}
+            sleepAvg={digest.sleepAvg}
+            habitPct={digest.habitPct}
+            moodAvg={digest.moodAvg}
+            readinessScore={readinessScore}
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+// ─── readiness card ───────────────────────────────────────────────────────────
+
+function ReadinessCard({
+  score,
+  label,
+  color,
+  sleepPts,
+  hrvPts,
+  rhrPts,
+  trainingPts,
+  lastSleepHrs,
+  hrv,
+}: {
+  score: number;
+  label: string;
+  color: string;
+  sleepPts: number;
+  hrvPts: number;
+  rhrPts: number;
+  trainingPts: number;
+  lastSleepHrs: number | null;
+  hrv: number | null;
+}) {
+  const hasData = lastSleepHrs !== null || hrv !== null;
+  const R = 46;
+  const circ = 2 * Math.PI * R;
+  const pct = score / 100;
+  const offset = circ - pct * circ;
+
+  const bars = [
+    { label: "Sleep",    pts: sleepPts,    max: 40 },
+    { label: "HRV",      pts: hrvPts,      max: 20 },
+    { label: "Resting HR", pts: rhrPts,   max: 20 },
+    { label: "Recovery", pts: trainingPts, max: 20 },
+  ];
+
+  if (!hasData) {
+    return (
+      <Card className="p-4 md:p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Readiness</span>
+          <IconBadge icon={Activity} color="var(--color-accent)" />
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-4">
+          <Activity size={24} className="text-text-disabled" />
+          <p className="text-12 text-text-muted">Log sleep, HRV and resting HR to<br />calculate your readiness score.</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-4 md:p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Readiness</span>
+        <InfoTooltip text="Daily readiness (0–100) based on your sleep duration, HRV, resting heart rate, and recent training load." />
+      </div>
+      <div className="flex items-center gap-5">
+        <div className="relative flex-shrink-0">
+          <svg width="110" height="110" viewBox="0 0 110 110" aria-hidden>
+            <circle cx="55" cy="55" r={R} fill="none" stroke="var(--color-bg-elevated)" strokeWidth="10" />
+            <circle
+              cx="55" cy="55" r={R}
+              fill="none"
+              stroke={color}
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
+              transform="rotate(-90 55 55)"
+              style={{ transition: "stroke-dashoffset 0.6s ease" }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="font-mono text-28 font-semibold leading-none" style={{ color }}>{score}</span>
+            <span className="text-10 font-semibold mt-0.5" style={{ color }}>{label}</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2.5 flex-1 min-w-0">
+          {bars.map((b) => (
+            <div key={b.label} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-10 text-text-muted">{b.label}</span>
+                <span className="text-10 font-mono text-text-secondary">{b.pts}/{b.max}</span>
+              </div>
+              <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+                <div
+                  className="h-full rounded-pill transition-all"
+                  style={{ width: `${(b.pts / b.max) * 100}%`, background: color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ─── momentum card ────────────────────────────────────────────────────────────
+
+function MomentumCard({
+  score,
+  domains,
+}: {
+  score: number;
+  domains: {
+    workout: boolean;
+    sleep: boolean;
+    mood: boolean;
+    nutrition: boolean;
+    habits: boolean;
+  };
+}) {
+  const items = [
+    { key: "workout",   label: "Workout",   icon: Dumbbell },
+    { key: "sleep",     label: "Sleep",     icon: Moon     },
+    { key: "habits",    label: "Habits",    icon: Flame    },
+    { key: "nutrition", label: "Nutrition", icon: Utensils },
+    { key: "mood",      label: "Mood",      icon: Sparkles },
+  ] as const;
+
+  const onTrack = score >= 3;
+  const label = score === 5 ? "Crushing it" : score >= 3 ? "On track" : score >= 1 ? "Getting started" : "Nothing yet";
+  const color = score >= 4 ? "#22C55E" : score >= 3 ? "#6C63FF" : score >= 1 ? "#F59E0B" : "var(--color-text-disabled)";
+
+  return (
+    <Card className="p-4 md:p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Today&apos;s momentum</span>
+        <InfoTooltip text="How many of your 5 key health domains you've tracked today. Hitting 3+ keeps your momentum alive." />
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-end gap-1">
+          <span className="font-mono text-40 font-semibold leading-none" style={{ color }}>{score}</span>
+          <span className="text-16 text-text-muted mb-1">/5</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-13 font-semibold" style={{ color }}>{label}</span>
+          <span className="text-11 text-text-muted">{onTrack ? "Keep going today" : "Log 3+ domains to stay on track"}</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {items.map((item) => {
+          const done = domains[item.key];
+          const Icon = item.icon;
+          return (
+            <div key={item.key} className="flex flex-col items-center gap-1.5">
+              <div
+                className="w-10 h-10 rounded-r3 flex items-center justify-center transition-colors"
+                style={{
+                  background: done ? "color-mix(in oklab, var(--color-success) 15%, transparent)" : "var(--color-bg-elevated)",
+                  border: done ? "1px solid color-mix(in oklab, var(--color-success) 30%, transparent)" : "1px solid var(--color-border)",
+                }}
+              >
+                {done
+                  ? <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
+                  : <Icon size={14} className="text-text-disabled" />
+                }
+              </div>
+              <span className="text-10 text-text-muted text-center leading-tight">{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -837,6 +1071,25 @@ function renderCard(id: string, d: DashboardData): React.ReactNode {
     case "goals-progress":   return <GoalsProgressCard count={d.activeGoalCount ?? 0} />;
     case "journal-streak":   return <JournalStreakCard days30={d.journalDays30 ?? 0} />;
     case "weekly-volume":    return <WeeklyVolumeCard weeklyVolume={d.weeklyVolume} />;
+    case "readiness":        return (
+      <ReadinessCard
+        score={d.readinessScore ?? 0}
+        label={d.readinessLabel ?? "—"}
+        color={d.readinessColor ?? "var(--color-text-muted)"}
+        sleepPts={d.readinessSleepPts ?? 8}
+        hrvPts={d.readinessHrvPts ?? 4}
+        rhrPts={d.readinessRhrPts ?? 4}
+        trainingPts={d.readinessTrainingPts ?? 20}
+        lastSleepHrs={d.lastSleepDuration}
+        hrv={d.hrv}
+      />
+    );
+    case "momentum":         return (
+      <MomentumCard
+        score={d.momentumScore ?? 0}
+        domains={d.momentumDomains ?? { workout: false, sleep: false, mood: false, nutrition: false, habits: false }}
+      />
+    );
     default:                 return null;
   }
 }
@@ -1087,7 +1340,12 @@ export function DashboardContent(props: DashboardData) {
       )}
 
       {showDigest && (
-        <WeeklyDigestCard digest={props.lastWeekDigest} onDismiss={dismissDigest} />
+        <WeeklyDigestCard
+          digest={props.lastWeekDigest}
+          onDismiss={dismissDigest}
+          username={props.username}
+          readinessScore={props.readinessScore}
+        />
       )}
 
       {props.setupPct < 100 && (

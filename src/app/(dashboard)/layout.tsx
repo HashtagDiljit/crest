@@ -91,7 +91,7 @@ export default async function DashboardLayout({
                 initials={initials}
                 avatarUrl={profile?.avatar_url ?? null}
               />
-              <main>
+              <main style={{ overscrollBehaviorY: "none" }}>
                 <div className="max-w-[1200px] w-full mx-auto px-4 md:px-6 pb-[80px] lg:pb-14" style={{ paddingTop: "var(--page-top-pad, 76px)" }}>
                   <PageTransition>{children}</PageTransition>
                 </div>

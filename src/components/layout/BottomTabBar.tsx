@@ -324,7 +324,12 @@ export function BottomTabBar({
       {/* Bottom tab bar */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-stretch border-t border-border bg-bg-surface"
-        style={{ height: "calc(56px + env(safe-area-inset-bottom))", paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{
+          height: "calc(56px + env(safe-area-inset-bottom))",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          overscrollBehavior: "none",
+          transform: "translateZ(0)",
+        }}
       >
         {/* Left two slots */}
         {slots.slice(0, 2).map((slotId, i) => {
