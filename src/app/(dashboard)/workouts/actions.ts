@@ -609,16 +609,28 @@ export async function updateCustomExercise(
       category: (formData.get("category") as string) || null,
       muscle_primary: (formData.get("muscle_primary") as string) || null,
       equipment: (formData.get("equipment") as string) || null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      logging_type: ((formData.get("logging_type") as string) || "weight_reps") as any,
     })
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("is_custom", true)
-    .select("id, name, category, muscle_primary, equipment, is_custom, user_id")
+    .select("id, name, category, muscle_primary, equipment, is_custom, user_id, logging_type")
     .single();
 
   if (error || !data) return { error: error?.message ?? "Failed to update" };
   revalidatePath("/workouts/exercises");
   return { success: true, exercise: data as ExerciseRow };
+}
+
+export async function deleteCustomExercise(id: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  const { error } = await supabase.from("exercises").delete().eq("id", id).eq("user_id", user.id).eq("is_custom", true);
+  if (error) return { error: error.message };
+  revalidatePath("/workouts/exercises");
+  return { success: true };
 }
 
 export async function getTemplate(id: string): Promise<TemplateRow | null> {

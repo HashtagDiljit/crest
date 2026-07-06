@@ -30,8 +30,8 @@ const config: CapacitorConfig = {
       backgroundColor: '#0D0D12'
     },
     Keyboard: {
-      resize: 'none',
-      resizeOnFullScreen: false
+      resize: 'native',
+      resizeOnFullScreen: true
     }
   }
 };

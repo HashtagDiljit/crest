@@ -103,9 +103,9 @@ function NumStepper({ label, value, unit, step, min = 0, isInt = false, focusFir
         <div className="flex-1 flex items-baseline justify-center gap-0.5">
           <input
             ref={ref}
-            type="text"
-            inputMode="decimal"
-            pattern="[0-9]*[.]?[0-9]*"
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={focused ? display : (isInt ? String(Math.round(value)) : value.toFixed(1))}
             onFocus={(e) => { setFocused(true); setDisplay(e.target.value); const len = e.target.value.length; e.target.setSelectionRange(len, len); }}
             onChange={(e) => setDisplay(e.target.value)}
