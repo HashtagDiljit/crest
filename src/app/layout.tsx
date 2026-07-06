@@ -54,6 +54,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
         {/* Inline script prevents flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Fix html/body to the viewport so only inner content divs scroll.
+            This eliminates rubber-band overscroll displacing fixed nav elements. */}
+        <style dangerouslySetInnerHTML={{ __html: `html,body{position:fixed;width:100%;height:100%;overflow:hidden;}` }} />
       </head>
       <body>
         <ThemeInit />

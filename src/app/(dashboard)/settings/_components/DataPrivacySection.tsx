@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Smartphone, Trash2, Loader2, ShieldCheck, ExternalLink } from "lucide-react";
+import { Download, Smartphone, Trash2, Loader2, ShieldCheck, ExternalLink, LogOut, AlertTriangle } from "lucide-react";
 import { exportUserData, deleteAccount } from "../actions";
+import { createClient } from "@/lib/supabase/client";
 import { SamsungImportModal } from "./SamsungImportModal";
 import { getConsent, saveConsent, withdrawConsentCategory } from "@/app/(dashboard)/consent/actions";
 import type { ConsentChoices } from "@/app/(dashboard)/consent/types";
@@ -22,6 +23,7 @@ export function DataPrivacySection() {
   const [showImport, setShowImport] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [consent, setConsent] = useState<(ConsentChoices & { consent_version: string }) | null>(null);
   const [loadingConsent, setLoadingConsent] = useState(true);
@@ -46,6 +48,13 @@ export function DataPrivacySection() {
       a.click();
       URL.revokeObjectURL(url);
     }
+  }
+
+  async function handleLogOut() {
+    setLoggingOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
   }
 
   async function handleDelete() {
@@ -179,6 +188,23 @@ export function DataPrivacySection() {
             <span key={app} className="px-3 py-1 rounded-pill border border-border text-11 text-text-disabled bg-bg-surface">{app}</span>
           ))}
         </div>
+      </div>
+
+      {/* Account actions */}
+      <button
+        onClick={handleLogOut}
+        disabled={loggingOut}
+        className="flex items-center gap-2.5 px-4 py-2.5 rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-13 font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 w-full"
+      >
+        {loggingOut ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+        Log out
+      </button>
+
+      <div className="rounded-r4 border border-danger/40 bg-[var(--color-danger-soft)] px-4 py-3 flex items-start gap-2.5">
+        <AlertTriangle size={15} className="text-danger flex-shrink-0 mt-0.5" />
+        <p className="text-12 text-danger leading-relaxed">
+          <span className="font-semibold">This cannot be undone.</span> All your data will be permanently erased.
+        </p>
       </div>
 
       {/* Delete account */}

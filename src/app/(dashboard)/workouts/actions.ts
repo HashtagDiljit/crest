@@ -21,7 +21,7 @@ export interface ExerciseRow {
   demo_gif_url?: string | null;
   is_custom?: boolean;
   user_id?: string | null;
-  logging_type?: "weight_reps" | "time_distance" | "time_reps" | "time_weight";
+  logging_type?: "weight_reps" | "time_distance" | "time_reps" | "time_weight" | "time_floors";
 }
 
 export interface TemplateExerciseRow {
@@ -1504,6 +1504,27 @@ export type TrainingBlock = "base" | "build" | "peak" | "deload";
 export interface TrainingBlockData {
   current_training_block: TrainingBlock | null;
   block_start_date: string | null;
+}
+
+export type LoggingType = "weight_reps" | "time_distance" | "time_reps" | "time_weight" | "time_floors";
+
+export async function updateExerciseLoggingType(
+  exerciseId: string,
+  loggingType: LoggingType,
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("exercises")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ logging_type: loggingType as any })
+    .eq("id", exerciseId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/workouts");
+  return { success: true };
 }
 
 export async function getTrainingBlock(): Promise<TrainingBlockData> {
