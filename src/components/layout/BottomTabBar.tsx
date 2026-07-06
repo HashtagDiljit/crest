@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Dumbbell, Heart, Target, CheckCircle2, Smile,
@@ -82,6 +82,21 @@ export function BottomTabBar({
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
 
+  // Close More drawer and quick log on route change (Fix 3)
+  useEffect(() => {
+    setShowMore(false);
+    setShowQuickLog(false);
+  }, [pathname]);
+
+  // Escape key closes More drawer (Fix 3)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { setShowMore(false); setShowQuickLog(false); }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
 
@@ -145,8 +160,8 @@ export function BottomTabBar({
 
   return (
     <>
-      {/* FAB — quick log trigger */}
-      <button
+      {/* FAB — quick log trigger (hidden on workout session page) */}
+      {!pathname.startsWith("/workouts/session") && <button
         type="button"
         onClick={() => setShowQuickLog((v) => !v)}
         className="lg:hidden fixed z-40 w-12 h-12 rounded-pill bg-accent text-white flex items-center justify-center transition-all"
@@ -161,7 +176,7 @@ export function BottomTabBar({
           strokeWidth={2.5}
           style={{ transform: showQuickLog ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
         />
-      </button>
+      </button>}
 
       {/* Quick log popup */}
       <AnimatePresence>

@@ -113,8 +113,9 @@ function NumStepper({ label, value, unit, step, min = 0, isInt = false, focusFir
             ref={ref}
             type="text"
             inputMode={isInt ? "numeric" : "decimal"}
+            pattern={isInt ? "[0-9]*" : "[0-9]*[.]?[0-9]*"}
             value={focused ? display : (isInt ? String(Math.round(value)) : value.toFixed(1))}
-            onFocus={(e) => { setFocused(true); setDisplay(e.target.value); e.target.select(); }}
+            onFocus={(e) => { setFocused(true); setDisplay(e.target.value); const len = e.target.value.length; e.target.setSelectionRange(len, len); }}
             onChange={(e) => setDisplay(e.target.value)}
             onBlur={(e) => commit(e.target.value)}
             className="w-full text-center font-mono text-[22px] font-bold text-text-primary bg-transparent outline-none min-w-0"
@@ -179,7 +180,7 @@ function DurStepper({ value, onChange, focusFirst }: { value: number; onChange: 
             ref={ref}
             type="text" inputMode="numeric"
             value={focused ? display : (() => { const m = Math.floor(value / 60), s = value % 60; return `${m}:${String(s).padStart(2, "0")}`; })()}
-            onFocus={(e) => { setFocused(true); setDisplay(e.target.value); e.target.select(); }}
+            onFocus={(e) => { setFocused(true); setDisplay(e.target.value); const len = e.target.value.length; e.target.setSelectionRange(len, len); }}
             onChange={(e) => setDisplay(e.target.value)}
             onBlur={(e) => commit(e.target.value)}
             className="w-full text-center font-mono text-[22px] font-bold text-text-primary bg-transparent outline-none min-w-0"

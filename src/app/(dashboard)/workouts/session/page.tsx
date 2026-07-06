@@ -1,11 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { Plus, Trophy, MoreHorizontal, Timer, AlignJustify, X } from "lucide-react";
+import { Plus, MoreHorizontal, Timer, AlignJustify, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
-import { logSet, finalizeSession, getExerciseHistory, updateSessionSet, deleteSessionSet } from "../actions";
+import { logSet, finalizeSession, getExerciseHistory, updateSessionSet, deleteSessionSet, discardSession } from "../actions";
 import { track } from "@vercel/analytics";
 import type { TemplateExerciseRow, SessionSetRow, SessionRow, ExerciseSessionHistory, PRResult } from "../actions";
 import type { LoggingType } from "../actions";
@@ -197,6 +197,10 @@ function SessionPage() {
   const [focusSignal, setFocusSignal] = useState(0);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [editLoggingTypeForEx, setEditLoggingTypeForEx] = useState<ExerciseRow | null>(null);
+  const [showSessionMenu, setShowSessionMenu] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
 
   // Timestamp-based timer: always accurate regardless of interval pauses
   const startTimeRef = useRef<number>(0);
@@ -204,6 +208,15 @@ function SessionPage() {
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  }
+
+  async function handleDiscard() {
+    if (!sessionId || discarding) return;
+    setDiscarding(true);
+    clearActiveSession();
+    await cancelWorkoutNotification();
+    await discardSession(sessionId);
+    router.replace("/workouts");
   }
 
   // ── Data loading ──────────────────────────────────────────────────────────
@@ -236,9 +249,20 @@ function SessionPage() {
         ? await supabase.from("exercises").select("id, name, category, muscle_primary, equipment, logging_type").in("id", exerciseIds)
         : { data: [] };
 
+      // Fetch per-user logging type overrides
+      const { data: prefsRaw } = exerciseIds.length > 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? await (supabase as any).from("user_exercise_preferences").select("exercise_id, logging_type").eq("user_id", user.id).in("exercise_id", exerciseIds)
+        : { data: [] };
+      const prefsMap = new Map<string, string>(
+        (prefsRaw ?? []).map((p: { exercise_id: string; logging_type: string }) => [p.exercise_id, p.logging_type])
+      );
+
       const exMap = new Map((exRaw ?? []).map(e => {
         const ex = e as Database["public"]["Tables"]["exercises"]["Row"];
-        return [ex.id, ex];
+        // Apply user preference override if present
+        const overriddenLoggingType = (prefsMap.get(ex.id) ?? ex.logging_type) as typeof ex.logging_type;
+        return [ex.id, { ...ex, logging_type: overriddenLoggingType }];
       }));
 
       const exercises: TemplateExerciseRow[] = texRows.map(te => ({
@@ -559,11 +583,89 @@ function SessionPage() {
         />
       )}
 
+      {/* Session ⋮ menu (Fix 6) */}
+      {showSessionMenu && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setShowSessionMenu(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-display text-16 font-semibold text-text-primary">Session options</span>
+              <button onClick={() => setShowSessionMenu(false)} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
+              <button onClick={() => { setShowSessionMenu(false); router.push("/settings"); }} className="flex items-center gap-3 px-3 py-3.5 rounded-r3 text-15 text-text-secondary hover:bg-bg-elevated transition-colors text-left">
+                Settings
+              </button>
+              <button onClick={() => { setShowSessionMenu(false); setShowDiscardConfirm(true); }} className="flex items-center gap-3 px-3 py-3.5 rounded-r3 text-15 text-error hover:bg-error/10 transition-colors text-left">
+                Discard session
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Discard confirmation (Fix 6) */}
+      {showDiscardConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setShowDiscardConfirm(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+            <p className="font-display text-16 font-semibold text-text-primary mb-1">Discard this workout?</p>
+            <p className="text-14 text-text-muted mb-5">All logged sets will be lost.</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleDiscard} disabled={discarding} className="w-full h-12 rounded-r3 bg-error hover:bg-error/90 text-white font-semibold text-14 transition-colors disabled:opacity-50">
+                {discarding ? "Discarding…" : "Discard workout"}
+              </button>
+              <button onClick={() => setShowDiscardConfirm(false)} className="w-full h-12 rounded-r3 border border-border text-text-secondary font-medium text-14 transition-colors hover:bg-bg-elevated">
+                Keep going
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Finish confirmation sheet (Fix 7) */}
+      {showFinishConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setShowFinishConfirm(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+            <p className="font-display text-16 font-semibold text-text-primary mb-1">Save this workout?</p>
+            <div className="flex gap-4 py-3 mb-4">
+              <div className="flex-1 text-center">
+                <p className="text-22 font-bold text-text-primary">{fmtTime(elapsedSeconds)}</p>
+                <p className="text-11 text-text-muted uppercase tracking-wide mt-0.5">Duration</p>
+              </div>
+              <div className="flex-1 text-center">
+                <p className="text-22 font-bold text-text-primary">{totalSets}</p>
+                <p className="text-11 text-text-muted uppercase tracking-wide mt-0.5">Sets</p>
+              </div>
+              <div className="flex-1 text-center">
+                <p className="text-22 font-bold text-text-primary">{totalVolume.toFixed(0)}</p>
+                <p className="text-11 text-text-muted uppercase tracking-wide mt-0.5">kg</p>
+              </div>
+              <div className="flex-1 text-center">
+                <p className="text-22 font-bold text-text-primary">{allExercises.length}</p>
+                <p className="text-11 text-text-muted uppercase tracking-wide mt-0.5">Exercises</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => { setShowFinishConfirm(false); handleEndSession(); }} disabled={ending} className="w-full h-12 rounded-r3 bg-accent hover:bg-accent-hover text-white font-semibold text-14 transition-colors disabled:opacity-50">
+                {ending ? "Saving…" : "Save workout"}
+              </button>
+              <button onClick={() => { setShowFinishConfirm(false); setShowDiscardConfirm(true); }} className="w-full h-12 rounded-r3 border border-error/50 text-error font-medium text-14 transition-colors hover:bg-error/10">
+                Discard
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Exercise queue slide-in */}
       {showQueue && (
         <>
           <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowQueue(false)} />
-          <div className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-bg-surface border-r border-border flex flex-col pt-4">
+          <div className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-bg-surface border-r border-border flex flex-col pt-4" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
             <div className="flex items-center justify-between px-4 mb-4">
               <span className="font-display text-15 font-semibold text-text-primary">Exercises</span>
               <button onClick={() => setShowQueue(false)} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
@@ -601,13 +703,9 @@ function SessionPage() {
           </div>
           <button
             type="button"
-            onClick={handleEndSession}
-            disabled={ending}
-            className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-warning transition-colors"
+            onClick={() => setShowSessionMenu(true)}
+            className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
           >
-            <Trophy size={17} />
-          </button>
-          <button type="button" className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
             <MoreHorizontal size={17} />
           </button>
         </div>
@@ -746,15 +844,15 @@ function SessionPage() {
         className="fixed z-20 flex items-center justify-between px-6 pointer-events-none"
         style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0 }}
       >
-        {/* Trophy / finish button */}
+        {/* Finish button */}
         <button
           type="button"
-          onClick={handleEndSession}
+          onClick={() => setShowFinishConfirm(true)}
           disabled={ending}
-          className="pointer-events-auto w-12 h-12 rounded-pill bg-bg-surface border border-border flex items-center justify-center shadow-lg transition-colors hover:border-warning/60"
-          style={{ boxShadow: "var(--shadow-2)" }}
+          className="pointer-events-auto px-5 h-11 rounded-pill bg-accent hover:bg-accent-hover text-white text-14 font-semibold flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
+          style={{ boxShadow: "0 4px 16px rgba(100,180,160,0.35)" }}
         >
-          <Trophy size={20} className="text-warning" />
+          Finish
         </button>
 
         {/* Add exercise FAB */}
