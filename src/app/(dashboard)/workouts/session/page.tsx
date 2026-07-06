@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { Plus, Timer, AlignJustify, X } from "lucide-react";
+import { Plus, Timer, ChevronLeft } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -11,7 +11,6 @@ import type { TemplateExerciseRow, SessionSetRow, SessionRow, ExerciseSessionHis
 import type { LoggingType } from "../actions";
 import { AdHocExercisePicker } from "./_components/AdHocExercisePicker";
 import { RestTimer } from "./_components/RestTimer";
-import { ExerciseQueue } from "./_components/ExerciseQueue";
 import { SessionSummary } from "./_components/SessionSummary";
 import { ExerciseCard, SupersetConnector, categoryStyle } from "./_components/ExerciseCard";
 import type { ExerciseRow } from "../actions";
@@ -185,7 +184,6 @@ function SessionPage() {
   const [adHocExercises, setAdHocExercises] = useState<TemplateExerciseRow[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set<string>());
   const [showPicker, setShowPicker] = useState(false);
-  const [showQueue, setShowQueue] = useState(false);
   const [targetOverrides, setTargetOverrides] = useState<Record<string, number>>({});
   const [currentSetType, setCurrentSetType] = useState<"warmup" | "working" | "dropset" | "failure">("working");
   const [supersetLinks, setSupersetLinks] = useState<Set<number>>(new Set<number>());
@@ -584,11 +582,12 @@ function SessionPage() {
         </>
       )}
 
-      {/* Finish confirmation sheet (Fix 7) */}
+      {/* Finish confirmation sheet */}
       {showFinishConfirm && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setShowFinishConfirm(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+          <div className="fixed inset-0 z-[9998] bg-black/70" onClick={() => setShowFinishConfirm(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-bg-surface px-4 pt-3" style={{ borderRadius: "20px 20px 0 0", paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))", boxShadow: "0 -8px 32px rgba(0,0,0,0.4)" }}>
+            <div className="flex justify-center mb-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <p className="font-display text-16 font-semibold text-text-primary mb-1">Save this workout?</p>
             <div className="flex gap-4 py-3 mb-4">
               <div className="flex-1 text-center">
@@ -620,42 +619,21 @@ function SessionPage() {
         </>
       )}
 
-      {/* Exercise queue slide-in */}
-      {showQueue && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowQueue(false)} />
-          <div className="fixed left-0 top-0 bottom-0 z-50 w-72 bg-bg-surface border-r border-border flex flex-col pt-4" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
-            <div className="flex items-center justify-between px-4 mb-4">
-              <span className="font-display text-15 font-semibold text-text-primary">Exercises</span>
-              <button onClick={() => setShowQueue(false)} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ExerciseQueue
-                exercises={allExercises} loggedSets={loggedSets} currentExIdx={currentExIdx}
-                onJump={(i) => { setCurrentExIdx(i); setShowQueue(false); }}
-                onAddExercise={() => { setShowPicker(true); setShowQueue(false); }}
-                onRemoveExercise={(id) => { setRemovedIds(prev => { const n = new Set(Array.from(prev)); n.add(id); return n; }); setCurrentExIdx(i => Math.min(i, allExercises.length - 2)); }}
-                supersetLinks={supersetLinks}
-                onToggleSuperset={(idx) => setSupersetLinks(prev => { const n = new Set(Array.from(prev)); if (n.has(idx)) n.delete(idx); else n.add(idx); return n; })}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
-        <button type="button" onClick={() => setShowQueue(v => !v)} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
-          <AlignJustify size={18} />
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
+        <button
+          type="button"
+          onClick={() => setShowDiscardConfirm(true)}
+          className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors flex-shrink-0"
+        >
+          <ChevronLeft size={22} />
         </button>
-        <div className="flex-1 flex justify-center">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-pill text-13 font-semibold" style={{ background: "rgba(100,180,160,0.18)", color: "var(--color-accent)" }}>
-            {data.template?.name ?? "Today"}
+        <div className="flex-1 flex justify-center overflow-hidden">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-13 font-semibold truncate max-w-full" style={{ background: "rgba(100,180,160,0.18)", color: "var(--color-accent)" }}>
+            {data.template?.name ?? "Quick start"}
           </div>
         </div>
-        <div className="flex items-center gap-1 text-text-muted">
+        <div className="flex items-center gap-1 text-text-muted flex-shrink-0">
           <Timer size={14} />
           <span className="font-mono text-13 tabular-nums">{fmtTime(elapsedSeconds)}</span>
         </div>
@@ -767,8 +745,8 @@ function SessionPage() {
                 onDistanceChange={setDistanceKm}
                 onFloorsChange={setFloors}
                 onSetTypeChange={setCurrentSetType}
-                onAddSet={() => setTargetOverrides(prev => ({ ...prev, [ex.id]: exTarget + 1 }))}
-                onRemoveSet={() => { if (exTarget > exSets.length + 1) setTargetOverrides(prev => ({ ...prev, [ex.id]: exTarget - 1 })); }}
+                onAddSet={() => setTargetOverrides(prev => ({ ...prev, [ex.id]: (exTarget ?? exSets.length) + 1 }))}
+                onRemoveSet={() => { if (exTarget !== null && exTarget > exSets.length + 1) setTargetOverrides(prev => ({ ...prev, [ex.id]: exTarget - 1 })); }}
                 onRemoveExercise={() => {
                   setRemovedIds(prev => { const n = new Set(Array.from(prev)); n.add(ex.id); return n; });
                   setCurrentExIdx(i => Math.min(i, allExercises.length - 2));
@@ -788,35 +766,36 @@ function SessionPage() {
         })}
       </div>
 
-      {/* ── Finish button ── */}
-      <button
-        type="button"
-        onClick={() => setShowFinishConfirm(true)}
-        disabled={ending}
-        className="fixed z-[100] h-12 rounded-pill bg-accent hover:bg-accent-hover text-white text-14 font-semibold flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
-        style={{
-          bottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 12px)",
-          left: "1rem",
-          right: "4.5rem",
-          boxShadow: "0 4px 16px rgba(100,180,160,0.35)",
-        }}
-      >
-        Finish
-      </button>
-
-      {/* ── Add exercise FAB ── */}
-      <button
-        type="button"
-        onClick={() => setShowPicker(true)}
-        className="fixed z-[100] w-14 h-14 rounded-pill bg-accent hover:bg-accent-hover text-white flex items-center justify-center transition-colors"
-        style={{
-          bottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 8px)",
-          right: "1rem",
-          boxShadow: "0 4px 20px rgba(100,180,160,0.4)",
-        }}
-      >
-        <Plus size={26} strokeWidth={2.5} />
-      </button>
+      {/* ── Finish button + Add exercise FAB ── */}
+      {!showFinishConfirm && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowFinishConfirm(true)}
+            disabled={ending}
+            className="fixed z-[100] h-12 px-5 rounded-pill bg-accent hover:bg-accent-hover text-white text-14 font-semibold flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
+            style={{
+              bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+              left: "1rem",
+              boxShadow: "0 4px 16px rgba(100,180,160,0.35)",
+            }}
+          >
+            Finish
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPicker(true)}
+            className="fixed z-[100] w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-white flex items-center justify-center transition-colors"
+            style={{
+              bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+              right: "1rem",
+              boxShadow: "0 4px 20px rgba(100,180,160,0.4)",
+            }}
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
+        </>
+      )}
     </div>
   );
 }
