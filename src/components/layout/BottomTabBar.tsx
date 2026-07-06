@@ -225,8 +225,11 @@ export function BottomTabBar({
               transition={{ duration: 0.2 }}
             />
             <motion.div
-              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
-              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4 overflow-y-auto"
+              style={{
+                paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+                maxHeight: "calc(100vh - 72px - env(safe-area-inset-top, 0px))",
+              }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -281,7 +284,10 @@ export function BottomTabBar({
             />
             <motion.div
               className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-4"
-              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              style={{
+                paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+                maxHeight: "calc(100vh - 72px - env(safe-area-inset-top, 0px))",
+              }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}

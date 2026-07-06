@@ -68,10 +68,6 @@ html, body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* Prevent rubber-band overscroll from displacing fixed elements (top bar,
-     bottom nav). Using 'none' rather than 'contain' because 'contain' still
-     allows the native bounce that shifts fixed-position elements on iOS/Android. */
-  overscroll-behavior-y: none;
 }
 
 * {
@@ -126,6 +122,7 @@ html, body {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  height: 100%;
 }
 
 @media (min-width: 768px) {
