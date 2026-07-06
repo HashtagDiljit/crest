@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { Plus, MoreHorizontal, Timer, AlignJustify, X } from "lucide-react";
+import { Plus, Timer, AlignJustify, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -14,7 +14,6 @@ import { RestTimer } from "./_components/RestTimer";
 import { ExerciseQueue } from "./_components/ExerciseQueue";
 import { SessionSummary } from "./_components/SessionSummary";
 import { ExerciseCard, SupersetConnector, categoryStyle } from "./_components/ExerciseCard";
-import { LoggingTypeEditor } from "./_components/LoggingTypeEditor";
 import type { ExerciseRow } from "../actions";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -196,8 +195,6 @@ function SessionPage() {
   const [restManuallySet, setRestManuallySet] = useState(false);
   const [focusSignal, setFocusSignal] = useState(0);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [editLoggingTypeForEx, setEditLoggingTypeForEx] = useState<ExerciseRow | null>(null);
-  const [showSessionMenu, setShowSessionMenu] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [discarding, setDiscarding] = useState(false);
@@ -411,7 +408,7 @@ function SessionPage() {
   }
 
   const setsForCurrentEx = loggedSets.filter(s => s.exercise_id === currentEx?.exercise_id);
-  const targetSets = currentEx ? (targetOverrides[currentEx.id] ?? currentEx.sets_target ?? 3) : 3;
+  const targetSets = currentEx ? (targetOverrides[currentEx.id] ?? currentEx.sets_target ?? null) : null;
 
   function persistNow(sets: SessionSetRow[], overrides: Partial<ActiveSessionSnapshot> = {}) {
     if (!sessionId || !data) return;
@@ -468,15 +465,15 @@ function SessionPage() {
       } else if (isSecondOfSuperset) {
         const firstEx = allExercises[currentExIdx - 1];
         const firstExDone = newSets.filter(s => s.exercise_id === firstEx?.exercise_id).length;
-        const firstExTarget = firstEx ? (targetOverrides[firstEx.id] ?? firstEx.sets_target ?? 3) : 3;
-        if (firstExDone >= firstExTarget && newCount >= targetSets) {
+        const firstExTarget = firstEx ? (targetOverrides[firstEx.id] ?? firstEx.sets_target ?? null) : null;
+        if ((firstExTarget === null || firstExDone >= firstExTarget) && (targetSets === null || newCount >= targetSets)) {
           nextExIdx = currentExIdx + 1;
           nextSetIdx = 0;
         } else {
           nextExIdx = currentExIdx - 1;
           nextSetIdx = 0;
         }
-      } else if (newCount >= targetSets && currentExIdx < allExercises.length - 1) {
+      } else if (targetSets !== null && newCount >= targetSets && currentExIdx < allExercises.length - 1) {
         nextExIdx = currentExIdx + 1;
         nextSetIdx = 0;
       }
@@ -532,13 +529,7 @@ function SessionPage() {
     track("workout_logged", { sets: result.sets_count ?? 0 });
   }, [sessionId, data, elapsedSeconds]);
 
-  function handleLoggingTypeChange(exerciseId: string, type: LoggingType) {
-    setData(prev => {
-      if (!prev) return prev;
-      return { ...prev, exercises: prev.exercises.map(ex => ex.exercise_id === exerciseId ? { ...ex, exercise: { ...ex.exercise, logging_type: type } } : ex) };
-    });
-    setAdHocExercises(prev => prev.map(ex => ex.exercise_id === exerciseId ? { ...ex, exercise: { ...ex.exercise, logging_type: type } } : ex));
-  }
+
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const totalSets = loggedSets.length;
@@ -574,39 +565,7 @@ function SessionPage() {
       {/* Exercise picker */}
       {showPicker && <AdHocExercisePicker onAdd={handleAddExercise} onClose={() => setShowPicker(false)} />}
 
-      {/* Logging type editor */}
-      {editLoggingTypeForEx && (
-        <LoggingTypeEditor
-          exercise={editLoggingTypeForEx}
-          onSave={handleLoggingTypeChange}
-          onClose={() => setEditLoggingTypeForEx(null)}
-        />
-      )}
-
-      {/* Session ⋮ menu (Fix 6) */}
-      {showSessionMenu && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setShowSessionMenu(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-display text-16 font-semibold text-text-primary">Session options</span>
-              <button onClick={() => setShowSessionMenu(false)} className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-1">
-              <button onClick={() => { setShowSessionMenu(false); router.push("/settings"); }} className="flex items-center gap-3 px-3 py-3.5 rounded-r3 text-15 text-text-secondary hover:bg-bg-elevated transition-colors text-left">
-                Settings
-              </button>
-              <button onClick={() => { setShowSessionMenu(false); setShowDiscardConfirm(true); }} className="flex items-center gap-3 px-3 py-3.5 rounded-r3 text-15 text-error hover:bg-error/10 transition-colors text-left">
-                Discard session
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Discard confirmation (Fix 6) */}
+      {/* Discard confirmation */}
       {showDiscardConfirm && (
         <>
           <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setShowDiscardConfirm(false)} />
@@ -696,18 +655,9 @@ function SessionPage() {
             {data.template?.name ?? "Today"}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-text-muted">
-            <Timer size={14} />
-            <span className="font-mono text-13 tabular-nums">{fmtTime(elapsedSeconds)}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowSessionMenu(true)}
-            className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
-          >
-            <MoreHorizontal size={17} />
-          </button>
+        <div className="flex items-center gap-1 text-text-muted">
+          <Timer size={14} />
+          <span className="font-mono text-13 tabular-nums">{fmtTime(elapsedSeconds)}</span>
         </div>
       </div>
 
@@ -775,7 +725,7 @@ function SessionPage() {
         {filteredExercises.map((ex) => {
           const realIdx = allExercises.indexOf(ex);
           const exSets = loggedSets.filter(s => s.exercise_id === ex.exercise_id);
-          const exTarget = targetOverrides[ex.id] ?? ex.sets_target ?? 3;
+          const exTarget = targetOverrides[ex.id] ?? ex.sets_target ?? null;
           const isSupersetLinked = supersetLinks.has(realIdx);
           const isSupersetAbove = realIdx > 0 && supersetLinks.has(realIdx - 1);
           const exHistory = realIdx === currentExIdx ? exerciseHistory : [];
@@ -830,7 +780,6 @@ function SessionPage() {
                     return n;
                   });
                 }}
-                onEditLoggingType={() => setEditLoggingTypeForEx(ex.exercise)}
                 onUpdateSet={handleUpdateSet}
                 onDeleteSet={handleDeleteSet}
               />
@@ -839,32 +788,35 @@ function SessionPage() {
         })}
       </div>
 
-      {/* ── Bottom FABs ── */}
-      <div
-        className="fixed z-20 flex items-center justify-between px-6 pointer-events-none"
-        style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0 }}
+      {/* ── Finish button ── */}
+      <button
+        type="button"
+        onClick={() => setShowFinishConfirm(true)}
+        disabled={ending}
+        className="fixed z-[100] h-12 rounded-pill bg-accent hover:bg-accent-hover text-white text-14 font-semibold flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
+        style={{
+          bottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 12px)",
+          left: "1rem",
+          right: "4.5rem",
+          boxShadow: "0 4px 16px rgba(100,180,160,0.35)",
+        }}
       >
-        {/* Finish button */}
-        <button
-          type="button"
-          onClick={() => setShowFinishConfirm(true)}
-          disabled={ending}
-          className="pointer-events-auto px-5 h-11 rounded-pill bg-accent hover:bg-accent-hover text-white text-14 font-semibold flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
-          style={{ boxShadow: "0 4px 16px rgba(100,180,160,0.35)" }}
-        >
-          Finish
-        </button>
+        Finish
+      </button>
 
-        {/* Add exercise FAB */}
-        <button
-          type="button"
-          onClick={() => setShowPicker(true)}
-          className="pointer-events-auto w-14 h-14 rounded-pill bg-accent hover:bg-accent-hover text-white flex items-center justify-center transition-colors"
-          style={{ boxShadow: "0 4px 20px rgba(100,180,160,0.4)" }}
-        >
-          <Plus size={26} strokeWidth={2.5} />
-        </button>
-      </div>
+      {/* ── Add exercise FAB ── */}
+      <button
+        type="button"
+        onClick={() => setShowPicker(true)}
+        className="fixed z-[100] w-14 h-14 rounded-pill bg-accent hover:bg-accent-hover text-white flex items-center justify-center transition-colors"
+        style={{
+          bottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 8px)",
+          right: "1rem",
+          boxShadow: "0 4px 20px rgba(100,180,160,0.4)",
+        }}
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </button>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WidthProvider, ResponsiveReactGridLayout, type LayoutItem as RGLItem, type ResponsiveLayouts } from "react-grid-layout/legacy";
@@ -40,6 +41,8 @@ export interface LayoutItem {
   y: number;
   w: number;
   h: number;
+  minW?: number;
+  minH?: number;
 }
 
 const ResponsiveGridLayout = WidthProvider(ResponsiveReactGridLayout);
@@ -130,24 +133,24 @@ const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
 // rowHeight=60 (desktop/tablet), rowHeight=52 (mobile sm breakpoint), margin=[12,12]
 // Heights scaled to match approximate visual size at new rowHeight.
 const DEFAULT_LAYOUT_LG: LayoutItem[] = [
-  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 5 },  // ~348px (was h4@80→320px)
-  { i: "streak",            x: 6,  y: 0,  w: 3,  h: 2 },  // top-right 2-row pair
-  { i: "sleep",             x: 9,  y: 0,  w: 3,  h: 2 },
-  { i: "resting-hr",        x: 6,  y: 2,  w: 3,  h: 3 },  // fills to match weekly-ring h=5
-  { i: "workouts",          x: 9,  y: 2,  w: 3,  h: 3 },
-  { i: "heatmap",           x: 0,  y: 5,  w: 12, h: 4 },  // ~276px
-  { i: "ai-insight",        x: 0,  y: 9,  w: 8,  h: 3 },
-  { i: "hrv",               x: 8,  y: 9,  w: 4,  h: 3 },
-  { i: "water-today",       x: 0,  y: 12, w: 3,  h: 3 },
-  { i: "nutrition-summary", x: 3,  y: 12, w: 4,  h: 3 },
-  { i: "next-workout",      x: 7,  y: 12, w: 5,  h: 3 },
-  { i: "focus-widget",      x: 0,  y: 15, w: 6,  h: 4 },
-  { i: "weight-trend",      x: 6,  y: 15, w: 3,  h: 3 },
-  { i: "goals-progress",    x: 9,  y: 15, w: 3,  h: 4 },  // matches focus-widget
-  { i: "journal-streak",    x: 0,  y: 19, w: 4,  h: 3 },
-  { i: "weekly-volume",     x: 4,  y: 19, w: 4,  h: 3 },
-  { i: "readiness",         x: 0,  y: 22, w: 6,  h: 4 },
-  { i: "momentum",          x: 6,  y: 22, w: 6,  h: 4 },
+  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 5,  minW: 6,  minH: 3 },
+  { i: "streak",            x: 6,  y: 0,  w: 3,  h: 2,  minW: 3,  minH: 2 },
+  { i: "sleep",             x: 9,  y: 0,  w: 3,  h: 2,  minW: 3,  minH: 2 },
+  { i: "resting-hr",        x: 6,  y: 2,  w: 3,  h: 3,  minW: 3,  minH: 2 },
+  { i: "workouts",          x: 9,  y: 2,  w: 3,  h: 3,  minW: 3,  minH: 2 },
+  { i: "heatmap",           x: 0,  y: 5,  w: 12, h: 4,  minW: 12, minH: 3 },
+  { i: "ai-insight",        x: 0,  y: 9,  w: 8,  h: 3,  minW: 4,  minH: 2 },
+  { i: "hrv",               x: 8,  y: 9,  w: 4,  h: 3,  minW: 3,  minH: 2 },
+  { i: "water-today",       x: 0,  y: 12, w: 3,  h: 3,  minW: 3,  minH: 2 },
+  { i: "nutrition-summary", x: 3,  y: 12, w: 4,  h: 3,  minW: 3,  minH: 2 },
+  { i: "next-workout",      x: 7,  y: 12, w: 5,  h: 3,  minW: 3,  minH: 2 },
+  { i: "focus-widget",      x: 0,  y: 15, w: 6,  h: 4,  minW: 3,  minH: 2 },
+  { i: "weight-trend",      x: 6,  y: 15, w: 3,  h: 3,  minW: 6,  minH: 2 },
+  { i: "goals-progress",    x: 9,  y: 15, w: 3,  h: 4,  minW: 6,  minH: 2 },
+  { i: "journal-streak",    x: 0,  y: 19, w: 4,  h: 3,  minW: 3,  minH: 2 },
+  { i: "weekly-volume",     x: 4,  y: 19, w: 4,  h: 3,  minW: 3,  minH: 2 },
+  { i: "readiness",         x: 0,  y: 22, w: 6,  h: 4,  minW: 12, minH: 3 },
+  { i: "momentum",          x: 6,  y: 22, w: 6,  h: 4,  minW: 4,  minH: 3 },
 ];
 
 const DEFAULT_LAYOUT_MD: LayoutItem[] = [
@@ -1253,9 +1256,14 @@ export function DashboardContent(props: DashboardData) {
         resizeHandles={["se"]}
         useCSSTransforms
       >
-        {visibleIds.map((id) => (
+        {visibleIds.map((id, idx) => (
           <div key={id} className="rgl-drag-handle" style={{ pointerEvents: 'auto' }}>
-            <div className="relative h-full group">
+            <motion.div
+              className="relative h-full group"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut", delay: idx * 0.03 }}
+            >
               {renderCard(id, props)}
               {editMode && (
                 <div className="absolute inset-0 rounded-r5 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
@@ -1270,7 +1278,7 @@ export function DashboardContent(props: DashboardData) {
                   <EyeOff size={13} />
                 </button>
               )}
-            </div>
+            </motion.div>
           </div>
         ))}
       </ResponsiveGridLayout>
