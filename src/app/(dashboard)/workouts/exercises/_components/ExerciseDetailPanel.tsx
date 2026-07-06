@@ -49,7 +49,7 @@ export function ExerciseDetailPanel({ exercise, onClose }: Props) {
       />
 
       {/* Panel */}
-      <div className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md flex flex-col bg-bg-surface border-l border-border shadow-2xl overflow-y-auto">
+      <div className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md flex flex-col bg-bg-surface border-l border-border shadow-2xl overflow-y-auto" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex items-start justify-between gap-3 flex-shrink-0">
           <div>

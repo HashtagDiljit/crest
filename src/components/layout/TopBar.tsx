@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { History } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -22,6 +23,10 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   const xpPct = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
   const xpRemaining = xpNeeded - xp;
   const [showHistory, setShowHistory] = useState(false);
+  const pathname = usePathname();
+
+  // Close history panel on route change (Fix 1)
+  useEffect(() => { setShowHistory(false); }, [pathname]);
 
   return (
     <>

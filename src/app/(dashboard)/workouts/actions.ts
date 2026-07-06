@@ -1516,11 +1516,46 @@ export async function updateExerciseLoggingType(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { error } = await supabase
+  // Check if this is a custom exercise owned by the user
+  const { data: ex } = await supabase
     .from("exercises")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update({ logging_type: loggingType as any })
-    .eq("id", exerciseId);
+    .select("is_custom, user_id")
+    .eq("id", exerciseId)
+    .single();
+
+  if (ex?.is_custom && ex.user_id === user.id) {
+    // Custom exercise — update directly
+    const { error } = await supabase
+      .from("exercises")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ logging_type: loggingType as any })
+      .eq("id", exerciseId);
+    if (error) return { error: error.message };
+  } else {
+    // Global exercise — upsert into per-user preferences
+    const { error } = await supabase
+      .from("user_exercise_preferences")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .upsert({ user_id: user.id, exercise_id: exerciseId, logging_type: loggingType, updated_at: new Date().toISOString() } as any, { onConflict: "user_id,exercise_id" });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/workouts");
+  return { success: true };
+}
+
+export async function discardSession(
+  sessionId: string,
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("workout_sessions")
+    .delete()
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
 
   if (error) return { error: error.message };
   revalidatePath("/workouts");
