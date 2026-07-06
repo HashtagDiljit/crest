@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, Loader2, Check } from "lucide-react";
+import { Camera, Loader2, Check, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { updateDisplayName, updatePassword, updateAvatarUrl } from "../actions";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,8 @@ export function AccountSection({ prefs, email }: Props) {
   const [newPwd, setNewPwd] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -97,6 +99,12 @@ export function AccountSection({ prefs, email }: Props) {
       router.refresh();
     }
     setAvatarUploading(false);
+  }
+
+  async function handleLogOut() {
+    setLoggingOut(true);
+    await supabase.auth.signOut();
+    router.push("/login");
   }
 
   function handleAvatarCancel() {
@@ -196,6 +204,36 @@ export function AccountSection({ prefs, email }: Props) {
           </div>
         </Field>
         {pwdMsg && <Msg {...pwdMsg} />}
+      </div>
+
+      <Divider />
+
+      {/* Account actions */}
+      <div className="flex flex-col gap-3">
+        <p className="text-13 font-semibold text-text-primary">Account actions</p>
+
+        <button
+          onClick={handleLogOut}
+          disabled={loggingOut}
+          className="flex items-center gap-2.5 px-4 py-2.5 rounded-r3 border border-border bg-bg-elevated hover:bg-bg-overlay text-13 font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 w-full"
+        >
+          {loggingOut ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+          Log out
+        </button>
+
+        <div className="rounded-r4 border border-danger/40 bg-[var(--color-danger-soft)] px-4 py-3 flex items-start gap-2.5">
+          <AlertTriangle size={15} className="text-danger flex-shrink-0 mt-0.5" />
+          <p className="text-12 text-danger leading-relaxed">
+            <span className="font-semibold">This cannot be undone.</span> All your data will be permanently erased.
+          </p>
+        </div>
+        <a
+          href="/settings?tab=data"
+          className="flex items-center gap-2.5 px-4 py-2.5 rounded-r3 border border-danger/50 bg-transparent hover:bg-[var(--color-danger-soft)] text-13 font-medium text-danger transition-colors w-full"
+        >
+          <Trash2 size={15} />
+          Delete account
+        </a>
       </div>
     </div>
   );

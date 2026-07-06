@@ -323,12 +323,14 @@ export function BottomTabBar({
 
       {/* Bottom tab bar */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-stretch border-t border-border bg-bg-surface"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] flex items-stretch border-t border-border bg-bg-surface"
         style={{
           height: "calc(56px + env(safe-area-inset-bottom))",
           paddingBottom: "env(safe-area-inset-bottom)",
           overscrollBehavior: "none",
           transform: "translateZ(0)",
+          willChange: "transform",
+          touchAction: "pan-x pan-y",
         }}
       >
         {/* Left two slots */}

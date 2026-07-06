@@ -49,6 +49,7 @@ interface Props {
 
 export function AppearanceSection({ theme: initTheme, accentColour: initAccent, hiddenNavItems, reduceMotion: initReduceMotion }: Props) {
   const [theme, setTheme] = useState(initTheme ?? "dark");
+  const [localTheme, setLocalTheme] = useState(initTheme ?? "dark");
   const [accent, setAccent] = useState(initAccent ?? "#64b4a0");
   const [hiddenNav, setHiddenNav] = useState<string[]>(hiddenNavItems ?? []);
   const [, startAppearanceTransition] = useTransition();
@@ -58,6 +59,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
   const [motionMsg, setMotionMsg] = useState<{ ok?: boolean; text: string } | null>(null);
 
   function handleThemeChange(value: string) {
+    setLocalTheme(value);
     setTheme(value);
     applyTheme(value);
     startAppearanceTransition(() => { updateAppearance(value, accent); });
@@ -98,7 +100,7 @@ export function AppearanceSection({ theme: initTheme, accentColour: initAccent, 
               key={t.value}
               onClick={() => handleThemeChange(t.value)}
               className={`flex-1 py-2.5 rounded-r3 border text-13 font-medium transition-colors ${
-                theme === t.value
+                localTheme === t.value
                   ? "border-accent bg-[var(--color-accent-soft)] text-text-primary"
                   : "border-border bg-bg-elevated text-text-secondary hover:text-text-primary"
               }`}
