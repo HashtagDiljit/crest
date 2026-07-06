@@ -201,6 +201,10 @@ export function ExerciseLibrary({ exercises: serverExercises }: Props) {
         <ExerciseDetailPanel
           exercise={selectedExercise}
           onClose={() => setSelectedExercise(null)}
+          onUpdate={(updated) => {
+            setEditedMap(prev => { const m = new Map(prev); m.set(updated.id, updated); return m; });
+            setSelectedExercise(updated);
+          }}
         />
       )}
     </div>
