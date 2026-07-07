@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { History } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import Image from "next/image";
 import { CalendarButton } from "./CalendarButton";
 import { HistoryPanel } from "./HistoryPanel";
 import { KairosMark } from "@/components/icons/KairosMark";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 interface TopBarProps {
   level: number;
@@ -23,20 +24,40 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
   const xpPct = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
   const xpRemaining = xpNeeded - xp;
   const [showHistory, setShowHistory] = useState(false);
+  const [syncedToast, setSyncedToast] = useState(false);
   const pathname = usePathname();
+  const online = useOnlineStatus();
+  const prevOnline = useRef(online);
 
   // Close history panel on route change (Fix 1)
   useEffect(() => { setShowHistory(false); }, [pathname]);
 
+  // Show "Synced" toast when connection is restored
+  useEffect(() => {
+    if (!prevOnline.current && online) {
+      setSyncedToast(true);
+      const t = setTimeout(() => setSyncedToast(false), 2500);
+      return () => clearTimeout(t);
+    }
+    prevOnline.current = online;
+  }, [online]);
+
   return (
     <>
+      {/* Synced toast */}
+      {syncedToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[300] px-3 py-1.5 rounded-pill bg-success/90 text-white text-12 font-medium pointer-events-none shadow-lg">
+          Synced
+        </div>
+      )}
+
       {/* ── Mobile top bar ── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex flex-col border-b border-border" style={{ background: "var(--topbar-bg)", paddingTop: "max(var(--safe-area-top), 4px)" }}>
         <div className="flex items-center justify-between px-4 h-12">
           <Link href="/" className="flex items-center gap-2">
             <KairosMark size={32} className="rounded-r3" />
           </Link>
-          <MobileStreakChip streak={streak} />
+          <MobileStreakChip streak={streak} offline={!online} />
           <Avatar initials={initials} avatarUrl={avatarUrl} />
         </div>
         {/* 4px XP strip */}
@@ -63,7 +84,7 @@ export function TopBar({ level, xp, xpNeeded, streak, username, initials, avatar
       >
         <LevelPill level={level} username={username} />
         <XpBar xp={xp} xpRemaining={xpRemaining} xpPct={xpPct} nextLevel={level + 1} />
-        <StreakChip streak={streak} />
+        <StreakChip streak={streak} offline={!online} />
         <button
           type="button"
           aria-label="History"
@@ -135,7 +156,7 @@ function XpBar({ xp, xpRemaining, xpPct, nextLevel }: XpBarProps) {
   );
 }
 
-function StreakChip({ streak }: { streak: number }) {
+function StreakChip({ streak, offline }: { streak: number; offline?: boolean }) {
   return (
     <div
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill font-mono text-12 text-text-primary"
@@ -150,11 +171,12 @@ function StreakChip({ streak }: { streak: number }) {
         <strong className="font-medium">{streak}</strong>
         <span className="text-text-muted ml-1">day streak</span>
       </span>
+      {offline && <span className="w-1.5 h-1.5 rounded-full bg-warning ml-0.5 flex-shrink-0" aria-label="Offline" />}
     </div>
   );
 }
 
-function MobileStreakChip({ streak }: { streak: number }) {
+function MobileStreakChip({ streak, offline }: { streak: number; offline?: boolean }) {
   return (
     <div
       className="flex items-center gap-1.5 px-2.5 py-1 rounded-pill font-mono text-12 text-text-primary"
@@ -166,6 +188,7 @@ function MobileStreakChip({ streak }: { streak: number }) {
     >
       <FlameIcon />
       <strong className="font-semibold">{streak}</strong>
+      {offline && <span className="w-1.5 h-1.5 rounded-full bg-warning flex-shrink-0" aria-label="Offline" />}
     </div>
   );
 }

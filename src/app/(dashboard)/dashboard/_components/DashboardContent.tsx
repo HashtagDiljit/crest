@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WidthProvider, ResponsiveReactGridLayout, type LayoutItem as RGLItem, type ResponsiveLayouts } from "react-grid-layout/legacy";
@@ -14,6 +14,8 @@ import { InfoTooltip } from "@/components/InfoTooltip";
 import { FocusBanner } from "@/components/FocusBanner";
 import { saveDashboardLayout } from "../actions";
 import { ShareableWeekCard } from "./ShareableWeekCard";
+import { quickLogWater } from "@/app/(dashboard)/quick-log-actions";
+import { trackEvent } from "@/lib/analytics";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +211,7 @@ function Sparkline({ data, color = "var(--color-accent)" }: { data: number[]; co
 
 function ProgressBar({ pct, color = "var(--color-accent)" }: { pct: number; color?: string }) {
   return (
-    <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden flex-shrink-0">
+    <div className="h-[3px] rounded-pill overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.1)" }}>
       <div className="h-full rounded-pill transition-all" style={{ width: `${Math.min(100, pct)}%`, background: color }} />
     </div>
   );
@@ -258,27 +260,16 @@ function WeeklyRingCard({ d, w, h }: { d: DashboardData; w: number; h: number })
 // ─── streak card ──────────────────────────────────────────────────────────────
 
 function StreakCard({ streak, w, h }: { streak: number; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isSmall } = sizeTier(w, h);
   const active = streak > 0;
+  const flameColor = active ? "var(--color-streak)" : "var(--color-text-disabled)";
   return (
-    <Card className="p-4 flex flex-col justify-between">
-      {!isSmall && (
-        <div className="flex items-center justify-between">
-          <span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Streak</span>
-          <Flame size={14} style={{ color: active ? "var(--color-streak)" : "var(--color-text-disabled)" }} />
-        </div>
-      )}
+    <Card className="p-4 flex flex-col justify-center items-center gap-1">
       <div className="flex items-center gap-2">
-        {isSmall && <Flame size={18} style={{ color: active ? "var(--color-streak)" : "var(--color-text-disabled)" }} />}
-        <div className="flex items-end gap-1">
-          <span className="font-mono font-semibold leading-none" style={{ fontSize: metricFontSize(w, h), color: active ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>{streak}</span>
-          {!isSmall && <span className="text-13 text-text-muted mb-0.5">days</span>}
-        </div>
+        <Flame size={isSmall ? 20 : 24} style={{ color: flameColor }} />
+        <span className="font-mono font-semibold leading-none" style={{ fontSize: metricFontSize(w, h), color: active ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>{streak}</span>
       </div>
-      {!isSmall && (
-        <ProgressBar pct={Math.min(100, streak * 10)} color={active ? "var(--color-streak, var(--color-accent))" : "transparent"} />
-      )}
-      {isFull && <span className="text-11 text-text-muted">day streak</span>}
+      {!isSmall && <span className="text-12 text-text-muted">day streak</span>}
     </Card>
   );
 }
@@ -362,6 +353,8 @@ function StatCard({ label, value, unit, Icon, w, h, progressPct = 0, progressCol
 function WorkoutsCard({ count, target, lastSession, weeklyVolume, w, h }: { count: number; target: number; lastSession: DashboardData["lastSession"]; weeklyVolume: number[]; w: number; h: number }) {
   const { isFull, isSmall } = sizeTier(w, h);
   const pct = Math.min((count / target) * 100, 100);
+  const daysSince = lastSession ? Math.floor((Date.now() - new Date(lastSession.date).getTime()) / 86400000) : null;
+  const lastLabel = daysSince === null ? null : daysSince === 0 ? "Last: today" : daysSince === 1 ? "Last: yesterday" : `Last: ${daysSince} days ago`;
   return (
     <Card className="p-4 flex flex-col justify-between">
       {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Workouts</span><IconBadge icon={Dumbbell} color="#64b4a0" /></div>}
@@ -373,11 +366,7 @@ function WorkoutsCard({ count, target, lastSession, weeklyVolume, w, h }: { coun
         {isFull && weeklyVolume.some(v => v > 0) && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
       </div>
       {!isSmall && <ProgressBar pct={pct} color="var(--color-accent)" />}
-      {isFull && lastSession && (
-        <span className="text-10 text-text-disabled truncate overflow-hidden">
-          Last: {lastSession.templateName ?? "Ad-hoc"} · {new Date(lastSession.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-        </span>
-      )}
+      {!isSmall && lastLabel && <span className="text-10 text-text-disabled truncate overflow-hidden">{lastLabel}</span>}
     </Card>
   );
 }
@@ -483,7 +472,7 @@ function AIInsightCard({ insight, w, h }: { insight: DashboardData["aiInsight"];
 
 const WATER_TARGET_ML = 3000;
 
-function WaterTodayCard({ ml, w, h }: { ml: number; w: number; h: number }) {
+function WaterTodayCard({ ml, w, h, onAddWater }: { ml: number; w: number; h: number; onAddWater?: () => void }) {
   const { isSmall } = sizeTier(w, h);
   const pct = Math.min(100, (ml / WATER_TARGET_ML) * 100);
   const display = ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`;
@@ -494,6 +483,13 @@ function WaterTodayCard({ ml, w, h }: { ml: number; w: number; h: number }) {
         <span className="font-mono font-medium leading-none overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: metricFontSize(w, h), color: pct >= 100 ? "var(--color-success)" : "var(--color-info)" }}>{display}</span>
       </div>
       {!isSmall && <ProgressBar pct={pct} color="var(--color-info)" />}
+      {onAddWater && (
+        <button type="button" onClick={onAddWater}
+          className="absolute bottom-2.5 right-2.5 px-2 py-1 rounded-pill text-10 font-semibold transition-colors"
+          style={{ background: "rgba(56,189,248,0.15)", color: "var(--color-info)", border: "1px solid rgba(56,189,248,0.3)", zIndex: 2 }}>
+          +250ml
+        </button>
+      )}
     </Card>
   );
 }
@@ -869,7 +865,7 @@ function MomentumCard({ score, domains, w, h }: {
 
 // ─── render card by ID ────────────────────────────────────────────────────────
 
-function renderCard(id: string, d: DashboardData, w: number, h: number): React.ReactNode {
+function renderCard(id: string, d: DashboardData, w: number, h: number, onAddWater?: () => void): React.ReactNode {
   switch (id) {
     case "weekly-ring":      return <WeeklyRingCard d={d} w={w} h={h} />;
     case "streak":           return <StreakCard streak={d.streak} w={w} h={h} />;
@@ -883,7 +879,7 @@ function renderCard(id: string, d: DashboardData, w: number, h: number): React.R
     case "hrv":              return <StatCard label="HRV" value={d.hrv} unit="ms" Icon={Activity} w={w} h={h}
                                progressPct={d.hrv !== null ? Math.min(100, (d.hrv / 80) * 100) : 0}
                                progressColor="var(--color-success)" />;
-    case "water-today":      return <WaterTodayCard ml={d.waterToday ?? 0} w={w} h={h} />;
+    case "water-today":      return <WaterTodayCard ml={d.waterToday ?? 0} w={w} h={h} onAddWater={onAddWater} />;
     case "nutrition-summary":return <NutritionSummaryCard protein={d.proteinToday ?? 0} target={d.proteinTarget ?? 150} w={w} h={h} />;
     case "next-workout":     return <NextWorkoutCard name={d.nextWorkoutName} w={w} h={h} />;
     case "focus-widget":     return <FocusWidgetCard focus={d.currentFocus} startDate={d.focusStartDate} endDate={d.focusEndDate} w={w} h={h} />;
@@ -931,6 +927,7 @@ export function DashboardContent(props: DashboardData) {
   const [editMode, setEditMode] = useState(false);
   const [editToast, setEditToast] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [, startWaterTransition] = useTransition();
   const [rowHeight, setRowHeight] = useState(
     typeof window !== "undefined" && window.innerWidth < 768 ? 52 : 60
   );
@@ -1048,7 +1045,15 @@ export function DashboardContent(props: DashboardData) {
   function handleEnterEditMode() {
     setEditMode(true);
     setEditToast(true);
+    trackEvent("dashboard_layout_edited");
     setTimeout(() => setEditToast(false), 3000);
+  }
+
+  function handleAddWater() {
+    startWaterTransition(async () => {
+      await quickLogWater(250);
+      router.refresh();
+    });
   }
 
   const visibleIds = DEFAULT_CARDS.filter(id => !hiddenCards.includes(id));
@@ -1085,7 +1090,7 @@ export function DashboardContent(props: DashboardData) {
           return (
             <div key={id} className="rgl-drag-handle" style={{ pointerEvents: "auto" }}>
               <div className="relative h-full">
-                {renderCard(id, props, w, h)}
+                {renderCard(id, props, w, h, handleAddWater)}
 
                 {editMode && (
                   <>
