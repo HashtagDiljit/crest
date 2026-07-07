@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getNutritionData } from "./actions";
+import { getUserSupplements } from "./supplement-actions";
 import { NutritionContent } from "./_components/NutritionContent";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,10 @@ export default async function NutritionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const data = await getNutritionData();
+  const [data, userSupplements] = await Promise.all([
+    getNutritionData(),
+    getUserSupplements(),
+  ]);
   const today = new Date().toISOString().split("T")[0];
 
   return (
@@ -21,6 +25,7 @@ export default async function NutritionPage() {
         supplementLogs={data.supplementLogs}
         settings={data.settings}
         today={today}
+        userSupplements={userSupplements}
       />
     </div>
   );

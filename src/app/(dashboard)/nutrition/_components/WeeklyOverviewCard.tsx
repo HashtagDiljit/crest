@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer, Cell } from "recharts";
 import type { NutritionSettings, SupplementLogRow } from "../types";
+import type { UserSupplement } from "../supplement-actions";
 
 interface WeeklyTotal { date: string; protein_g: number }
 
@@ -44,10 +45,12 @@ export function WeeklyOverviewCard({
   weeklyTotals,
   supplementLogs,
   settings,
+  userSupplements,
 }: {
   weeklyTotals: WeeklyTotal[];
   supplementLogs: SupplementLogRow[];
   settings: NutritionSettings;
+  userSupplements?: UserSupplement[];
 }) {
   const target = settings.protein_target;
   const daysHit = weeklyTotals.filter((d) => d.protein_g >= target).length;
@@ -58,9 +61,9 @@ export function WeeklyOverviewCard({
     hit: d.protein_g >= target,
   }));
 
-  const activeSupplements = Object.entries(settings.supplements)
-    .filter(([, on]) => on)
-    .map(([name]) => name);
+  const activeSupplements = userSupplements
+    ? userSupplements.filter(s => s.enabled).map(s => s.name)
+    : Object.entries(settings.supplements).filter(([, on]) => on).map(([name]) => name);
 
   return (
     <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-5">

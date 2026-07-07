@@ -7,6 +7,7 @@ import { WeeklyOverviewCard } from "./WeeklyOverviewCard";
 import { SupplementLogSection } from "./SupplementLogSection";
 import { toggleSupplement, deleteMeal } from "../actions";
 import type { MealLogRow, SupplementLogRow, NutritionSettings } from "../types";
+import type { UserSupplement } from "../supplement-actions";
 
 // Kept for backwards compat — no longer used for grid layout
 export interface LayoutItem {
@@ -32,6 +33,7 @@ export function NutritionContent({
   supplementLogs: initialSupplLogs,
   settings,
   today,
+  userSupplements,
 }: {
   todayMeals: MealLogRow[];
   weeklyTotals: Array<{ date: string; protein_g: number }>;
@@ -39,6 +41,7 @@ export function NutritionContent({
   settings: NutritionSettings;
   today: string;
   nutritionLayout?: unknown;
+  userSupplements: UserSupplement[];
 }) {
   const [showModal, setShowModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -70,9 +73,7 @@ export function NutritionContent({
   const targetMeals = settings.meals_per_day || 4;
   const proteinAnchored = optimisticMeals.filter((m) => (m.protein_g ?? 0) >= 20).length;
 
-  const activeSupplements = Object.entries(settings.supplements)
-    .filter(([, on]) => on)
-    .map(([name]) => name);
+  const activeSupplements = userSupplements.filter(s => s.enabled).map(s => s.name);
 
   function handleToggleSupplement(name: string) {
     startTransition(async () => {
@@ -263,12 +264,11 @@ export function NutritionContent({
           weeklyTotals={weeklyTotals}
           supplementLogs={initialSupplLogs}
           settings={settings}
+          userSupplements={userSupplements}
         />
 
-        {/* Supplement log (only shown when supplements are configured) */}
-        {activeSupplements.length > 0 && (
-          <SupplementLogSection supplementLogs={initialSupplLogs} settings={settings} />
-        )}
+        {/* Supplement log */}
+        <SupplementLogSection supplementLogs={initialSupplLogs} userSupplements={userSupplements} />
       </div>
     </>
   );

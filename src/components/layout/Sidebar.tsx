@@ -9,11 +9,11 @@ import {
   ChevronLeft, ChevronRight,
   type LucideIcon,
 } from "lucide-react";
-import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
+import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, JournalModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
 import { KairosMark } from "@/components/icons/KairosMark";
 
-type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
+type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "journal" | null;
 
 const NAV_PRIMARY: Array<{ id: string; label: string; icon: LucideIcon; href: string }> = [
   { id: "dashboard",  label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
@@ -37,7 +37,7 @@ const QUICK_LOG: Array<{ key: NonNullable<ModalKey>; label: string; icon: Lucide
   { key: "food",   label: "Food",   icon: Utensils, color: "var(--color-success)" },
   { key: "weight", label: "Weight", icon: Weight,   color: "var(--color-text-secondary)" },
   { key: "sleep",  label: "Sleep",  icon: Moon,     color: "#A39CFF" },
-  { key: "note",   label: "Note",   icon: PenLine,  color: "var(--color-warning)" },
+  { key: "journal", label: "Journal", icon: PenLine, color: "var(--color-warning)" },
 ];
 
 function isActive(href: string, pathname: string): boolean {
@@ -221,7 +221,7 @@ export function Sidebar({ hiddenNavIds = [] }: { hiddenNavIds?: string[] }) {
       {openModal === "food"   && <FoodModal   onClose={() => setOpenModal(null)} />}
       {openModal === "weight" && <WeightModal onClose={() => setOpenModal(null)} />}
       {openModal === "sleep"  && <SleepModal  onClose={() => setOpenModal(null)} />}
-      {openModal === "note"   && <NoteModal   onClose={() => setOpenModal(null)} />}
+      {openModal === "journal" && <JournalModal onClose={() => setOpenModal(null)} />}
     </>
   );
 }

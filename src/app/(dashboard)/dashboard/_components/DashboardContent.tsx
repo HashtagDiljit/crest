@@ -41,6 +41,7 @@ export interface DashboardData {
   focusStartDate?: string | null; focusEndDate?: string | null;
   waterToday?: number; proteinToday?: number; proteinTarget?: number;
   weightTrend?: number[]; journalDays30?: number; activeGoalCount?: number;
+  topGoals?: Array<{ id: string; title: string; progress: number; category: string | null }>;
   nextWorkoutName?: string | null; readinessScore?: number | null;
   readinessLabel?: string | null; readinessColor?: string | null;
   readinessSleepPts?: number; readinessHrvPts?: number;
@@ -582,16 +583,38 @@ function WeightTrendCard({ trend, w, h }: { trend: number[]; w: number; h: numbe
 
 // ─── goals progress card ──────────────────────────────────────────────────────
 
-function GoalsProgressCard({ count, w, h }: { count: number; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+function GoalsProgressCard({ count, goals, w, h }: { count: number; goals?: Array<{ id: string; title: string; progress: number; category: string | null }>; w: number; h: number }) {
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
+  const showGoals = (isFull || isMid) && goals && goals.length > 0;
   return (
-    <Card className="p-4 flex flex-col justify-between">
-      {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Active goals</span><IconBadge icon={Target} color="var(--color-accent)" /></div>}
-      <div className="flex items-end gap-1">
-        <span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{count}</span>
-        {!isSmall && <span className="text-13 text-text-muted mb-0.5">goal{count !== 1 ? "s" : ""}</span>}
+    <Card className="p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        {!isSmall && <span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Active goals</span>}
+        <IconBadge icon={Target} color="var(--color-accent)" />
       </div>
-      {isFull && <a href="/goals" className="text-12 text-accent hover:text-accent-hover transition-colors">View goals →</a>}
+      {!showGoals && (
+        <div className="flex items-end gap-1">
+          <span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{count}</span>
+          {!isSmall && <span className="text-13 text-text-muted mb-0.5">goal{count !== 1 ? "s" : ""}</span>}
+        </div>
+      )}
+      {showGoals && (
+        <div className="flex flex-col gap-2.5">
+          {goals.map(g => {
+            const pct = Math.min(100, Math.round(g.progress));
+            return (
+              <div key={g.id} className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-12 text-text-primary truncate">{g.title}</span>
+                  <span className="text-11 text-text-muted flex-shrink-0 ml-2">{pct}%</span>
+                </div>
+                <ProgressBar pct={pct} color="var(--color-accent)" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {isFull && <a href="/goals" className="text-12 text-accent hover:text-accent-hover transition-colors">View all →</a>}
     </Card>
   );
 }
@@ -884,7 +907,7 @@ function renderCard(id: string, d: DashboardData, w: number, h: number, onAddWat
     case "next-workout":     return <NextWorkoutCard name={d.nextWorkoutName} w={w} h={h} />;
     case "focus-widget":     return <FocusWidgetCard focus={d.currentFocus} startDate={d.focusStartDate} endDate={d.focusEndDate} w={w} h={h} />;
     case "weight-trend":     return <WeightTrendCard trend={d.weightTrend ?? []} w={w} h={h} />;
-    case "goals-progress":   return <GoalsProgressCard count={d.activeGoalCount ?? 0} w={w} h={h} />;
+    case "goals-progress":   return <GoalsProgressCard count={d.activeGoalCount ?? 0} goals={d.topGoals} w={w} h={h} />;
     case "journal-streak":   return <JournalStreakCard days30={d.journalDays30 ?? 0} w={w} h={h} />;
     case "weekly-volume":    return <WeeklyVolumeCard weeklyVolume={d.weeklyVolume} w={w} h={h} />;
     case "readiness":        return <ReadinessCard score={d.readinessScore ?? 0} label={d.readinessLabel ?? "—"} color={d.readinessColor ?? "var(--color-text-muted)"} sleepPts={d.readinessSleepPts ?? 8} hrvPts={d.readinessHrvPts ?? 4} rhrPts={d.readinessRhrPts ?? 4} trainingPts={d.readinessTrainingPts ?? 20} lastSleepHrs={d.lastSleepDuration} hrv={d.hrv} w={w} h={h} />;
@@ -998,6 +1021,8 @@ export function DashboardContent(props: DashboardData) {
     const remaining = props.habitTotal - (props.habitsTodayDone ?? 0);
     if (props.habitTotal > 0 && remaining > 0) return `You have ${remaining} habit${remaining > 1 ? "s" : ""} left to complete.`;
     if (props.habitTotal > 0 && remaining === 0) return "All habits done today. Strong work.";
+    const topGoal = props.topGoals?.[0];
+    if (topGoal) return `Goal: ${topGoal.title}${topGoal.progress > 0 ? ` — ${Math.round(topGoal.progress)}%` : ""}`;
     if (props.lastSleepDuration !== null && props.lastSleepDuration < 7) return `You got ${props.lastSleepDuration.toFixed(1)}hrs last night. Aim for 7+ tonight.`;
     return null;
   }

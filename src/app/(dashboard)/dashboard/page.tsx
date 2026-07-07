@@ -74,6 +74,7 @@ export default async function DashboardPage() {
     sessionsLast3Result,
     workoutTodayResult,
     moodTodayResult,
+    topGoalsResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -179,6 +180,8 @@ export default async function DashboardPage() {
     supabase.from("workout_sessions").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("started_at", today + "T00:00:00"),
     // Mood today (for momentum)
     supabase.from("mood_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("logged_date", today),
+    // Top 3 active goals with progress
+    supabase.from("goals").select("id, title, progress, category").eq("user_id", user.id).is("completed_at", null).order("target_date", { ascending: true }).limit(3),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -263,6 +266,7 @@ export default async function DashboardPage() {
   const journalDates = new Set(((journalDaysResult.data ?? []) as { logged_date: string }[]).map((r) => r.logged_date));
   const journalDays30 = journalDates.size;
   const activeGoalCount = activeGoalsResult.count ?? 0;
+  const topGoals = (topGoalsResult.data ?? []) as { id: string; title: string; progress: number; category: string | null }[];
   const templates = (nextWorkoutResult.data ?? []) as { id: string; name: string }[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastTemplateName = (lastSessionRow as any)?.workout_templates?.name ?? null;
@@ -330,6 +334,7 @@ export default async function DashboardPage() {
       weightTrend={weightTrend}
       journalDays30={journalDays30}
       activeGoalCount={activeGoalCount}
+      topGoals={topGoals}
       nextWorkoutName={nextWorkoutName}
       habitsTodayDone={habitsTodayDone}
       readinessScore={readiness.score}

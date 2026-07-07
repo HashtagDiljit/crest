@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { Plus, Timer, ChevronLeft } from "lucide-react";
+import { Plus, Timer } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -75,7 +75,7 @@ function getDefaultRestSeconds(exercise: ExerciseRow | undefined): number {
 }
 
 // ─── Notification helpers (native only) ──────────────────────────────────────
-async function scheduleWorkoutNotification(sets: number, kg: number, elapsed: number) {
+async function scheduleWorkoutNotification(exerciseName: string, elapsed: number) {
   try {
     const { Capacitor } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform()) return;
@@ -88,15 +88,15 @@ async function scheduleWorkoutNotification(sets: number, kg: number, elapsed: nu
     await LocalNotifications.schedule({
       notifications: [{
         id: 1001,
-        title: "Kairos · Workout in progress",
-        body: `${sets} sets · ${kg.toFixed(1)}kg · ${fmtTime(elapsed)} elapsed`,
+        title: `Kairos · ${fmtTime(elapsed)} elapsed`,
+        body: exerciseName ? `Currently: ${exerciseName}` : "Workout in progress",
         ongoing: true,
       }],
     });
   } catch { /* ignore on web */ }
 }
 
-async function updateWorkoutNotification(sets: number, kg: number, elapsed: number) {
+async function updateWorkoutNotification(exerciseName: string, elapsed: number) {
   try {
     const { Capacitor } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform()) return;
@@ -104,8 +104,8 @@ async function updateWorkoutNotification(sets: number, kg: number, elapsed: numb
     await LocalNotifications.schedule({
       notifications: [{
         id: 1001,
-        title: "Kairos · Workout in progress",
-        body: `${sets} sets · ${kg.toFixed(1)}kg · ${fmtTime(elapsed)} elapsed`,
+        title: `Kairos · ${fmtTime(elapsed)} elapsed`,
+        body: exerciseName ? `Currently: ${exerciseName}` : "Workout in progress",
         ongoing: true,
       }],
     });
@@ -164,6 +164,7 @@ function SessionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("id");
+  const isBlank = searchParams.get("blank") === "1";
   const isDeload = searchParams.get("deload") === "1";
 
   const [data, setData] = useState<SessionData | null>(null);
@@ -321,7 +322,7 @@ function SessionPage() {
       setLoading(false);
 
       // Start notification
-      scheduleWorkoutNotification(sets.length, sets.reduce((a, s) => a + (s.weight_kg ?? 0), 0), Math.floor((Date.now() - startTimeRef.current) / 1000));
+      scheduleWorkoutNotification("", Math.floor((Date.now() - startTimeRef.current) / 1000));
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, router]);
@@ -348,16 +349,21 @@ function SessionPage() {
     return () => document.removeEventListener("visibilitychange", handler);
   }, []);
 
-  // ── Notification update every 60 seconds ─────────────────────────────────
+  // ── Notification update every 30 seconds ─────────────────────────────────
+  const currentExIdxRef = useRef(0);
+  const adHocExRef = useRef(adHocExercises);
+  useEffect(() => { currentExIdxRef.current = currentExIdx; }, [currentExIdx]);
+  useEffect(() => { adHocExRef.current = adHocExercises; }, [adHocExercises]);
   useEffect(() => {
     if (ending || !data) return;
     const t = setInterval(() => {
-      const totalKg = loggedSets.reduce((a, s) => a + (s.weight_kg ?? 0) * (s.reps ?? 1), 0);
-      updateWorkoutNotification(loggedSets.length, totalKg, elapsedSeconds);
-    }, 60000);
+      const allEx = [...(data.exercises ?? []), ...adHocExRef.current];
+      const exerciseName = allEx[currentExIdxRef.current]?.exercise?.name ?? "";
+      updateWorkoutNotification(exerciseName, Math.floor((Date.now() - startTimeRef.current) / 1000));
+    }, 30000);
     return () => clearInterval(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ending, data, loggedSets.length, elapsedSeconds]);
+  }, [ending, data]);
 
   // ── Rest countdown ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -535,7 +541,7 @@ function SessionPage() {
   const uniqueCategories = Array.from(new Set(allExercises.map(ex => ex.exercise.category).filter(Boolean))) as string[];
   const filteredExercises = activeFilter ? allExercises.filter(ex => ex.exercise.category?.toLowerCase() === activeFilter) : allExercises;
 
-  if (loading) return <SessionSkeleton />;
+  if (loading && !isBlank) return <SessionSkeleton />;
   if (!data) return null;
 
   const isQuickStart = !data.template;
@@ -563,20 +569,22 @@ function SessionPage() {
       {/* Exercise picker */}
       {showPicker && <AdHocExercisePicker onAdd={handleAddExercise} onClose={() => setShowPicker(false)} />}
 
-      {/* Discard confirmation */}
+      {/* Discard confirmation — centred modal */}
       {showDiscardConfirm && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setShowDiscardConfirm(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-r5 border-t border-border bg-bg-surface px-4 pt-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
-            <p className="font-display text-16 font-semibold text-text-primary mb-1">Discard this workout?</p>
-            <p className="text-14 text-text-muted mb-5">All logged sets will be lost.</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleDiscard} disabled={discarding} className="w-full h-12 rounded-r3 bg-error hover:bg-error/90 text-white font-semibold text-14 transition-colors disabled:opacity-50">
-                {discarding ? "Discarding…" : "Discard workout"}
-              </button>
-              <button onClick={() => setShowDiscardConfirm(false)} className="w-full h-12 rounded-r3 border border-border text-text-secondary font-medium text-14 transition-colors hover:bg-bg-elevated">
-                Keep going
-              </button>
+          <div className="fixed inset-0 z-[10000] bg-black/70" onClick={() => setShowDiscardConfirm(false)} />
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center px-6 pointer-events-none">
+            <div className="pointer-events-auto w-full max-w-sm rounded-r4 border border-border bg-bg-surface p-6 shadow-2xl">
+              <p className="font-display text-18 font-semibold text-text-primary mb-1">Discard workout?</p>
+              <p className="text-14 text-text-muted mb-6">This session will be lost and cannot be recovered.</p>
+              <div className="flex flex-col gap-2.5">
+                <button onClick={() => setShowDiscardConfirm(false)} className="w-full h-12 rounded-r3 bg-accent hover:bg-accent-hover text-white font-semibold text-14 transition-colors">
+                  Keep training
+                </button>
+                <button onClick={handleDiscard} disabled={discarding} className="w-full h-12 rounded-r3 border border-error/50 bg-transparent hover:bg-error/10 text-error font-semibold text-14 transition-colors disabled:opacity-50">
+                  {discarding ? "Discarding…" : "Discard"}
+                </button>
+              </div>
             </div>
           </div>
         </>
@@ -621,13 +629,6 @@ function SessionPage() {
 
       {/* ── Header ── */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-        <button
-          type="button"
-          onClick={() => setShowDiscardConfirm(true)}
-          className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors flex-shrink-0"
-        >
-          <ChevronLeft size={22} />
-        </button>
         <div className="flex-1 flex justify-center overflow-hidden">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-13 font-semibold truncate max-w-full" style={{ background: "rgba(100,180,160,0.18)", color: "var(--color-accent)" }}>
             {data.template?.name ?? "Quick start"}

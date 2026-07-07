@@ -315,9 +315,10 @@ export function BPModal({ onClose }: { onClose: () => void }) {
 
 // ─── Note ─────────────────────────────────────────────────────────────────────
 
-export function NoteModal({ onClose }: { onClose: () => void }) {
+export function JournalModal({ onClose }: { onClose: () => void }) {
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -328,8 +329,9 @@ export function NoteModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Quick note" onClose={onClose}>
+    <Modal title="Journal" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <p className="text-12 text-text-muted -mt-1">{today}</p>
         <div className="relative">
           <textarea
             autoFocus
@@ -341,7 +343,7 @@ export function NoteModal({ onClose }: { onClose: () => void }) {
           />
           <span className="absolute bottom-2 right-3 text-10 font-mono text-text-disabled">{body.length}/500</span>
         </div>
-        <SaveBtn saving={saving} label="Save note" />
+        <SaveBtn saving={saving} label="Save entry" />
       </form>
     </Modal>
   );
