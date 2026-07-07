@@ -5,6 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
 export async function saveDashboardLayout(layout: {
   lg: Array<{ i: string; x: number; y: number; w: number; h: number }>;
   hidden: string[];
+  v?: number;
 }) {
   const supabase = await createServerClient();
   const {

@@ -99,6 +99,7 @@ export interface DashboardData {
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
+const LAYOUT_VERSION = 2;
 const BREAKPOINTS = { lg: 1200, md: 768, sm: 0 };
 const COLS = { lg: 12, md: 4, sm: 2 };
 const MARGIN: [number, number] = [12, 12];
@@ -132,26 +133,26 @@ const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
 };
 
 // rowHeight=60 (desktop/tablet), rowHeight=52 (mobile sm breakpoint), margin=[12,12]
-// Heights scaled to match approximate visual size at new rowHeight.
+// h values sized to content: 2 = stat card (~132px), 3 = medium (~192px), 4 = large (~252px)
 const DEFAULT_LAYOUT_LG: LayoutItem[] = [
-  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 5,  minW: 6,  maxW: 12, minH: 3, maxH: 4 },
-  { i: "streak",            x: 6,  y: 0,  w: 3,  h: 2,  minW: 3,  maxW: 4,  minH: 2, maxH: 2 },
+  { i: "weekly-ring",       x: 0,  y: 0,  w: 6,  h: 4,  minW: 6,  maxW: 12, minH: 3, maxH: 5 },
+  { i: "streak",            x: 6,  y: 0,  w: 3,  h: 2,  minW: 3,  maxW: 4,  minH: 2, maxH: 3 },
   { i: "sleep",             x: 9,  y: 0,  w: 3,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "resting-hr",        x: 6,  y: 2,  w: 3,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "workouts",          x: 9,  y: 2,  w: 3,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "heatmap",           x: 0,  y: 5,  w: 12, h: 4,  minW: 12, maxW: 12, minH: 3, maxH: 4 },
-  { i: "ai-insight",        x: 0,  y: 9,  w: 8,  h: 3,  minW: 6,  maxW: 12, minH: 2, maxH: 3 },
-  { i: "hrv",               x: 8,  y: 9,  w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "water-today",       x: 0,  y: 12, w: 3,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "nutrition-summary", x: 3,  y: 12, w: 4,  h: 3,  minW: 4,  maxW: 8,  minH: 2, maxH: 3 },
-  { i: "next-workout",      x: 7,  y: 12, w: 5,  h: 3,  minW: 3,  maxW: 12, minH: 2, maxH: 3 },
-  { i: "focus-widget",      x: 0,  y: 15, w: 6,  h: 4,  minW: 3,  maxW: 12, minH: 2, maxH: 6 },
-  { i: "weight-trend",      x: 6,  y: 15, w: 3,  h: 3,  minW: 4,  maxW: 12, minH: 2, maxH: 4 },
-  { i: "goals-progress",    x: 9,  y: 15, w: 3,  h: 4,  minW: 6,  maxW: 12, minH: 3, maxH: 6 },
-  { i: "journal-streak",    x: 0,  y: 19, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "weekly-volume",     x: 4,  y: 19, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "readiness",         x: 0,  y: 22, w: 12, h: 4,  minW: 12, maxW: 12, minH: 3, maxH: 5 },
-  { i: "momentum",          x: 0,  y: 26, w: 6,  h: 4,  minW: 3,  maxW: 4,  minH: 2, maxH: 2 },
+  { i: "resting-hr",        x: 6,  y: 2,  w: 3,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "workouts",          x: 9,  y: 2,  w: 3,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "heatmap",           x: 0,  y: 4,  w: 12, h: 3,  minW: 12, maxW: 12, minH: 3, maxH: 4 },
+  { i: "ai-insight",        x: 0,  y: 7,  w: 8,  h: 2,  minW: 6,  maxW: 12, minH: 2, maxH: 3 },
+  { i: "hrv",               x: 8,  y: 7,  w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "water-today",       x: 0,  y: 9,  w: 3,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "nutrition-summary", x: 3,  y: 9,  w: 4,  h: 2,  minW: 4,  maxW: 8,  minH: 2, maxH: 3 },
+  { i: "next-workout",      x: 7,  y: 9,  w: 5,  h: 2,  minW: 3,  maxW: 12, minH: 2, maxH: 3 },
+  { i: "focus-widget",      x: 0,  y: 11, w: 6,  h: 2,  minW: 3,  maxW: 12, minH: 2, maxH: 4 },
+  { i: "weight-trend",      x: 6,  y: 11, w: 3,  h: 2,  minW: 4,  maxW: 12, minH: 2, maxH: 4 },
+  { i: "goals-progress",    x: 9,  y: 11, w: 3,  h: 3,  minW: 6,  maxW: 12, minH: 2, maxH: 4 },
+  { i: "journal-streak",    x: 0,  y: 13, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "weekly-volume",     x: 4,  y: 13, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
+  { i: "readiness",         x: 0,  y: 15, w: 12, h: 4,  minW: 12, maxW: 12, minH: 3, maxH: 5 },
+  { i: "momentum",          x: 0,  y: 19, w: 6,  h: 4,  minW: 3,  maxW: 12, minH: 3, maxH: 5 },
 ];
 
 const DEFAULT_LAYOUT_MD: LayoutItem[] = [
@@ -160,25 +161,33 @@ const DEFAULT_LAYOUT_MD: LayoutItem[] = [
   { i: "sleep",             x: 2, y: 4,  w: 2, h: 2 },
   { i: "resting-hr",        x: 0, y: 6,  w: 2, h: 2 },
   { i: "workouts",          x: 2, y: 6,  w: 2, h: 2 },
-  { i: "heatmap",           x: 0, y: 8,  w: 4, h: 4 },
-  { i: "ai-insight",        x: 0, y: 12, w: 4, h: 3 },
-  { i: "hrv",               x: 0, y: 15, w: 2, h: 3 },
-  { i: "water-today",       x: 2, y: 15, w: 2, h: 3 },
-  { i: "nutrition-summary", x: 0, y: 18, w: 2, h: 3 },
-  { i: "next-workout",      x: 2, y: 18, w: 2, h: 3 },
-  { i: "focus-widget",      x: 0, y: 21, w: 4, h: 4 },
-  { i: "weight-trend",      x: 0, y: 25, w: 2, h: 3 },
-  { i: "goals-progress",    x: 2, y: 25, w: 2, h: 3 },
-  { i: "journal-streak",    x: 0, y: 28, w: 4, h: 3 },
-  { i: "weekly-volume",     x: 0, y: 31, w: 4, h: 3 },
-  { i: "readiness",         x: 0, y: 34, w: 4, h: 4 },
-  { i: "momentum",          x: 0, y: 38, w: 4, h: 4 },
+  { i: "heatmap",           x: 0, y: 8,  w: 4, h: 3 },
+  { i: "ai-insight",        x: 0, y: 11, w: 4, h: 2 },
+  { i: "hrv",               x: 0, y: 13, w: 2, h: 2 },
+  { i: "water-today",       x: 2, y: 13, w: 2, h: 2 },
+  { i: "nutrition-summary", x: 0, y: 15, w: 2, h: 2 },
+  { i: "next-workout",      x: 2, y: 15, w: 2, h: 2 },
+  { i: "focus-widget",      x: 0, y: 17, w: 4, h: 2 },
+  { i: "weight-trend",      x: 0, y: 19, w: 2, h: 2 },
+  { i: "goals-progress",    x: 2, y: 19, w: 2, h: 3 },
+  { i: "journal-streak",    x: 0, y: 21, w: 4, h: 2 },
+  { i: "weekly-volume",     x: 0, y: 23, w: 4, h: 2 },
+  { i: "readiness",         x: 0, y: 25, w: 4, h: 4 },
+  { i: "momentum",          x: 0, y: 29, w: 4, h: 4 },
 ];
 
-// sm: rowHeight=52; h=3 per card (3×52+2×12=180px) stacked tightly
-const DEFAULT_LAYOUT_SM: LayoutItem[] = DEFAULT_CARDS.map((id, i) => ({
-  i: id, x: 0, y: i * 3, w: 2, h: 3,
-}));
+// sm: rowHeight=52; tall cards get h=4, medium h=3, stat cards h=2
+const DEFAULT_LAYOUT_SM: LayoutItem[] = (() => {
+  const tall = new Set(["weekly-ring", "readiness", "momentum"]);
+  const medium = new Set(["heatmap", "goals-progress"]);
+  let y = 0;
+  return DEFAULT_CARDS.map((id) => {
+    const h = tall.has(id) ? 4 : medium.has(id) ? 3 : 2;
+    const item: LayoutItem = { i: id, x: 0, y, w: 2, h };
+    y += h;
+    return item;
+  });
+})();
 
 // ─── base card ────────────────────────────────────────────────────────────────
 
@@ -299,21 +308,31 @@ function WeeklyRingCard({ d, compact }: { d: DashboardData; compact?: boolean })
 // ─── streak card ──────────────────────────────────────────────────────────────
 
 function StreakCard({ streak }: { streak: number }) {
+  const pct = Math.min(100, streak * 10); // 10 days = 100%
+  const active = streak > 0;
   return (
-    <Card className="p-4 md:p-5 flex flex-col items-center justify-center gap-2">
-      <Flame size={28} style={{ color: streak > 0 ? "var(--color-streak)" : "var(--color-text-disabled)" }} />
-      <span className="font-mono text-40 font-semibold leading-none" style={{ color: streak > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>
-        {streak}
-      </span>
-      <span className="text-11 text-text-muted">day streak</span>
+    <Card className="p-4 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Streak</span>
+        <Flame size={14} style={{ color: active ? "var(--color-streak)" : "var(--color-text-disabled)" }} />
+      </div>
+      <div className="flex items-end gap-1.5">
+        <span className="font-mono text-36 font-semibold leading-none" style={{ color: active ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>
+          {streak}
+        </span>
+        <span className="text-13 text-text-muted mb-0.5">days</span>
+      </div>
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill transition-all" style={{ width: `${pct}%`, background: active ? "var(--color-streak, var(--color-accent))" : "transparent" }} />
+      </div>
     </Card>
   );
 }
 
 // ─── sleep card ───────────────────────────────────────────────────────────────
 
-function SleepCard({ duration, quality, sparkline, compact }: { duration: number | null; quality: number | null; sparkline: number[]; compact?: boolean }) {
-  const qualityLabel = quality === null ? null : quality >= 4 ? "Great" : quality >= 3 ? "Good" : quality >= 2 ? "Fair" : "Poor";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function SleepCard({ duration, quality: _quality, sparkline, compact }: { duration: number | null; quality: number | null; sparkline: number[]; compact?: boolean }) {
   if (duration === null) {
     return (
       <Card className="p-4 flex flex-col justify-between">
@@ -325,17 +344,20 @@ function SleepCard({ duration, quality, sparkline, compact }: { duration: number
       </Card>
     );
   }
+  const sleepPct = Math.min(100, ((duration ?? 0) / 8) * 100);
   return (
     <Card className="p-4 flex flex-col justify-between">
       {!compact && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Sleep</span><IconBadge icon={Moon} color="#38BDF8" /></div>}
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-1.5">
-          <span className="font-mono text-28 font-medium text-text-primary leading-none">{duration.toFixed(1)}</span>
+          <span className="font-mono text-28 font-medium text-text-primary leading-none">{duration!.toFixed(1)}</span>
           <span className="text-13 text-text-muted mb-0.5">hrs</span>
         </div>
-        {!compact && sparkline.length >= 2 && <Sparkline data={sparkline} color="var(--color-warning)" />}
+        {!compact && sparkline.length >= 2 && <Sparkline data={sparkline} color="#38BDF8" />}
       </div>
-      {!compact && qualityLabel && <span className="text-11 text-text-muted">{qualityLabel} quality</span>}
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill transition-all" style={{ width: `${sleepPct}%`, background: "#38BDF8" }} />
+      </div>
     </Card>
   );
 }
@@ -347,7 +369,10 @@ const STAT_TOOLTIPS: Record<string, string> = {
   "Resting HR": "Resting heart rate. Lower typically indicates better cardiovascular fitness (normal range: 60–100 bpm).",
 };
 
-function StatCard({ label, value, unit, Icon, compact }: { label: string; value: number | null; unit: string; Icon: React.ElementType; compact?: boolean }) {
+function StatCard({ label, value, unit, Icon, compact, progressPct = 0, progressColor = "var(--color-accent)" }: {
+  label: string; value: number | null; unit: string; Icon: React.ElementType; compact?: boolean;
+  progressPct?: number; progressColor?: string;
+}) {
   if (value === null) {
     return (
       <Card className="p-4 flex flex-col justify-between">
@@ -356,6 +381,7 @@ function StatCard({ label, value, unit, Icon, compact }: { label: string; value:
           <Icon size={18} className="text-text-disabled group-hover:text-accent transition-colors" />
           {!compact && <span className="text-12 text-text-muted group-hover:text-accent transition-colors">Tap to log {label.toLowerCase()}</span>}
         </a>
+        <div className="h-1.5 rounded-pill bg-bg-elevated" />
       </Card>
     );
   }
@@ -366,7 +392,9 @@ function StatCard({ label, value, unit, Icon, compact }: { label: string; value:
         <span className="font-mono text-28 font-medium text-text-primary leading-none">{Math.round(value)}</span>
         <span className="text-13 text-text-muted mb-0.5">{unit}</span>
       </div>
-      {!compact && <div className="h-1.5 rounded-pill bg-bg-elevated" />}
+      <div className="h-1.5 rounded-pill bg-bg-elevated overflow-hidden">
+        <div className="h-full rounded-pill transition-all" style={{ width: `${progressPct}%`, background: progressColor }} />
+      </div>
     </Card>
   );
 }
@@ -994,11 +1022,15 @@ function renderCard(id: string, d: DashboardData, w: number = 6): React.ReactNod
     case "weekly-ring":      return <WeeklyRingCard d={d} compact={compact} />;
     case "streak":           return <StreakCard streak={d.streak} />;
     case "sleep":            return <SleepCard duration={d.lastSleepDuration} quality={d.lastSleepQuality} sparkline={d.sleepSparkline} compact={compact} />;
-    case "resting-hr":       return <StatCard label="Resting HR" value={d.restingHR} unit="bpm" Icon={Heart} compact={compact} />;
+    case "resting-hr":       return <StatCard label="Resting HR" value={d.restingHR} unit="bpm" Icon={Heart} compact={compact}
+                               progressPct={d.restingHR !== null ? Math.max(0, Math.min(100, (100 - d.restingHR) / 40 * 100)) : 0}
+                               progressColor="var(--color-danger)" />;
     case "workouts":         return <WorkoutsCard count={d.workoutCount} target={d.workoutTarget} lastSession={d.lastSession} weeklyVolume={d.weeklyVolume} compact={compact} />;
     case "heatmap":          return <HeatmapCard workoutDates={d.workoutDates} />;
     case "ai-insight":       return <AIInsightCard insight={d.aiInsight} compact={compact} />;
-    case "hrv":              return <StatCard label="HRV" value={d.hrv} unit="ms" Icon={Activity} compact={compact} />;
+    case "hrv":              return <StatCard label="HRV" value={d.hrv} unit="ms" Icon={Activity} compact={compact}
+                               progressPct={d.hrv !== null ? Math.min(100, (d.hrv / 80) * 100) : 0}
+                               progressColor="var(--color-success)" />;
     case "water-today":      return <WaterTodayCard ml={d.waterToday ?? 0} compact={compact} />;
     case "nutrition-summary":return <NutritionSummaryCard protein={d.proteinToday ?? 0} target={d.proteinTarget ?? 150} compact={compact} />;
     case "next-workout":     return <NextWorkoutCard name={d.nextWorkoutName} compact={compact} />;
@@ -1051,11 +1083,20 @@ export function DashboardContent(props: DashboardData) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [rowHeight, setRowHeight] = useState(60);
+  const [rowHeight, setRowHeight] = useState(
+    typeof window !== "undefined" && window.innerWidth < 768 ? 52 : 60
+  );
+
+  // Only reuse a saved layout if it matches the current LAYOUT_VERSION; otherwise
+  // reset to defaults so h-value changes take effect immediately.
+  const savedLg = props.dashboardLayout?.lg;
+  const savedVersion = (props.dashboardLayout as Record<string, unknown> | null)?.v as number | undefined;
+  const initialLg = (savedLg && savedVersion === LAYOUT_VERSION)
+    ? mergeLayout(savedLg, DEFAULT_LAYOUT_LG) as RGLItem[]
+    : DEFAULT_LAYOUT_LG as RGLItem[];
+
   const [layouts, setLayouts] = useState<{ lg: RGLItem[]; md: RGLItem[]; sm: RGLItem[] }>({
-    lg: props.dashboardLayout?.lg
-      ? mergeLayout(props.dashboardLayout.lg, DEFAULT_LAYOUT_LG) as RGLItem[]
-      : DEFAULT_LAYOUT_LG as RGLItem[],
+    lg: initialLg,
     md: DEFAULT_LAYOUT_MD as RGLItem[],
     sm: DEFAULT_LAYOUT_SM as RGLItem[],
   });
@@ -1139,7 +1180,7 @@ export function DashboardContent(props: DashboardData) {
   async function handleSave() {
     setSaving(true);
     try {
-      await saveDashboardLayout({ lg: layouts.lg, hidden: hiddenCards });
+      await saveDashboardLayout({ lg: layouts.lg, hidden: hiddenCards, v: LAYOUT_VERSION });
     } finally {
       setSaving(false);
       setEditMode(false);
@@ -1148,9 +1189,7 @@ export function DashboardContent(props: DashboardData) {
 
   function handleCancel() {
     setLayouts({
-      lg: props.dashboardLayout?.lg
-        ? mergeLayout(props.dashboardLayout.lg, DEFAULT_LAYOUT_LG) as RGLItem[]
-        : DEFAULT_LAYOUT_LG as RGLItem[],
+      lg: initialLg,
       md: DEFAULT_LAYOUT_MD as RGLItem[],
       sm: DEFAULT_LAYOUT_SM as RGLItem[],
     });
@@ -1176,6 +1215,7 @@ export function DashboardContent(props: DashboardData) {
       style={{ pointerEvents: editMode ? undefined : 'none' }}
     >
       <ResponsiveGridLayout
+        className={editMode ? "edit-mode" : undefined}
         layouts={layouts as unknown as ResponsiveLayouts}
         breakpoints={BREAKPOINTS}
         cols={COLS}
@@ -1183,8 +1223,9 @@ export function DashboardContent(props: DashboardData) {
         margin={MARGIN}
         isDraggable={editMode}
         isResizable={editMode}
+        isBounded={true}
         onLayoutChange={handleLayoutChange}
-        onBreakpointChange={(bp: string) => setRowHeight(bp === 'sm' ? 52 : 60)}
+        onBreakpointChange={(bp: string) => setRowHeight(bp === "sm" ? 52 : 60)}
         draggableHandle=".rgl-drag-handle"
         resizeHandles={["se"]}
         useCSSTransforms
