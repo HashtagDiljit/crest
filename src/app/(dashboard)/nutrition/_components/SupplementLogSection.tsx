@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import type { SupplementLogRow, NutritionSettings } from "../types";
+import { ChevronDown, ChevronUp, Settings2 } from "lucide-react";
+import type { SupplementLogRow } from "../types";
 import { SUPPLEMENT_EVIDENCE } from "../types";
+import type { UserSupplement } from "../supplement-actions";
+import { EditSupplementsSheet } from "./EditSupplementsSheet";
 
 function buildCalendar(logs: SupplementLogRow[], name: string): Array<{ date: string; taken: boolean }> {
   const taken = new Set(
@@ -54,22 +56,28 @@ function fmtMonth(dateStr: string) {
 
 export function SupplementLogSection({
   supplementLogs,
-  settings,
+  userSupplements,
 }: {
   supplementLogs: SupplementLogRow[];
-  settings: NutritionSettings;
+  userSupplements: UserSupplement[];
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
 
-  const activeSupplements = Object.entries(settings.supplements)
-    .filter(([, on]) => on)
-    .map(([name]) => name);
+  const activeSupplements = userSupplements.filter(s => s.enabled).map(s => s.name);
 
-  if (!activeSupplements.length) return null;
+  if (!userSupplements.length) return null;
 
   return (
+    <>
+    {showEdit && <EditSupplementsSheet supplements={userSupplements} onClose={() => setShowEdit(false)} />}
     <div className="rounded-r5 border border-border bg-bg-surface p-5 flex flex-col gap-4">
-      <h2 className="font-display text-16 font-semibold text-text-primary">Supplement log</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-16 font-semibold text-text-primary">Supplement log</h2>
+        <button onClick={() => setShowEdit(true)} className="flex items-center gap-1 text-12 text-text-muted hover:text-text-primary transition-colors">
+          <Settings2 size={13} /> Edit
+        </button>
+      </div>
       <div className="flex flex-col gap-2">
         {activeSupplements.map((name) => {
           const s = streak(supplementLogs, name);
@@ -148,5 +156,6 @@ export function SupplementLogSection({
         })}
       </div>
     </div>
+    </>
   );
 }

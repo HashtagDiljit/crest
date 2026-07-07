@@ -468,7 +468,7 @@ export async function startBlankSession(): Promise<{ error: string } | void> {
     .single();
 
   if (error || !session) return { error: error?.message ?? "Failed to start session" };
-  redirect(`/workouts/session?id=${(session as { id: string }).id}`);
+  redirect(`/workouts/session?id=${(session as { id: string }).id}&blank=1`);
 }
 
 export async function getExercises(): Promise<ExerciseRow[]> {

@@ -10,11 +10,11 @@ import {
   Droplets, Utensils, Weight, Moon,
   type LucideIcon,
 } from "lucide-react";
-import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, NoteModal } from "./QuickLogModals";
+import { WaterModal, MoodModal, FoodModal, WeightModal, SleepModal, JournalModal } from "./QuickLogModals";
 import { startBlankSession } from "@/app/(dashboard)/workouts/actions";
 import { updateBottomNavItems } from "@/app/(dashboard)/settings/actions";
 
-type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "note" | null;
+type ModalKey = "water" | "mood" | "food" | "weight" | "sleep" | "journal" | null;
 
 const HOME_ITEM = { id: "dashboard", label: "Home", icon: LayoutDashboard, href: "/dashboard" };
 
@@ -34,7 +34,7 @@ const SECTION_ITEMS: Array<{ id: string; label: string; icon: LucideIcon; href: 
 
 const MORE_ITEM: { id: string; label: string; icon: LucideIcon; href?: string } = { id: "more", label: "More", icon: MoreHorizontal };
 
-const DEFAULT_SLOTS = ["workouts", "health", "habits", "more"];
+const DEFAULT_SLOTS = ["workouts", "goals", "habits", "more"];
 
 const QUICK_LOG_ITEMS = [
   { key: "water"  as const, label: "Water",  icon: Droplets, color: "var(--color-info)" },
@@ -42,7 +42,7 @@ const QUICK_LOG_ITEMS = [
   { key: "food"   as const, label: "Food",   icon: Utensils, color: "var(--color-success)" },
   { key: "weight" as const, label: "Weight", icon: Weight,   color: "var(--color-text-secondary)" },
   { key: "sleep"  as const, label: "Sleep",  icon: Moon,     color: "#A39CFF" },
-  { key: "note"   as const, label: "Note",   icon: PenLine,  color: "var(--color-warning)" },
+  { key: "journal" as const, label: "Journal", icon: PenLine, color: "var(--color-warning)" },
 ];
 
 function isActive(href: string, pathname: string): boolean {
@@ -478,7 +478,7 @@ export function BottomTabBar({
       {openModal === "food"   && <FoodModal   onClose={() => setOpenModal(null)} />}
       {openModal === "weight" && <WeightModal onClose={() => setOpenModal(null)} />}
       {openModal === "sleep"  && <SleepModal  onClose={() => setOpenModal(null)} />}
-      {openModal === "note"   && <NoteModal   onClose={() => setOpenModal(null)} />}
+      {openModal === "journal" && <JournalModal onClose={() => setOpenModal(null)} />}
     </>
   );
 }
