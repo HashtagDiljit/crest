@@ -217,16 +217,29 @@ html[data-theme="light"] main { background-color: #FFFFFF !important; }
   border-radius: 12px;
   opacity: 1 !important;
 }
-.react-resizable-handle {
-  opacity: 0;
-  transition: opacity 0.15s;
+/* RGL resize handle — only visible in edit mode */
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  z-index: 20;
 }
-.react-grid-item:hover .react-resizable-handle,
-.react-grid-item.react-draggable-dragging .react-resizable-handle {
-  opacity: 1;
+.react-grid-item > .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  border-right: 2px solid rgba(255,255,255,0.5);
+  border-bottom: 2px solid rgba(255,255,255,0.5);
+  border-radius: 0 0 3px 0;
 }
-.react-resizable-handle::after {
-  border-color: var(--color-accent) !important;
+.react-grid-layout:not(.edit-mode) .react-resizable-handle {
+  display: none;
 }
 
 /* Each widget fills its RGL cell; pointer-events: auto so cards stay

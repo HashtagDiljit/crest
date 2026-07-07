@@ -210,3 +210,27 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   await supabase.auth.signOut();
   return {};
 }
+
+export async function submitFeedback({ category, message }: { category: string; message: string }): Promise<{ error?: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("feedback") as any).insert({
+    user_id: user?.id ?? null,
+    category,
+    message,
+    app_version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
+  });
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function getReferralInfo(): Promise<{ referralCount: number; userId: string } | null> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("profiles") as any).select("referral_count").eq("id", user.id).single();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { referralCount: (data as any)?.referral_count ?? 0, userId: user.id };
+}

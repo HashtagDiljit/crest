@@ -12,6 +12,7 @@ import { OfflineSync } from "@/components/OfflineSync";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PageTransition } from "@/components/PageTransition";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +73,12 @@ export default async function DashboardLayout({
   const streak = profile?.streak_current ?? 0;
   const xpNeeded = level * 500;
 
+  const hasAnalyticsConsent = !!(consent?.product_improvement);
+
   return (
     <>
       <ThemeProvider theme={profile?.theme ?? null} accent={profile?.accent_colour ?? null} />
+      <AnalyticsProvider userId={user!.id} hasAnalyticsConsent={hasAnalyticsConsent} />
       <OfflineSync />
       <MotionProvider forceReduced={profile?.reduce_motion ?? false}>
         <ConsentGate needsConsent={needsConsent}>

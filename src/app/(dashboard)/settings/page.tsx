@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { getProfilePrefs, getTrainingPreferences } from "./actions";
+import { getProfilePrefs, getTrainingPreferences, getReferralInfo } from "./actions";
 import { getNutritionSettings } from "@/app/(dashboard)/nutrition/actions";
 import { getTrainingBlock } from "@/app/(dashboard)/workouts/actions";
 import { AccountSection } from "./_components/AccountSection";
@@ -11,6 +11,8 @@ import { DataPrivacySection } from "./_components/DataPrivacySection";
 import { NutritionSection } from "./_components/NutritionSection";
 import { TrainingSection } from "./_components/TrainingSection";
 import { TrainingBlockSection } from "./_components/TrainingBlockSection";
+import { FeedbackSheet } from "./_components/FeedbackSheet";
+import { ReferralSection } from "./_components/ReferralSection";
 
 export const dynamic = "force-dynamic";
 
@@ -19,22 +21,33 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [prefs, nutritionSettings, trainingPrefs, blockData] = await Promise.all([
+  const [prefs, nutritionSettings, trainingPrefs, blockData, referralInfo] = await Promise.all([
     getProfilePrefs(),
     getNutritionSettings(),
     getTrainingPreferences(),
     getTrainingBlock(),
+    getReferralInfo(),
   ]);
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <div>
-        <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Settings</h1>
-        <p className="text-13 text-text-secondary mt-0.5">Manage your account and preferences</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-24 md:text-32 font-semibold text-text-primary tracking-tight">Settings</h1>
+          <p className="text-13 text-text-secondary mt-0.5">Manage your account and preferences</p>
+        </div>
+        <div className="mt-2 flex-shrink-0">
+          <FeedbackSheet />
+        </div>
       </div>
 
       <Section id="account" title="Account">
         <AccountSection prefs={prefs ?? { username: null, theme: null, accent_colour: null, weight_unit: null, distance_unit: null, time_format: null, week_starts: null, avatar_url: null, notification_preferences: null, hidden_nav_items: null, reduce_motion: false }} email={user.email ?? ""} />
+        {referralInfo && (
+          <div className="border-t border-border pt-5">
+            <ReferralSection userId={referralInfo.userId} referralCount={referralInfo.referralCount} />
+          </div>
+        )}
       </Section>
 
       <Section id="appearance" title="Appearance">
