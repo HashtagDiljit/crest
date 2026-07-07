@@ -1,4 +1,4 @@
-package com.arc.lifetracker;
+package com.kairos.lifetracker;
 
 import com.getcapacitor.BridgeActivity;
 
