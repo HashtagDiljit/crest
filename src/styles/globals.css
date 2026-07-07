@@ -237,3 +237,16 @@ html[data-theme="light"] main { background-color: #FFFFFF !important; }
   box-sizing: border-box;
   pointer-events: auto;
 }
+
+/* Suppress RGL's built-in item transitions in view mode so widgets snap
+   into place instantly on mount instead of animating from (0,0). Only
+   enable smooth transforms while the user is actively editing the grid. */
+.react-grid-layout:not(.edit-mode) .react-grid-item {
+  transition: none !important;
+}
+.react-grid-layout:not(.edit-mode) .react-grid-item.cssTransforms {
+  transition: none !important;
+}
+.react-grid-layout.edit-mode .react-grid-item {
+  transition: transform 200ms ease !important;
+}
