@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { Plus, Timer } from "lucide-react";
+import { NumericKeypadProvider } from "./_components/NumericKeypad";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
@@ -547,6 +548,7 @@ function SessionPage() {
   const isQuickStart = !data.template;
 
   return (
+    <NumericKeypadProvider>
     <div className="-mx-4 md:-mx-6 flex flex-col" style={{ minHeight: "calc(100vh - var(--topbar-h))" }}>
 
       {/* Toast */}
@@ -628,13 +630,14 @@ function SessionPage() {
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-        <div className="flex-1 flex justify-center overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/50" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+        <div />
+        <div className="flex justify-center overflow-hidden">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-13 font-semibold truncate max-w-full" style={{ background: "rgba(100,180,160,0.18)", color: "var(--color-accent)" }}>
             {data.template?.name ?? "Quick start"}
           </div>
         </div>
-        <div className="flex items-center gap-1 text-text-muted flex-shrink-0">
+        <div className="flex items-center justify-end gap-1 text-text-muted">
           <Timer size={14} />
           <span className="font-mono text-13 tabular-nums">{fmtTime(elapsedSeconds)}</span>
         </div>
@@ -798,5 +801,6 @@ function SessionPage() {
         </>
       )}
     </div>
+    </NumericKeypadProvider>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Plus, Minus, Link2, Trash2, Check } from "lucide-react";
 import type { TemplateExerciseRow, SessionSetRow } from "../../actions";
 import type { LoggingType } from "../../actions";
+import { useNumericKeypad } from "./NumericKeypad";
 
 // Muscle group accent colours
 const CAT_COLORS: Record<string, { accent: string; bg: string }> = {
@@ -73,23 +74,36 @@ interface NumStepperProps {
 function NumStepper({ label, value, unit, step, min = 0, isInt = false, focusFirst, onChange }: NumStepperProps) {
   const ref = useRef<HTMLInputElement>(null);
   const [display, setDisplay] = useState(() => isInt ? String(Math.round(value)) : value.toFixed(1));
-  const [focused, setFocused] = useState(false);
+  const { openKeypad, closeKeypad } = useNumericKeypad();
 
   useEffect(() => {
-    if (!focused) setDisplay(isInt ? String(Math.round(value)) : value.toFixed(1));
-  }, [value, isInt, focused]);
+    setDisplay(isInt ? String(Math.round(value)) : value.toFixed(1));
+  }, [value, isInt]);
 
   useEffect(() => {
     if (focusFirst) { setTimeout(() => ref.current?.focus(), 100); }
   }, [focusFirst]);
 
-  function commit(raw: string) {
-    setFocused(false);
+  function commitStr(raw: string) {
     const parsed = isInt ? parseInt(raw, 10) : parseFloat(raw);
     if (isNaN(parsed)) { onChange(min); setDisplay(isInt ? String(min) : min.toFixed(1)); return; }
     const v = Math.max(min, parsed);
     onChange(v);
     setDisplay(isInt ? String(Math.round(v)) : v.toFixed(1));
+  }
+
+  function handleFocus() {
+    const initVal = isInt ? String(Math.round(value)) : value.toFixed(1);
+    openKeypad({
+      value: initVal,
+      isInt,
+      onChange: (newStr) => {
+        setDisplay(newStr);
+        const parsed = isInt ? parseInt(newStr, 10) : parseFloat(newStr);
+        if (!isNaN(parsed)) onChange(Math.max(min, parsed));
+      },
+      onDone: () => commitStr(display),
+    });
   }
 
   return (
@@ -103,14 +117,14 @@ function NumStepper({ label, value, unit, step, min = 0, isInt = false, focusFir
         <div className="flex-1 flex items-baseline justify-center gap-0.5">
           <input
             ref={ref}
-            type={isInt ? "tel" : "text"}
-            inputMode={isInt ? "numeric" : "decimal"}
-            pattern={isInt ? "[0-9]*" : "[0-9]*\\.?[0-9]*"}
-            value={focused ? display : (isInt ? String(Math.round(value)) : value.toFixed(1))}
-            onFocus={(e) => { setFocused(true); setDisplay(e.target.value); const len = e.target.value.length; e.target.setSelectionRange(len, len); }}
-            onChange={(e) => setDisplay(e.target.value)}
-            onBlur={(e) => commit(e.target.value)}
-            className="w-full text-center font-mono text-[22px] font-bold text-text-primary bg-transparent outline-none min-w-0"
+            type="text"
+            inputMode="none"
+            readOnly
+            value={display}
+            onFocus={handleFocus}
+            onBlur={() => closeKeypad()}
+            className="w-full text-center font-mono text-[22px] font-bold text-text-primary bg-transparent outline-none min-w-0 cursor-pointer"
+            style={{ caretColor: "transparent" }}
           />
           <span className="text-11 text-text-muted flex-shrink-0">{unit}</span>
         </div>

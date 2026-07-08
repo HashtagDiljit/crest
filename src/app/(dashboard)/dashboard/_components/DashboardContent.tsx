@@ -52,7 +52,7 @@ export interface DashboardData {
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
-const LAYOUT_VERSION = 3;
+const LAYOUT_VERSION = 4;
 const LS_KEY = "kairos-dashboard-layout";
 const DEFAULT_HIDDEN = ["journal-streak", "next-workout", "focus-widget"];
 const BREAKPOINTS = { lg: 1200, md: 768, sm: 0 };
@@ -92,44 +92,44 @@ const CARD_META: Record<string, { label: string; Icon: React.ElementType }> = {
 // Optimised layout: readiness first, then weekly trackers, then vitals, activity, heatmap, context, ai
 const DEFAULT_LAYOUT_LG: LayoutItem[] = [
   { i: "readiness",         x: 0,  y: 0,  w: 12, h: 4,  minW: 12, maxW: 12, minH: 3, maxH: 5 },
-  { i: "weekly-ring",       x: 0,  y: 4,  w: 6,  h: 4,  minW: 4,  maxW: 12, minH: 3, maxH: 5 },
-  { i: "momentum",          x: 6,  y: 4,  w: 6,  h: 4,  minW: 4,  maxW: 12, minH: 3, maxH: 5 },
-  { i: "sleep",             x: 0,  y: 8,  w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "resting-hr",        x: 4,  y: 8,  w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "hrv",               x: 8,  y: 8,  w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "workouts",          x: 0,  y: 10, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "streak",            x: 4,  y: 10, w: 4,  h: 2,  minW: 3,  maxW: 4,  minH: 2, maxH: 3 },
-  { i: "water-today",       x: 8,  y: 10, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "heatmap",           x: 0,  y: 12, w: 12, h: 3,  minW: 12, maxW: 12, minH: 3, maxH: 4 },
-  { i: "weight-trend",      x: 0,  y: 15, w: 6,  h: 2,  minW: 4,  maxW: 12, minH: 2, maxH: 4 },
-  { i: "nutrition-summary", x: 6,  y: 15, w: 6,  h: 2,  minW: 4,  maxW: 8,  minH: 2, maxH: 4 },
-  { i: "goals-progress",    x: 0,  y: 17, w: 8,  h: 3,  minW: 6,  maxW: 12, minH: 2, maxH: 5 },
-  { i: "weekly-volume",     x: 8,  y: 17, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 4 },
-  { i: "ai-insight",        x: 0,  y: 20, w: 12, h: 2,  minW: 6,  maxW: 12, minH: 2, maxH: 3 },
-  { i: "journal-streak",    x: 0,  y: 22, w: 4,  h: 2,  minW: 3,  maxW: 6,  minH: 2, maxH: 3 },
-  { i: "next-workout",      x: 4,  y: 22, w: 4,  h: 2,  minW: 3,  maxW: 12, minH: 2, maxH: 3 },
-  { i: "focus-widget",      x: 8,  y: 22, w: 4,  h: 2,  minW: 3,  maxW: 12, minH: 2, maxH: 4 },
+  { i: "weekly-ring",       x: 0,  y: 4,  w: 6,  h: 4,  minW: 3,  maxW: 12, minH: 3, maxH: 5 },
+  { i: "momentum",          x: 6,  y: 4,  w: 6,  h: 4,  minW: 6,  maxW: 12, minH: 4, maxH: 6 },
+  { i: "sleep",             x: 0,  y: 8,  w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 5 },
+  { i: "resting-hr",        x: 4,  y: 8,  w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "hrv",               x: 8,  y: 8,  w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "workouts",          x: 0,  y: 11, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "streak",            x: 4,  y: 11, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "water-today",       x: 8,  y: 11, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "heatmap",           x: 0,  y: 14, w: 12, h: 3,  minW: 12, maxW: 12, minH: 3, maxH: 5 },
+  { i: "weight-trend",      x: 0,  y: 17, w: 6,  h: 3,  minW: 3,  maxW: 12, minH: 3, maxH: 4 },
+  { i: "nutrition-summary", x: 6,  y: 17, w: 6,  h: 3,  minW: 3,  maxW: 8,  minH: 3, maxH: 4 },
+  { i: "goals-progress",    x: 0,  y: 20, w: 8,  h: 3,  minW: 4,  maxW: 12, minH: 3, maxH: 5 },
+  { i: "weekly-volume",     x: 8,  y: 20, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "ai-insight",        x: 0,  y: 23, w: 12, h: 3,  minW: 4,  maxW: 12, minH: 3, maxH: 4 },
+  { i: "journal-streak",    x: 0,  y: 26, w: 4,  h: 3,  minW: 3,  maxW: 6,  minH: 3, maxH: 4 },
+  { i: "next-workout",      x: 4,  y: 26, w: 4,  h: 3,  minW: 3,  maxW: 12, minH: 3, maxH: 4 },
+  { i: "focus-widget",      x: 8,  y: 26, w: 4,  h: 3,  minW: 3,  maxW: 12, minH: 3, maxH: 5 },
 ];
 
 const DEFAULT_LAYOUT_MD: LayoutItem[] = [
   { i: "readiness",         x: 0, y: 0,  w: 4, h: 4 },
   { i: "weekly-ring",       x: 0, y: 4,  w: 4, h: 4 },
   { i: "momentum",          x: 0, y: 8,  w: 4, h: 4 },
-  { i: "sleep",             x: 0, y: 12, w: 2, h: 2 },
-  { i: "resting-hr",        x: 2, y: 12, w: 2, h: 2 },
-  { i: "hrv",               x: 0, y: 14, w: 2, h: 2 },
-  { i: "workouts",          x: 2, y: 14, w: 2, h: 2 },
-  { i: "streak",            x: 0, y: 16, w: 2, h: 2 },
-  { i: "water-today",       x: 2, y: 16, w: 2, h: 2 },
-  { i: "heatmap",           x: 0, y: 18, w: 4, h: 3 },
-  { i: "weight-trend",      x: 0, y: 21, w: 4, h: 2 },
-  { i: "nutrition-summary", x: 0, y: 23, w: 4, h: 2 },
-  { i: "goals-progress",    x: 0, y: 25, w: 4, h: 3 },
-  { i: "weekly-volume",     x: 0, y: 28, w: 4, h: 2 },
-  { i: "ai-insight",        x: 0, y: 30, w: 4, h: 2 },
-  { i: "journal-streak",    x: 0, y: 32, w: 4, h: 2 },
-  { i: "next-workout",      x: 0, y: 34, w: 4, h: 2 },
-  { i: "focus-widget",      x: 0, y: 36, w: 4, h: 2 },
+  { i: "sleep",             x: 0, y: 12, w: 2, h: 3 },
+  { i: "resting-hr",        x: 2, y: 12, w: 2, h: 3 },
+  { i: "hrv",               x: 0, y: 15, w: 2, h: 3 },
+  { i: "workouts",          x: 2, y: 15, w: 2, h: 3 },
+  { i: "streak",            x: 0, y: 18, w: 2, h: 3 },
+  { i: "water-today",       x: 2, y: 18, w: 2, h: 3 },
+  { i: "heatmap",           x: 0, y: 21, w: 4, h: 3 },
+  { i: "weight-trend",      x: 0, y: 24, w: 4, h: 3 },
+  { i: "nutrition-summary", x: 0, y: 27, w: 4, h: 3 },
+  { i: "goals-progress",    x: 0, y: 30, w: 4, h: 3 },
+  { i: "weekly-volume",     x: 0, y: 33, w: 4, h: 3 },
+  { i: "ai-insight",        x: 0, y: 36, w: 4, h: 3 },
+  { i: "journal-streak",    x: 0, y: 39, w: 4, h: 3 },
+  { i: "next-workout",      x: 0, y: 42, w: 4, h: 3 },
+  { i: "focus-widget",      x: 0, y: 45, w: 4, h: 3 },
 ];
 
 const DEFAULT_LAYOUT_SM: LayoutItem[] = (() => {
@@ -163,10 +163,12 @@ function saveToLS(payload: { lg: LayoutItem[]; hidden: string[]; v: number }) {
 // ─── size tier ────────────────────────────────────────────────────────────────
 
 function sizeTier(w: number, h: number) {
-  const isFull = w > 6 || h >= 4;
-  const isSmall = !isFull && (w <= 3 || h <= 2);
-  const isMid = !isFull && !isSmall;
-  return { isFull, isMid, isSmall };
+  const isSmall = w <= 4;
+  const isMid = w > 4 && w <= 8;
+  const isFull = w > 8;
+  const isTall = h >= 5;
+  const isShort = h <= 3;
+  return { isFull, isMid, isSmall, isTall, isShort };
 }
 
 function metricFontSize(w: number, h: number): number {
@@ -221,14 +223,14 @@ function ProgressBar({ pct, color = "var(--color-accent)" }: { pct: number; colo
 // ─── weekly ring card ─────────────────────────────────────────────────────────
 
 function WeeklyRingCard({ d, w, h }: { d: DashboardData; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const rings = [
     { label: "Workouts",    pct: Math.min((d.workoutCount / d.workoutTarget) * 100, 100), color: "var(--color-accent)",   val: `${d.workoutCount}/${d.workoutTarget}`, r: 50 },
     { label: "Habits",      pct: d.habitTotal > 0 ? Math.min((d.habitLogs / (d.habitTotal * 7)) * 100, 100) : 0, color: "var(--color-success)", val: `${d.habitLogs}/${d.habitTotal * 7}`, r: 39 },
     { label: "Sleep ≥ 7hr", pct: Math.min((d.sleepNights7hrs / 7) * 100, 100), color: "var(--color-warning)", val: `${d.sleepNights7hrs}/7`, r: 28 },
     { label: "Mood ≥ 3",    pct: Math.min((d.moodDaysThisWeek / 7) * 100, 100), color: "var(--color-info)",    val: `${d.moodDaysThisWeek}/7`, r: 17 },
   ];
-  const svgSize = isSmall ? 80 : 100;
+  const svgSize = isSmall ? 80 : isMid ? 100 : 110;
   return (
     <Card className="p-4 flex items-center gap-4">
       <svg width={svgSize} height={svgSize} viewBox="0 0 120 120" className="flex-shrink-0" aria-hidden>
@@ -243,7 +245,7 @@ function WeeklyRingCard({ d, w, h }: { d: DashboardData; w: number; h: number })
           );
         })}
       </svg>
-      {!isSmall && (
+      {(isMid || isFull) && (
         <div className="flex flex-col gap-2 flex-1 min-w-0">
           {rings.map((ring) => (
             <div key={ring.label} className="flex items-center gap-2 min-w-0">
@@ -261,16 +263,19 @@ function WeeklyRingCard({ d, w, h }: { d: DashboardData; w: number; h: number })
 // ─── streak card ──────────────────────────────────────────────────────────────
 
 function StreakCard({ streak, w, h }: { streak: number; w: number; h: number }) {
-  const { isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const active = streak > 0;
   const flameColor = active ? "var(--color-streak)" : "var(--color-text-disabled)";
+  const pct = Math.min(100, (streak / 30) * 100);
   return (
-    <Card className="p-4 flex flex-col justify-center items-center gap-1">
+    <Card className="p-4 flex flex-col justify-between">
+      {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Streak</span><Flame size={14} style={{ color: flameColor }} /></div>}
       <div className="flex items-center gap-2">
-        <Flame size={isSmall ? 20 : 24} style={{ color: flameColor }} />
+        <Flame size={isSmall ? 20 : 18} style={{ color: flameColor }} />
         <span className="font-mono font-semibold leading-none" style={{ fontSize: metricFontSize(w, h), color: active ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>{streak}</span>
+        {(isMid || isFull) && <span className="text-12 text-text-muted">day streak</span>}
       </div>
-      {!isSmall && <span className="text-12 text-text-muted">day streak</span>}
+      {(isFull || isMid) && <ProgressBar pct={pct} color="var(--color-streak)" />}
     </Card>
   );
 }
@@ -279,7 +284,7 @@ function StreakCard({ streak, w, h }: { streak: number; w: number; h: number }) 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SleepCard({ duration, quality: _quality, sparkline, w, h }: { duration: number | null; quality: number | null; sparkline: number[]; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const sleepPct = duration !== null ? Math.min(100, (duration / 8) * 100) : 0;
 
   if (duration === null) {
@@ -290,7 +295,7 @@ function SleepCard({ duration, quality: _quality, sparkline, w, h }: { duration:
           <Moon size={isSmall ? 22 : 18} className="text-text-disabled group-hover:text-accent transition-colors" />
           {!isSmall && <span className="text-12 text-text-muted group-hover:text-accent transition-colors truncate overflow-hidden">Tap to log sleep</span>}
         </a>
-        {!isSmall && <ProgressBar pct={0} color="#38BDF8" />}
+        <ProgressBar pct={0} color="#38BDF8" />
       </Card>
     );
   }
@@ -301,11 +306,11 @@ function SleepCard({ duration, quality: _quality, sparkline, w, h }: { duration:
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-end gap-1">
           <span className="font-mono font-medium text-text-primary leading-none" style={{ fontSize: metricFontSize(w, h) }}>{duration.toFixed(1)}</span>
-          {!isSmall && <span className="text-13 text-text-muted mb-0.5">hrs</span>}
+          <span className="text-13 text-text-muted mb-0.5">hrs</span>
         </div>
-        {isFull && sparkline.length >= 2 && <Sparkline data={sparkline} color="#38BDF8" />}
+        {(isFull || isMid) && sparkline.length >= 2 && <Sparkline data={sparkline} color="#38BDF8" />}
       </div>
-      {!isSmall && <ProgressBar pct={sleepPct} color="#38BDF8" />}
+      <ProgressBar pct={sleepPct} color="#38BDF8" />
     </Card>
   );
 }
@@ -321,7 +326,7 @@ function StatCard({ label, value, unit, Icon, w, h, progressPct = 0, progressCol
   label: string; value: number | null; unit: string; Icon: React.ElementType;
   w: number; h: number; progressPct?: number; progressColor?: string;
 }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
 
   if (value === null) {
     return (
@@ -331,7 +336,7 @@ function StatCard({ label, value, unit, Icon, w, h, progressPct = 0, progressCol
           <Icon size={isSmall ? 22 : 18} className="text-text-disabled group-hover:text-accent transition-colors" />
           {!isSmall && <span className="text-12 text-text-muted group-hover:text-accent transition-colors truncate overflow-hidden">Tap to log</span>}
         </a>
-        {!isSmall && <ProgressBar pct={0} color={progressColor} />}
+        <ProgressBar pct={0} color={progressColor} />
       </Card>
     );
   }
@@ -341,9 +346,9 @@ function StatCard({ label, value, unit, Icon, w, h, progressPct = 0, progressCol
       {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted flex items-center gap-1 truncate">{label}{STAT_TOOLTIPS[label] && <InfoTooltip text={STAT_TOOLTIPS[label]} size={10} />}</span><IconBadge icon={Icon} color="var(--color-danger)" /></div>}
       <div className="flex items-end gap-1">
         <span className="font-mono font-medium text-text-primary leading-none" style={{ fontSize: metricFontSize(w, h) }}>{Math.round(value)}</span>
-        {!isSmall && <span className="text-13 text-text-muted mb-0.5">{unit}</span>}
+        {(isMid || isFull) && <span className="text-13 text-text-muted mb-0.5">{unit}</span>}
       </div>
-      {!isSmall && <ProgressBar pct={progressPct} color={progressColor} />}
+      <ProgressBar pct={progressPct} color={progressColor} />
       {isFull && <span className="text-11 text-text-muted">{label}</span>}
     </Card>
   );
@@ -352,7 +357,7 @@ function StatCard({ label, value, unit, Icon, w, h, progressPct = 0, progressCol
 // ─── workouts card ────────────────────────────────────────────────────────────
 
 function WorkoutsCard({ count, target, lastSession, weeklyVolume, w, h }: { count: number; target: number; lastSession: DashboardData["lastSession"]; weeklyVolume: number[]; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const pct = Math.min((count / target) * 100, 100);
   const daysSince = lastSession ? Math.floor((Date.now() - new Date(lastSession.date).getTime()) / 86400000) : null;
   const lastLabel = daysSince === null ? null : daysSince === 0 ? "Last: today" : daysSince === 1 ? "Last: yesterday" : `Last: ${daysSince} days ago`;
@@ -362,12 +367,12 @@ function WorkoutsCard({ count, target, lastSession, weeklyVolume, w, h }: { coun
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-end gap-1">
           <span className="font-mono font-medium leading-none" style={{ fontSize: metricFontSize(w, h), color: count > 0 ? "var(--color-text-primary)" : "var(--color-text-disabled)" }}>{count}</span>
-          {!isSmall && <span className="text-13 text-text-muted mb-0.5">/ {target} wk</span>}
+          <span className="text-13 text-text-muted mb-0.5">/ {target} wk</span>
         </div>
         {isFull && weeklyVolume.some(v => v > 0) && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
       </div>
-      {!isSmall && <ProgressBar pct={pct} color="var(--color-accent)" />}
-      {!isSmall && lastLabel && <span className="text-10 text-text-disabled truncate overflow-hidden">{lastLabel}</span>}
+      <ProgressBar pct={pct} color="var(--color-accent)" />
+      {(isMid || isFull) && lastLabel && <span className="text-10 text-text-disabled truncate overflow-hidden">{lastLabel}</span>}
     </Card>
   );
 }
@@ -378,8 +383,9 @@ const HEATMAP_GAP = 4;
 const MIN_SQUARE = 6;
 const MAX_SQUARE = 18;
 
-function HeatmapCard({ workoutDates, h }: { workoutDates: string[]; w: number; h: number }) {
-  const HEATMAP_WEEKS = h >= 4 ? 52 : 26;
+function HeatmapCard({ workoutDates, w, h }: { workoutDates: string[]; w: number; h: number }) {
+  const { isTall } = sizeTier(w, h);
+  const HEATMAP_WEEKS = isTall ? 52 : 26;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [squareSize, setSquareSize] = useState(MAX_SQUARE);
 
@@ -422,7 +428,7 @@ function HeatmapCard({ workoutDates, h }: { workoutDates: string[]; w: number; h
   return (
     <Card className="p-4 flex flex-col">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Activity · {HEATMAP_WEEKS === 52 ? "12" : "6"} months</span>
+        <span className="text-11 font-semibold uppercase tracking-widest text-text-muted">Activity · {isTall ? "12" : "6"} months</span>
         <BarChart2 size={14} className="text-text-muted" />
       </div>
       <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden">
@@ -447,20 +453,20 @@ function HeatmapCard({ workoutDates, h }: { workoutDates: string[]; w: number; h
 // ─── AI insight card ──────────────────────────────────────────────────────────
 
 function AIInsightCard({ insight, w, h }: { insight: DashboardData["aiInsight"]; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   return (
     <Card className="p-4 flex items-start gap-3">
       <div className="w-7 h-7 rounded-r3 bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5">
         <Sparkles size={13} className="text-accent" />
       </div>
       {insight ? (
-        <div className="flex flex-col gap-1 min-w-0">
-          {!isSmall && <span className="text-11 font-semibold uppercase tracking-widest text-accent truncate overflow-hidden">{insight.category}</span>}
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          {(isMid || isFull) && <span className="text-11 font-semibold uppercase tracking-widest text-accent truncate overflow-hidden">{insight.category}</span>}
           <p className="text-13 font-semibold text-text-primary truncate overflow-hidden">{insight.title}</p>
           {isFull && <p className="text-13 text-text-secondary line-clamp-2">{insight.body}</p>}
         </div>
       ) : (
-        <div className="flex flex-col gap-1 min-w-0">
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
           <span className="text-13 font-semibold text-text-secondary truncate overflow-hidden">AI insights will appear here</span>
           {!isSmall && <p className="text-13 text-text-muted line-clamp-2">Log workouts, sleep, mood, and habits for a week.</p>}
         </div>
@@ -474,7 +480,7 @@ function AIInsightCard({ insight, w, h }: { insight: DashboardData["aiInsight"];
 const WATER_TARGET_ML = 3000;
 
 function WaterTodayCard({ ml, w, h, onAddWater }: { ml: number; w: number; h: number; onAddWater?: () => void }) {
-  const { isSmall } = sizeTier(w, h);
+  const { isMid, isFull, isSmall } = sizeTier(w, h);
   const pct = Math.min(100, (ml / WATER_TARGET_ML) * 100);
   const display = ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`;
   return (
@@ -483,11 +489,11 @@ function WaterTodayCard({ ml, w, h, onAddWater }: { ml: number; w: number; h: nu
       <div className="flex items-end gap-1">
         <span className="font-mono font-medium leading-none overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: metricFontSize(w, h), color: pct >= 100 ? "var(--color-success)" : "var(--color-info)" }}>{display}</span>
       </div>
-      {!isSmall && <ProgressBar pct={pct} color="var(--color-info)" />}
-      {onAddWater && (
+      <ProgressBar pct={pct} color="var(--color-info)" />
+      {(isMid || isFull) && onAddWater && (
         <button type="button" onClick={onAddWater}
-          className="absolute bottom-2.5 right-2.5 px-2 py-1 rounded-pill text-10 font-semibold transition-colors"
-          style={{ background: "rgba(56,189,248,0.15)", color: "var(--color-info)", border: "1px solid rgba(56,189,248,0.3)", zIndex: 2 }}>
+          className="mt-1 px-3 py-1 rounded-pill text-10 font-semibold transition-colors self-start"
+          style={{ background: "rgba(56,189,248,0.15)", color: "var(--color-info)", border: "1px solid rgba(56,189,248,0.3)" }}>
           +250ml
         </button>
       )}
@@ -498,16 +504,16 @@ function WaterTodayCard({ ml, w, h, onAddWater }: { ml: number; w: number; h: nu
 // ─── nutrition summary card ───────────────────────────────────────────────────
 
 function NutritionSummaryCard({ protein, target, w, h }: { protein: number; target: number; w: number; h: number }) {
-  const { isSmall } = sizeTier(w, h);
+  const { isMid, isFull, isSmall } = sizeTier(w, h);
   const pct = Math.min(100, (protein / target) * 100);
   return (
     <Card className="p-4 flex flex-col justify-between">
       {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Protein today</span><IconBadge icon={Utensils} color="var(--color-success)" /></div>}
       <div className="flex items-end gap-1">
         <span className="font-mono font-medium leading-none" style={{ fontSize: metricFontSize(w, h), color: pct >= 100 ? "var(--color-success)" : "var(--color-text-primary)" }}>{protein}</span>
-        {!isSmall && <span className="text-13 text-text-muted mb-0.5">/ {target}g</span>}
+        {(isMid || isFull) && <span className="text-13 text-text-muted mb-0.5">/ {target}g</span>}
       </div>
-      {!isSmall && <ProgressBar pct={pct} color={pct >= 100 ? "var(--color-success)" : "var(--color-accent)"} />}
+      <ProgressBar pct={pct} color={pct >= 100 ? "var(--color-success)" : "var(--color-accent)"} />
     </Card>
   );
 }
@@ -561,20 +567,21 @@ function FocusWidgetCard({ focus, startDate, endDate, w, h }: { focus?: string |
 // ─── weight trend card ────────────────────────────────────────────────────────
 
 function WeightTrendCard({ trend, w, h }: { trend: number[]; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const latest = trend[trend.length - 1] ?? null;
   const prev = trend[trend.length - 2] ?? null;
   const delta = latest !== null && prev !== null ? Math.round((latest - prev) * 10) / 10 : null;
+  const sparkColor = delta !== null && delta > 0 ? "var(--color-warning)" : "var(--color-success)";
   return (
     <Card className="p-4 flex flex-col justify-between">
       {!isSmall && <div className="flex items-center justify-between"><span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Body weight</span><IconBadge icon={Weight} color="var(--color-text-secondary)" /></div>}
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-end gap-1">
           {latest !== null
-            ? <><span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{latest.toFixed(1)}</span>{!isSmall && <span className="text-13 text-text-muted mb-0.5">kg</span>}</>
+            ? <><span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{latest.toFixed(1)}</span><span className="text-13 text-text-muted mb-0.5">kg</span></>
             : <span className="text-13 text-text-muted">No data</span>}
         </div>
-        {!isSmall && trend.length >= 2 && <Sparkline data={trend} color={delta !== null && delta > 0 ? "var(--color-warning)" : "var(--color-success)"} />}
+        {(isMid || isFull) && trend.length >= 2 && <Sparkline data={trend} color={sparkColor} />}
       </div>
       {isFull && delta !== null && <p className="text-11 text-text-muted">{delta > 0 ? `+${delta}` : delta}kg vs last</p>}
     </Card>
@@ -585,20 +592,37 @@ function WeightTrendCard({ trend, w, h }: { trend: number[]; w: number; h: numbe
 
 function GoalsProgressCard({ count, goals, w, h }: { count: number; goals?: Array<{ id: string; title: string; progress: number; category: string | null }>; w: number; h: number }) {
   const { isFull, isMid, isSmall } = sizeTier(w, h);
-  const showGoals = (isFull || isMid) && goals && goals.length > 0;
+  const topGoal = goals?.[0] ?? null;
   return (
     <Card className="p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         {!isSmall && <span className="text-11 font-semibold uppercase tracking-widest text-text-muted truncate">Active goals</span>}
         <IconBadge icon={Target} color="var(--color-accent)" />
       </div>
-      {!showGoals && (
+      {isSmall && (
         <div className="flex items-end gap-1">
           <span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{count}</span>
-          {!isSmall && <span className="text-13 text-text-muted mb-0.5">goal{count !== 1 ? "s" : ""}</span>}
+          <span className="text-13 text-text-muted mb-0.5">goal{count !== 1 ? "s" : ""}</span>
         </div>
       )}
-      {showGoals && (
+      {isMid && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-end gap-1">
+            <span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{count}</span>
+            <span className="text-13 text-text-muted mb-0.5">active</span>
+          </div>
+          {topGoal && (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-12 text-text-primary truncate">{topGoal.title}</span>
+                <span className="text-11 text-text-muted flex-shrink-0 ml-2">{Math.round(topGoal.progress)}%</span>
+              </div>
+              <ProgressBar pct={Math.min(100, topGoal.progress)} color="var(--color-accent)" />
+            </div>
+          )}
+        </div>
+      )}
+      {isFull && goals && goals.length > 0 && (
         <div className="flex flex-col gap-2.5">
           {goals.map(g => {
             const pct = Math.min(100, Math.round(g.progress));
@@ -640,9 +664,10 @@ function JournalStreakCard({ days30, w, h }: { days30: number; w: number; h: num
 // ─── weekly volume card ───────────────────────────────────────────────────────
 
 function WeeklyVolumeCard({ weeklyVolume, w, h }: { weeklyVolume: number[]; w: number; h: number }) {
-  const { isFull, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall } = sizeTier(w, h);
   const thisWeek = weeklyVolume[3] ?? 0;
   const lastWeek = weeklyVolume[2] ?? 0;
+  const maxVol = Math.max(...weeklyVolume, 1);
   const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : null;
   const fmt = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v);
   return (
@@ -651,10 +676,11 @@ function WeeklyVolumeCard({ weeklyVolume, w, h }: { weeklyVolume: number[]; w: n
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-end gap-1">
           <span className="font-mono font-medium leading-none text-text-primary" style={{ fontSize: metricFontSize(w, h) }}>{fmt(thisWeek)}</span>
-          {!isSmall && <span className="text-13 text-text-muted mb-0.5">kg</span>}
+          <span className="text-13 text-text-muted mb-0.5">kg</span>
         </div>
-        {!isSmall && weeklyVolume.some(v => v > 0) && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
+        {(isMid || isFull) && weeklyVolume.some(v => v > 0) && <Sparkline data={weeklyVolume} color="var(--color-accent)" />}
       </div>
+      <ProgressBar pct={(thisWeek / maxVol) * 100} color="var(--color-accent)" />
       {isFull && (delta !== null ? <p className="text-11 text-text-muted">{delta >= 0 ? "+" : ""}{delta}% vs last week</p> : <p className="text-11 text-text-muted">4-week training load</p>)}
     </Card>
   );
@@ -757,7 +783,7 @@ function ReadinessCard({ score, label, color, sleepPts, hrvPts, rhrPts, training
   sleepPts: number; hrvPts: number; rhrPts: number; trainingPts: number;
   lastSleepHrs: number | null; hrv: number | null; w: number; h: number;
 }) {
-  const { isFull, isMid, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall, isTall } = sizeTier(w, h);
   const hasData = lastSleepHrs !== null || hrv !== null;
   const R = 46; const circ = 2 * Math.PI * R; const pct = score / 100; const offset = circ - pct * circ;
   const bars = [
@@ -804,7 +830,7 @@ function ReadinessCard({ score, label, color, sleepPts, hrvPts, rhrPts, training
             <span className="text-10 font-semibold mt-0.5" style={{ color }}>{label}</span>
           </div>
         </div>
-        {isFull && (
+        {(isFull || (isMid && isTall)) && (
           <div className="flex flex-col gap-2.5 flex-1 min-w-0">
             {bars.map(b => (
               <div key={b.label} className="flex flex-col gap-1">
@@ -829,7 +855,7 @@ function MomentumCard({ score, domains, w, h }: {
   domains: { workout: boolean; sleep: boolean; mood: boolean; nutrition: boolean; habits: boolean };
   w: number; h: number;
 }) {
-  const { isFull, isMid, isSmall } = sizeTier(w, h);
+  const { isFull, isMid, isSmall, isTall } = sizeTier(w, h);
   const items = [
     { key: "workout",   label: "Workout",   icon: Dumbbell },
     { key: "sleep",     label: "Sleep",     icon: Moon     },
@@ -876,7 +902,7 @@ function MomentumCard({ score, domains, w, h }: {
                   style={{ background: done ? "color-mix(in oklab, var(--color-success) 15%, transparent)" : "var(--color-bg-elevated)", border: done ? "1px solid color-mix(in oklab, var(--color-success) 30%, transparent)" : "1px solid var(--color-border)" }}>
                   {done ? <CheckCircle2 size={15} style={{ color: "var(--color-success)" }} /> : <Icon size={13} className="text-text-disabled" />}
                 </div>
-                {isFull && <span className="text-10 text-text-muted text-center leading-tight truncate overflow-hidden w-full">{item.label}</span>}
+                {(isFull || (isMid && isTall)) && <span className="text-10 text-text-muted text-center leading-tight truncate overflow-hidden w-full">{item.label}</span>}
               </div>
             );
           })}
